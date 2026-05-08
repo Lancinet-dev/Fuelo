@@ -24,6 +24,10 @@ const venteRoutes = require('./routes/ventes')
 
 app.use('/api/ventes', venteRoutes)
 
+const alerteRoutes = require('./routes/alertes')
+
+app.use('/api/alertes', alerteRoutes)
+
 const PORT = process.env.PORT || 5000
 app.listen(PORT, () => {
   console.log(`⛽ Fuelo démarré sur le port ${PORT}`)
