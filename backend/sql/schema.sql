@@ -1,0 +1,45 @@
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  nom VARCHAR(100) NOT NULL,
+  email VARCHAR(150) UNIQUE NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  role VARCHAR(20) DEFAULT 'admin',
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS stations (
+  id SERIAL PRIMARY KEY,
+  owner_id INT REFERENCES users(id) ON DELETE CASCADE,
+  nom VARCHAR(150) NOT NULL,
+  adresse VARCHAR(255),
+  ville VARCHAR(100) DEFAULT 'Conakry', pays VARCHAR(100) DEFAULT 'Guinee',
+  seuil_essence FLOAT DEFAULT 300,
+  seuil_gasoil FLOAT DEFAULT 300,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS stocks (
+  id SERIAL PRIMARY KEY,
+  station_id INT REFERENCES stations(id) ON DELETE CASCADE,
+  type VARCHAR(20) NOT NULL,
+  quantite FLOAT DEFAULT 0,
+  updated_at TIMESTAMP DEFAULT NOW(),
+  UNIQUE(station_id, type)
+);
+CREATE TABLE IF NOT EXISTS ventes (
+  id SERIAL PRIMARY KEY,
+  station_id INT REFERENCES stations(id) ON DELETE CASCADE,
+  user_id INT REFERENCES users(id),
+  type VARCHAR(20) NOT NULL,
+  litres FLOAT NOT NULL,
+  montant_gnf BIGINT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS alertes (
+  id SERIAL PRIMARY KEY,
+  station_id INT REFERENCES stations(id) ON DELETE CASCADE,
+  type VARCHAR(50) NOT NULL,
+  message TEXT NOT NULL,
+  lu BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT NOW()
+);
