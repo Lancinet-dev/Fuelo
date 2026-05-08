@@ -28,6 +28,10 @@ const alerteRoutes = require('./routes/alertes')
 
 app.use('/api/alertes', alerteRoutes)
 
+const statsRoutes = require('./routes/stats')
+
+app.use('/api/stats', statsRoutes)
+
 const PORT = process.env.PORT || 5000
 app.listen(PORT, () => {
   console.log(`⛽ Fuelo démarré sur le port ${PORT}`)
