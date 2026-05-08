@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS stations (
   owner_id INT REFERENCES users(id) ON DELETE CASCADE,
   nom VARCHAR(150) NOT NULL,
   adresse VARCHAR(255),
-  ville VARCHAR(100) DEFAULT 'Conakry', pays VARCHAR(100) DEFAULT 'Guinee',
+  ville VARCHAR(100) DEFAULT 'Conakry', 
+  pays VARCHAR(100) DEFAULT 'Guinee',
   seuil_essence FLOAT DEFAULT 300,
   seuil_gasoil FLOAT DEFAULT 300,
   created_at TIMESTAMP DEFAULT NOW()
