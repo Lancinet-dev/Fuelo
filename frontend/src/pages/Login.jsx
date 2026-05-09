@@ -217,7 +217,7 @@ export default function Login() {
 
         {/* Stats */}
         <div style={{ display: 'flex', gap: 24, position: 'relative', zIndex: 2 }}>
-          {[['200+', 'Stations actives'], ['14j', 'Essai gratuit'], ['99%', 'Satisfaction']].map(([n, l]) => (
+          {[[], ['14j', 'Essai gratuit'], []].map(([n, l]) => (
             <div key={l} style={{ borderTop: '1px solid rgba(245,158,11,0.2)', paddingTop: 12 }}>
               <div style={{ fontSize: 20, fontWeight: 800, color: '#F59E0B', letterSpacing: '-0.5px', fontFamily: 'DM Mono, monospace' }}>{n}</div>
               <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{l}</div>
@@ -240,7 +240,7 @@ export default function Login() {
             Connexion sécurisée
           </div>
           <div style={{ fontSize: 22, fontWeight: 800, color: t.text, letterSpacing: '-0.5px', marginBottom: 4, transition: 'color 0.3s' }}>
-            Bon retour 👋
+            Bon retour 
           </div>
           <div style={{ fontSize: 13, color: t.textSub, marginBottom: 28, lineHeight: 1.5 }}>
             Connectez-vous à votre espace Fuelo.
