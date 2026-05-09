@@ -10,6 +10,7 @@ const stockRoutes = require('./routes/stock')
 const venteRoutes = require('./routes/ventes')
 const alerteRoutes = require('./routes/alertes')
 const statsRoutes = require('./routes/stats')
+const stationRoutes = require('./routes/station')
 
 const app = express()
 
