@@ -1,4 +1,4 @@
-import { useState,  } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../services/api'
 import toast from 'react-hot-toast'
@@ -180,7 +180,11 @@ const fetchStock = async () => {
     setLoading(false)
   }
 }
- fetchStock()
+
+useEffect(() => {
+  fetchStock()
+}, [])
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     const qty = parseFloat(quantite)
