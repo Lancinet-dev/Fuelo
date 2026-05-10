@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard'
 import Stock from './pages/Stock'
 import Ventes from './pages/Ventes'
 import Alertes from './pages/Alertes'
+import Register from './pages/Register'
 
 // Protection route — redirige si pas connecté
 const Private = ({ children }) => {
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="/stock" element={<Private><Stock /></Private>} />
         <Route path="/ventes" element={<Private><Ventes /></Private>} />
         <Route path="/alertes" element={<Private><Alertes /></Private>} />
+        <Route path="/register" element={<Private><Register /></Private>} />
       </Routes>
     </BrowserRouter>
   )

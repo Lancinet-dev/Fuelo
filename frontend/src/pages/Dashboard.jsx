@@ -14,7 +14,7 @@ const FueloLogo = () => (
       </svg>
     </div>
     <span style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-0.5px' }}>
-      <span style={{ color: '#fff' }}>fuel</span>
+      <span style={{ color: '#FF500B' }}>fuel</span>
       <span style={{ color: '#F59E0B' }}>o</span>
     </span>
   </div>
@@ -230,7 +230,7 @@ export default function Dashboard() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 }}>
           <div>
             <div style={{ fontSize: 22, fontWeight: 800, color: t.text, letterSpacing: '-0.5px' }}>
-              Bonjour, {user.nom?.split(' ')[0] || 'Gérant'} 👋
+              Bonjour, {user.nom?.split(' ')[0] || 'Gérant'} 
             </div>
             <div style={{ fontSize: 13, color: t.textSub, marginTop: 3 }}>
               {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
