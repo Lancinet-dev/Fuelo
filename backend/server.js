@@ -20,6 +20,8 @@ const venteRoutes   = require('./routes/ventes')
 const alerteRoutes  = require('./routes/alertes')
 const statsRoutes   = require('./routes/stats')
 const stationRoutes = require('./routes/station')
+const employeRoutes = require('./routes/employes')
+
 
 app.use('/api/auth',    limiterAuth, authRoutes)
 app.use('/api/stock',   stockRoutes)
@@ -27,7 +29,7 @@ app.use('/api/ventes',  venteRoutes)
 app.use('/api/alertes', alerteRoutes)
 app.use('/api/stats',   statsRoutes)
 app.use('/api/station', stationRoutes)
-
+app.use('/api/employes', employeRoutes)
 // ── Route test ───────────────────────────────────────
 app.get('/', (req, res) => {
   res.json({ message: '⛽ Fuelo API — En ligne', status: 'OK' })
