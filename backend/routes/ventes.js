@@ -1,11 +1,17 @@
-const express = require('express')
-const router = express.Router()
+const express     = require('express')
+const router      = express.Router()
 const verifyToken = require('../middleware/auth')
-const { enregistrerVente, getVentes, getVentesAujourdhui } = require('../controllers/venteController')
-const { validateVente } = require('../middleware/validate')
+const { isPompiste, isManager } = require('../middleware/checkRole')
+const {
+  enregistrerVente,
+  getVentes,
+  getVentesRecentes,
+  getVentesAujourdhui
+} = require('../controllers/venteController')
 
-router.post('/', verifyToken, validateVente, enregistrerVente)
-router.get('/', verifyToken, getVentes)
-router.get('/aujourdhui', verifyToken, getVentesAujourdhui)
+router.post('/',          verifyToken, isPompiste, enregistrerVente)
+router.get('/',           verifyToken, isManager,  getVentes)
+router.get('/recentes',   verifyToken, isManager,  getVentesRecentes)
+router.get('/aujourdhui', verifyToken, isPompiste, getVentesAujourdhui)
 
 module.exports = router

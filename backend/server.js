@@ -1,19 +1,20 @@
+// ================================================
+// FUELO V2 — Serveur principal
+// ================================================
+
 const express = require('express')
-const cors = require('cors')
+const cors    = require('cors')
 require('dotenv').config()
 require('./config/database')
 
 const app = express()
 
-// ── Middlewares globaux ──────────────────────────────
 app.use(cors())
 app.use(express.json())
 
-// ── Rate limiting ────────────────────────────────────
 const {  limiterAuth } = require('./middleware/rateLimit')
-app.use( limiterAuth )
+app.use(limiterAuth)
 
-// ── Routes ───────────────────────────────────────────
 const authRoutes    = require('./routes/auth')
 const stockRoutes   = require('./routes/stock')
 const venteRoutes   = require('./routes/ventes')
@@ -22,25 +23,22 @@ const statsRoutes   = require('./routes/stats')
 const stationRoutes = require('./routes/station')
 const employeRoutes = require('./routes/employes')
 
-
-app.use('/api/auth',    limiterAuth, authRoutes)
-app.use('/api/stock',   stockRoutes)
-app.use('/api/ventes',  venteRoutes)
-app.use('/api/alertes', alerteRoutes)
-app.use('/api/stats',   statsRoutes)
-app.use('/api/station', stationRoutes)
+app.use('/api/auth',     limiterAuth, authRoutes)
+app.use('/api/stock',    stockRoutes)
+app.use('/api/ventes',   venteRoutes)
+app.use('/api/alertes',  alerteRoutes)
+app.use('/api/stats',    statsRoutes)
+app.use('/api/station',  stationRoutes)
 app.use('/api/employes', employeRoutes)
-// ── Route test ───────────────────────────────────────
+
 app.get('/', (req, res) => {
-  res.json({ message: '⛽ Fuelo API — En ligne', status: 'OK' })
+  res.json({ message: '⛽ Fuelo API V2 — En ligne', version: '2.0.0', status: 'OK' })
 })
 
-// ── Gestion erreurs — toujours en dernier ────────────
 const errorHandler = require('./middleware/errorHandler')
 app.use(errorHandler)
 
-// ── Démarrage ────────────────────────────────────────
 const PORT = process.env.PORT || 5000
 app.listen(PORT, () => {
-  console.log(`⛽ Fuelo démarré sur le port ${PORT}`)
+  console.log(`⛽ Fuelo V2 démarré sur le port ${PORT}`)
 })

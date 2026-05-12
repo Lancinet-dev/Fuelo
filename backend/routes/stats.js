@@ -1,9 +1,5 @@
-// ================================================
-// FUELO V2 — Routes stats
-// ================================================
-
-const express    = require('express')
-const router     = express.Router()
+const express     = require('express')
+const router      = express.Router()
 const verifyToken = require('../middleware/auth')
 const { isManager } = require('../middleware/checkRole')
 const {
@@ -14,10 +10,10 @@ const {
   getStatsEmploye
 } = require('../controllers/statsController')
 
-router.get('/resume',        verifyToken, isManager, getResume)
-router.get('/semaine',       verifyToken, isManager, getStatsSemaine)
-router.get('/mois',          verifyToken, isManager, getStatsMois)
-router.get('/activite',      verifyToken, isManager, getActivite)
-router.get('/employe/:id',   verifyToken, isManager, getStatsEmploye)
+router.get('/resume',      verifyToken, isManager, getResume)
+router.get('/semaine',     verifyToken, isManager, getStatsSemaine)
+router.get('/mois',        verifyToken, isManager, getStatsMois)
+router.get('/activite',    verifyToken, isManager, getActivite)
+router.get('/employe/:id', verifyToken, isManager, getStatsEmploye)
 
 module.exports = router

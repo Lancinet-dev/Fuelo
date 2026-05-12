@@ -1,13 +1,17 @@
-const pool = require('../config/database')
-const bcrypt = require('bcryptjs')
-const jwt = require('jsonwebtoken')
+// ================================================
+// FUELO V2 — Auth Controller avec rôles
+// ================================================
 
-// ── REGISTER ─────────────────────────────
+const pool   = require('../config/database')
+const bcrypt = require('bcryptjs')
+const jwt    = require('jsonwebtoken')
+
+// ── REGISTER ─────────────────────────────────────────
 const register = async (req, res) => {
   try {
     const { nom, email, password, nom_station } = req.body
 
-    // Vérifier si email existe déjà
+    // Vérifier email existe déjà
     const existe = await pool.query(
       'SELECT id FROM users WHERE email = $1', [email]
     )
@@ -15,30 +19,41 @@ const register = async (req, res) => {
       return res.status(400).json({ error: 'Email déjà utilisé' })
     }
 
-    // Chiffrer le mot de passe
     const hash = await bcrypt.hash(password, 10)
 
-    // Créer le user
-    const user = await pool.query( 'INSERT INTO users (nom, email, password) VALUES ($1, $2, $3) RETURNING id, nom, email',
+    // Créer le user avec rôle 'owner' par défaut à l'inscription
+    const user = await pool.query(
+      `INSERT INTO users (nom, email, password, role)
+       VALUES ($1, $2, $3, 'owner')
+       RETURNING id, nom, email, role`,
       [nom, email, hash]
     )
 
     // Créer la station automatiquement
     const station = await pool.query(
-      'INSERT INTO stations (owner_id, nom) VALUES ($1, $2) RETURNING id',
+      `INSERT INTO stations (owner_id, nom)
+       VALUES ($1, $2) RETURNING id`,
       [user.rows[0].id, nom_station || 'Ma Station']
     )
 
-    // Créer les stocks initiaux (0L)
     const station_id = station.rows[0].id
+
+    // Lier le owner à sa station
     await pool.query(
-      'INSERT INTO stocks (station_id, type, quantite) VALUES ($1, $2, $3), ($1, $4, $3)',
-      [station_id, 'essence', 0, 'gasoil']
+      `INSERT INTO station_users (station_id, user_id)
+       VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      [station_id, user.rows[0].id]
     )
 
-    // Générer le token JWT 
-     const token = jwt.sign(
-      { id: user.rows[0].id, station_id },
+    // Créer stocks initiaux
+    await pool.query(
+      `INSERT INTO stocks (station_id, type, quantite)
+       VALUES ($1, 'essence', 0), ($1, 'gasoil', 0)`,
+      [station_id]
+    )
+
+    const token = jwt.sign(
+      { id: user.rows[0].id, station_id, role: user.rows[0].role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRE }
     )
@@ -53,12 +68,11 @@ const register = async (req, res) => {
   }
 }
 
-// ── LOGIN ────────────────────────────────
+// ── LOGIN ─────────────────────────────────────────────
 const login = async (req, res) => {
   try {
     const { email, password } = req.body
 
-    // Trouver le user
     const result = await pool.query(
       'SELECT * FROM users WHERE email = $1', [email]
     )
@@ -68,32 +82,55 @@ const login = async (req, res) => {
 
     const user = result.rows[0]
 
-    // Vérifier le mot de passe
+    // Vérifier si compte actif
+    if (!user.actif) {
+      return res.status(403).json({ error: 'Compte désactivé. Contactez votre gérant.' })
+    }
+
     const valid = await bcrypt.compare(password, user.password)
     if (!valid) {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' })
     }
 
-    // Trouver la station
+    // Trouver la station liée à cet utilisateur
     const station = await pool.query(
-      'SELECT id FROM stations WHERE owner_id = $1', [user.id]
+      `SELECT s.id FROM stations s
+       JOIN station_users su ON su.station_id = s.id
+       WHERE su.user_id = $1
+       LIMIT 1`,
+      [user.id]
     )
 
-    const station_id = station.rows[0]?.id
+    const station_id = station.rows[0]?.id || null
 
     const token = jwt.sign(
-      { id: user.id, station_id },
+      { id: user.id, station_id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRE }
     )
+
     res.json({
       token,
-      user: { id: user.id, nom: user.nom, email: user.email },
-      station_id
+      user: { id: user.id, nom: user.nom, email: user.email, role: user.role },
+      station_id,
+      role: user.role
     })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 }
 
-module.exports = { register, login }
+// ── ME ────────────────────────────────────────────────
+const me = async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, nom, email, role, actif, created_at FROM users WHERE id = $1',
+      [req.user.id]
+    )
+    res.json({ user: result.rows[0] })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+}
+
+module.exports = { register, login, me }
