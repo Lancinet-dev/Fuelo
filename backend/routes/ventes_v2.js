@@ -12,7 +12,7 @@ const {
   getVentes,
   getVentesRecentes,
   getVentesAujourdhui
-} = require('../controllers/venteController')
+} = require('../controllers/venteController_v2')
 
 // POST /api/ventes — validation Zod automatique
 router.post('/',          verifyToken, isPompiste, validate(venteSchema), enregistrerVente)
