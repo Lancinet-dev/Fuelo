@@ -41,7 +41,7 @@ app.use(express.json({ limit: '10kb' }))
 require('./config/database')
 
 // ── Rate limiting ─────────────────────────────────────
-const {  limiterAuth } = require('./middleware/rateLimit')
+const {limiterAuth } = require('./middleware/rateLimit')
 app.use(limiterAuth )
 
 // ── Routes ────────────────────────────────────────────
