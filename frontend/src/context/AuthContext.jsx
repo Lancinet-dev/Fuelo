@@ -3,6 +3,7 @@
 // Fichier : frontend/src/context/AuthContext.jsx
 // Auth global — plus jamais de localStorage direct
 // ================================================
+/* eslint-disable react-refresh/only-export-components */
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import api from '../services/api'
@@ -17,6 +18,16 @@ export function AuthProvider({ children }) {
   const [stationId,      setStationId]      = useState(() => localStorage.getItem('fuelo_station'))
   const [loading,        setLoading]        = useState(true)
   const [isAuthenticated,setIsAuthenticated] = useState(false)
+
+  // ── Clear auth ────────────────────────────────────
+  const clearAuth = useCallback(() => {
+    localStorage.removeItem('fuelo_token')
+    localStorage.removeItem('fuelo_station')
+    setToken(null)
+    setUser(null)
+    setStationId(null)
+    setIsAuthenticated(false)
+  }, [])
 
   // ── Charger le profil au démarrage ────────────────
   useEffect(() => {
@@ -38,7 +49,7 @@ export function AuthProvider({ children }) {
       }
     }
     init()
-  }, [])
+  }, [clearAuth])
 
   // ── Login ─────────────────────────────────────────
   const login = useCallback(async (email, password) => {
@@ -75,7 +86,7 @@ export function AuthProvider({ children }) {
   // ── Logout ────────────────────────────────────────
   const logout = useCallback(() => {
     clearAuth()
-  }, [])
+  }, [clearAuth])
 
   // ── Changer de station (propriétaire) ─────────────
   const changerStation = useCallback(async (newStationId) => {
@@ -91,15 +102,7 @@ export function AuthProvider({ children }) {
     return station_id
   }, [])
 
-  // ── Clear auth ────────────────────────────────────
-  const clearAuth = () => {
-    localStorage.removeItem('fuelo_token')
-    localStorage.removeItem('fuelo_station')
-    setToken(null)
-    setUser(null)
-    setStationId(null)
-    setIsAuthenticated(false)
-  }
+  
 
   // ── Helpers rôle ──────────────────────────────────
   const isOwner      = user?.role === 'owner'
@@ -139,5 +142,3 @@ export function useAuth() {
   }
   return context
 }
-
-export default AuthContext
