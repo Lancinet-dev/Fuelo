@@ -1,131 +1,171 @@
 // ================================================
 // FUELO V2 — AuthContext
 // Fichier : frontend/src/context/AuthContext.jsx
-// Auth global — plus jamais de localStorage direct
 // ================================================
-/* eslint-disable react-refresh/only-export-components */
 
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+} from 'react'
 import api from '../services/api'
 
-// ── Création du contexte ─────────────────────────────
 const AuthContext = createContext(null)
+
+// ── Helpers localStorage ──────────────────────────────
+const storage = {
+  getToken:   () => localStorage.getItem('fuelo_token'),
+  getStation: () => {
+    const val = localStorage.getItem('fuelo_station')
+    return val ? Number(val) || null : null
+  },
+  set: (token, stationId) => {
+    localStorage.setItem('fuelo_token',   String(token))
+    localStorage.setItem('fuelo_station', String(stationId))
+  },
+  clear: () => {
+    localStorage.removeItem('fuelo_token')
+    localStorage.removeItem('fuelo_station')
+    // Nettoyer le header axios pour éviter les requêtes avec vieux token
+    delete api.defaults.headers.common['Authorization']
+  },
+}
+
+// ── Splash screen de chargement ───────────────────────
+function LoadingScreen() {
+  return (
+    <div style={{
+      height:          '100vh',
+      display:         'flex',
+      flexDirection:   'column',
+      alignItems:      'center',
+      justifyContent:  'center',
+      background:      '#F5F7FA',
+      gap:             16,
+    }}>
+      <div style={{
+        width:        40,
+        height:       40,
+        background:   '#F59E0B',
+        borderRadius: 11,
+        display:      'flex',
+        alignItems:   'center',
+        justifyContent: 'center',
+        boxShadow:    '0 0 20px rgba(245,158,11,0.3)',
+      }}>
+        <svg width="20" height="20" viewBox="0 0 48 48">
+          <path d="M24 4C24 4 10 20 10 30C10 39.5 16.5 45 24 45C31.5 45 38 39.5 38 30C38 20 24 4 24 4Z" fill="#0F172A" />
+          <ellipse cx="18" cy="36" rx="4" ry="6" fill="#F59E0B" opacity="0.6" />
+        </svg>
+      </div>
+      <div style={{
+        width:        32,
+        height:       32,
+        border:       '3px solid #E5E7EB',
+        borderTopColor: '#F59E0B',
+        borderRadius: '50%',
+        animation:    'spin 0.8s linear infinite',
+      }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  )
+}
 
 // ── Provider ─────────────────────────────────────────
 export function AuthProvider({ children }) {
-  const [user,           setUser]           = useState(null)
-  const [token,          setToken]          = useState(() => localStorage.getItem('fuelo_token'))
-  const [stationId,      setStationId]      = useState(() => localStorage.getItem('fuelo_station'))
-  const [loading,        setLoading]        = useState(true)
-  const [isAuthenticated,setIsAuthenticated] = useState(false)
+  const [user,      setUser]      = useState(null)
+  const [stationId, setStationId] = useState(() => storage.getStation())
+  const [loading,   setLoading]   = useState(() => !!storage.getToken())
 
-  // ── Clear auth ────────────────────────────────────
-  const clearAuth = useCallback(() => {
-    localStorage.removeItem('fuelo_token')
-    localStorage.removeItem('fuelo_station')
-    setToken(null)
-    setUser(null)
-    setStationId(null)
-    setIsAuthenticated(false)
-  }, [])
-
-  // ── Charger le profil au démarrage ────────────────
+  // ── Vérifier token au démarrage ───────────────────
   useEffect(() => {
-    const init = async () => {
-      const savedToken = localStorage.getItem('fuelo_token')
-      if (!savedToken) {
-        setLoading(false)
-        return
-      }
-      try {
-        const res = await api.get('/auth/me')
+    const token = storage.getToken()
+    if (!token) return
+
+    let cancelled = false
+
+    api.get('/auth/me')
+      .then(res => {
+        if (cancelled) return
         setUser(res.data.user)
-        setIsAuthenticated(true)
-      } catch {
-        // Token invalide ou expiré
-        clearAuth()
-      } finally {
-        setLoading(false)
-      }
-    }
-    init()
-  }, [clearAuth])
+        setStationId(storage.getStation())
+      })
+      .catch(() => {
+        if (cancelled) return
+        storage.clear()
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => { cancelled = true }
+  }, [])
 
   // ── Login ─────────────────────────────────────────
   const login = useCallback(async (email, password) => {
-    const res = await api.post('/auth/login', { email, password })
-    const { token, user, station_id } = res.data
-
-    localStorage.setItem('fuelo_token', token)
-    localStorage.setItem('fuelo_station', station_id)
-
-    setToken(token)
-    setUser(user)
-    setStationId(station_id)
-    setIsAuthenticated(true)
-
-    return user
+    setLoading(true)
+    try {
+      const { data } = await api.post('/auth/login', { email, password })
+      storage.set(data.token, data.station_id)
+      setUser(data.user)
+      setStationId(Number(data.station_id))
+      return data.user
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   // ── Register ──────────────────────────────────────
-  const register = useCallback(async (data) => {
-    const res = await api.post('/auth/register', data)
-    const { token, user, station_id } = res.data
-
-    localStorage.setItem('fuelo_token', token)
-    localStorage.setItem('fuelo_station', station_id)
-
-    setToken(token)
-    setUser(user)
-    setStationId(station_id)
-    setIsAuthenticated(true)
-
-    return user
+  const register = useCallback(async (payload) => {
+    setLoading(true)
+    try {
+      const { data } = await api.post('/auth/register', payload)
+      storage.set(data.token, data.station_id)
+      setUser(data.user)
+      setStationId(Number(data.station_id))
+      return data.user
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   // ── Logout ────────────────────────────────────────
   const logout = useCallback(() => {
-    clearAuth()
-  }, [clearAuth])
-
-  // ── Changer de station (propriétaire) ─────────────
-  const changerStation = useCallback(async (newStationId) => {
-    const res = await api.post('/station/changer', { station_id: newStationId })
-    const { token, station_id } = res.data
-
-    localStorage.setItem('fuelo_token', token)
-    localStorage.setItem('fuelo_station', station_id)
-
-    setToken(token)
-    setStationId(station_id)
-
-    return station_id
+    storage.clear()
+    setUser(null)
+    setStationId(null)
   }, [])
 
-  
+  // ── Changer de station (owner) ────────────────────
+  const changerStation = useCallback(async (newStationId) => {
+    const { data } = await api.post('/station/changer', { station_id: newStationId })
+    storage.set(data.token, data.station_id)
+    setUser(data.user)
+    setStationId(Number(data.station_id))
+    return Number(data.station_id)
+  }, [])
 
-  // ── Helpers rôle ──────────────────────────────────
-  const isOwner      = user?.role === 'owner'
-  const isManager    = user?.role === 'manager' || user?.role === 'owner'
-  const isPompiste   = user?.role === 'pompiste'
-  const isSuperAdmin = user?.role === 'superadmin'
-
-  const value = {
+  // ── Valeurs mémorisées ────────────────────────────
+  const value = useMemo(() => ({
     user,
-    token,
     stationId,
-    isAuthenticated,
     loading,
+    isAuthenticated: !!user,
+    role:            user?.role   ?? null,
+    isOwner:         user?.role === 'owner',
+    isManager:       user?.role === 'owner' || user?.role === 'manager',
+    isPompiste:      user?.role === 'pompiste',
+    isSuperAdmin:    user?.role === 'superadmin',
     login,
     register,
     logout,
     changerStation,
-    isOwner,
-    isManager,
-    isPompiste,
-    isSuperAdmin,
-    role: user?.role || null,
-  }
+  }), [user, stationId, loading, login, register, logout, changerStation])
+
+  if (loading) return <LoadingScreen />
 
   return (
     <AuthContext.Provider value={value}>
@@ -134,11 +174,13 @@ export function AuthProvider({ children }) {
   )
 }
 
-// ── Hook useAuth ──────────────────────────────────────
+
+export { AuthContext }
+
+// ── Hook ─────────────────────────────────────────────
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
-  const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth doit être utilisé dans un AuthProvider')
-  }
-  return context
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error('useAuth doit être dans un AuthProvider')
+  return ctx
 }
