@@ -43,7 +43,7 @@ const THEMES = {
     sidebar:       '#080D18',
     sidebarBorder: 'rgba(255,255,255,0.05)',
     // Textes
-    text:          '#F1F5F9',
+    text:           '#F1F5F9',      
     textSub:       '#64748B',
     textMuted:     '#334155',
     // Inputs

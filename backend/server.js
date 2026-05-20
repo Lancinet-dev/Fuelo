@@ -41,8 +41,8 @@ app.use(express.json({ limit: '10kb' }))
 require('./config/database')
 
 // ── Rate limiting ─────────────────────────────────────
-const {limiterAuth } = require('./middleware/rateLimit')
-app.use(limiterAuth )
+const {limiterAuth, limiterGeneral } = require('./middleware/rateLimit')
+app.use(limiterAuth , limiterGeneral )
 
 // ── Routes ────────────────────────────────────────────
 const authRoutes    = require('./routes/auth')
@@ -53,7 +53,7 @@ const statsRoutes   = require('./routes/stats')
 const stationRoutes = require('./routes/station')
 const employeRoutes = require('./routes/employes')
 
-app.use('/api/auth',     limiterAuth, authRoutes)
+app.use('/api/auth',  limiterGeneral,   limiterAuth, authRoutes)
 app.use('/api/stock',    stockRoutes)
 app.use('/api/ventes',   venteRoutes)
 app.use('/api/alertes',  alerteRoutes)
