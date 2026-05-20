@@ -560,7 +560,7 @@ function Footer() {
           </div>
           <span style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>fuel<span style={{ color: C.primary }}>o</span></span>
         </div>
-        <div style={{ fontSize: 13, color: C.textMuted }}>© 2025 Fuelo. Tous droits réservés.</div>
+        <div style={{ fontSize: 13, color: C.textMuted }}>© 2026 Fuelo. Tous droits réservés.</div>
         <div style={{ display: 'flex', gap: 24 }}>
           {['Confidentialité', 'Conditions', 'Contact'].map(l => (
             <span key={l} style={{ fontSize: 13, color: C.textMuted, cursor: 'pointer', transition: 'color 0.2s' }}
