@@ -3,20 +3,21 @@
 // Fichier : frontend/src/main.jsx
 // ================================================
 
-import { StrictMode } from 'react'
-import { createRoot }  from 'react-dom/client'
+import { StrictMode }   from 'react'
+import { createRoot }   from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Toaster } from 'react-hot-toast'
+import { Toaster }      from 'react-hot-toast'
 import { AuthProvider } from './context/AuthContext'
-import Router from './app/router'
+import Router           from './app/router'
+import WhatsAppButton   from './ui/WhatsAppButton'
 
 // ── React Query client ────────────────────────────────
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry:              1,
+      retry:                1,
       refetchOnWindowFocus: false,
-      staleTime:          15_000,
+      staleTime:            15_000,
     },
     mutations: {
       retry: 0,
@@ -30,7 +31,7 @@ const globalStyles = `
 
   *, *::before, *::after {
     box-sizing: border-box;
-    margin: 0;
+    margin:  0;
     padding: 0;
   }
 
@@ -72,6 +73,10 @@ createRoot(document.getElementById('root')).render(
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Router />
+
+        {/* Bouton WhatsApp flottant — visible sur toutes les pages */}
+        <WhatsAppButton />
+
         <Toaster
           position="top-right"
           toastOptions={{
