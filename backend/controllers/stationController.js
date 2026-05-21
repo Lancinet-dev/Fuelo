@@ -8,16 +8,8 @@ const pool = require('../config/database')
 const getStation = async (req, res) => {
   try {
     const station_id = req.user.station_id
-
-    const result = await pool.query(
-      'SELECT * FROM stations WHERE id = $1',
-      [station_id]
-    )
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Station non trouvée' })
-    }
-
+    const result = await pool.query('SELECT * FROM stations WHERE id = $1', [station_id])
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Station non trouvée' })
     res.json({ station: result.rows[0] })
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -28,24 +20,18 @@ const getStation = async (req, res) => {
 const getMesStations = async (req, res) => {
   try {
     const user_id = req.user.id
-
     const result = await pool.query(
       `SELECT
          s.*,
-         -- Stock essence
          COALESCE((SELECT quantite FROM stocks WHERE station_id = s.id AND type = 'essence'), 0) as stock_essence,
-         -- Stock gasoil
          COALESCE((SELECT quantite FROM stocks WHERE station_id = s.id AND type = 'gasoil'), 0) as stock_gasoil,
-         -- Ventes du jour
          COALESCE((SELECT SUM(montant_gnf) FROM ventes WHERE station_id = s.id AND DATE(created_at) = CURRENT_DATE), 0) as ventes_jour,
-         -- Alertes non lues
          (SELECT COUNT(*) FROM alertes WHERE station_id = s.id AND lu = false) as alertes_nb
        FROM stations s
        WHERE s.owner_id = $1
        ORDER BY s.created_at ASC`,
       [user_id]
     )
-
     res.json({ stations: result.rows })
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -56,103 +42,78 @@ const getMesStations = async (req, res) => {
 const creerStation = async (req, res) => {
   try {
     const user_id = req.user.id
-    const { nom, adresse, ville, pays, seuil_essence, seuil_gasoil } = req.body
+    const { nom, adresse, ville, pays, seuil_essence, seuil_gasoil, prix_essence, prix_gasoil } = req.body
 
-    if (!nom || !nom.trim()) {
-      return res.status(400).json({ error: 'Le nom de la station est obligatoire' })
-    }
+    if (!nom || !nom.trim()) return res.status(400).json({ error: 'Le nom de la station est obligatoire' })
 
-    // Créer la station
     const station = await pool.query(
-      `INSERT INTO stations (owner_id, nom, adresse, ville, pays, seuil_essence, seuil_gasoil)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO stations (owner_id, nom, adresse, ville, pays, seuil_essence, seuil_gasoil, prix_essence, prix_gasoil)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [
-        user_id,
-        nom,
-        adresse || null,
-        ville || 'Conakry',
-        pays || 'Guinée',
-        seuil_essence || 300,
-        seuil_gasoil || 300
-      ]
+      [user_id, nom, adresse || null, ville || 'Conakry', pays || 'Guinée',
+       seuil_essence || 300, seuil_gasoil || 300,
+       prix_essence || 10000, prix_gasoil || 9000]
     )
 
     const station_id = station.rows[0].id
 
-    // Lier le propriétaire à la nouvelle station
     await pool.query(
-      `INSERT INTO station_users (station_id, user_id)
-       VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      `INSERT INTO station_users (station_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
       [station_id, user_id]
     )
 
-    // Créer les stocks initiaux
     await pool.query(
-      `INSERT INTO stocks (station_id, type, quantite)
-       VALUES ($1, 'essence', 0), ($1, 'gasoil', 0)`,
+      `INSERT INTO stocks (station_id, type, quantite) VALUES ($1, 'essence', 0), ($1, 'gasoil', 0)`,
       [station_id]
     )
 
-    res.status(201).json({
-      message: 'Station créée avec succès',
-      station: station.rows[0]
-    })
+    res.status(201).json({ message: 'Station créée avec succès', station: station.rows[0] })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 }
 
-// ── Modifier infos station ───────────────────────────
+// ── Modifier infos station (avec prix) ───────────────
 const updateStation = async (req, res) => {
   try {
     const station_id = req.user.station_id
-    const { nom, adresse, ville, pays, seuil_essence, seuil_gasoil } = req.body
+    const { nom, adresse, ville, pays, seuil_essence, seuil_gasoil, prix_essence, prix_gasoil } = req.body
 
     const result = await pool.query(
       `UPDATE stations SET
-         nom            = COALESCE($1, nom),
-         adresse        = COALESCE($2, adresse),
-         ville          = COALESCE($3, ville),
-         pays           = COALESCE($4, pays),
-         seuil_essence  = COALESCE($5, seuil_essence),
-         seuil_gasoil   = COALESCE($6, seuil_gasoil)
-       WHERE id = $7
+         nom           = COALESCE($1, nom),
+         adresse       = COALESCE($2, adresse),
+         ville         = COALESCE($3, ville),
+         pays          = COALESCE($4, pays),
+         seuil_essence = COALESCE($5, seuil_essence),
+         seuil_gasoil  = COALESCE($6, seuil_gasoil),
+         prix_essence  = COALESCE($7, prix_essence),
+         prix_gasoil   = COALESCE($8, prix_gasoil)
+       WHERE id = $9
        RETURNING *`,
-      [nom, adresse, ville, pays, seuil_essence, seuil_gasoil, station_id]
+      [nom, adresse, ville, pays, seuil_essence, seuil_gasoil, prix_essence, prix_gasoil, station_id]
     )
 
-    res.json({
-      message: 'Station mise à jour',
-      station: result.rows[0]
-    })
+    res.json({ message: 'Station mise à jour', station: result.rows[0] })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 }
 
-// ── Changer de station active (pour propriétaire) ────
+// ── Changer de station active ────────────────────────
 const changerStation = async (req, res) => {
   try {
     const user_id = req.user.id
     const { station_id } = req.body
 
-    // Vérifier que cette station appartient au propriétaire
     const check = await pool.query(
       'SELECT id FROM stations WHERE id = $1 AND owner_id = $2',
       [station_id, user_id]
     )
+    if (check.rows.length === 0) return res.status(403).json({ error: 'Cette station ne vous appartient pas' })
 
-    if (check.rows.length === 0) {
-      return res.status(403).json({ error: 'Cette station ne vous appartient pas' })
-    }
-
-    // Retourner un nouveau token avec la nouvelle station_id
     const jwt = require('jsonwebtoken')
-    const userResult = await pool.query(
-      'SELECT id, nom, email, role FROM users WHERE id = $1',
-      [user_id]
-    )
+    const userResult = await pool.query('SELECT id, nom, email, role FROM users WHERE id = $1', [user_id])
 
     const token = jwt.sign(
       { id: user_id, station_id: parseInt(station_id), role: req.user.role },
@@ -160,42 +121,32 @@ const changerStation = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRE }
     )
 
-    res.json({
-      message: 'Station changée avec succès',
-      token,
-      station_id: parseInt(station_id),
-      user: userResult.rows[0]
-    })
+    res.json({ message: 'Station changée', token, station_id: parseInt(station_id), user: userResult.rows[0] })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 }
 
-// ── Vue consolidée toutes stations (owner) ───────────
+// ── Vue consolidée ───────────────────────────────────
 const getConsolide = async (req, res) => {
   try {
     const user_id = req.user.id
 
-    // Total global
     const total = await pool.query(
       `SELECT
          COUNT(DISTINCT s.id) as nb_stations,
          COALESCE(SUM(v.montant_gnf), 0) as ventes_jour_total,
          COALESCE(SUM(CASE WHEN a.lu = false THEN 1 ELSE 0 END), 0) as alertes_total
        FROM stations s
-       LEFT JOIN ventes v ON v.station_id = s.id
-         AND DATE(v.created_at) = CURRENT_DATE
+       LEFT JOIN ventes v ON v.station_id = s.id AND DATE(v.created_at) = CURRENT_DATE
        LEFT JOIN alertes a ON a.station_id = s.id
        WHERE s.owner_id = $1`,
       [user_id]
     )
 
-    // Détail par station
     const stations = await pool.query(
       `SELECT
-         s.id,
-         s.nom,
-         s.ville,
+         s.id, s.nom, s.ville,
          COALESCE((SELECT quantite FROM stocks WHERE station_id = s.id AND type = 'essence'), 0) as stock_essence,
          COALESCE((SELECT quantite FROM stocks WHERE station_id = s.id AND type = 'gasoil'), 0) as stock_gasoil,
          COALESCE((SELECT SUM(montant_gnf) FROM ventes WHERE station_id = s.id AND DATE(created_at) = CURRENT_DATE), 0) as ventes_jour,
@@ -207,20 +158,10 @@ const getConsolide = async (req, res) => {
       [user_id]
     )
 
-    res.json({
-      consolide: total.rows[0],
-      stations:  stations.rows
-    })
+    res.json({ consolide: total.rows[0], stations: stations.rows })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 }
 
-module.exports = {
-  getStation,
-  getMesStations,
-  creerStation,
-  updateStation,
-  changerStation,
-  getConsolide
-}
+module.exports = { getStation, getMesStations, creerStation, updateStation, changerStation, getConsolide }

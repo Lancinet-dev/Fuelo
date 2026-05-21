@@ -89,3 +89,34 @@
 {"timestamp":"2026-05-21 06:31:16","level":"info","message":"Employé supprimé (soft) — hfieio"}
 {"timestamp":"2026-05-21 06:32:28","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
 {"timestamp":"2026-05-21 06:32:47","level":"info","message":"Employé créé — Station 11 — mkld,moiejopmi (pompiste)"}
+{"timestamp":"2026-05-21 06:34:53","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 06:36:46","level":"info","message":"Employé supprimé (soft) — mkld,moiejopmi"}
+{"timestamp":"2026-05-21 06:37:02","level":"info","message":"Employé créé — Station 11 — saijoid (pompiste)"}
+{"timestamp":"2026-05-21 06:38:17","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 06:43:15","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 06:44:58","level":"info","message":"Employé supprimé (soft) — saijoid"}
+{"timestamp":"2026-05-21 06:45:31","level":"info","message":"Employé créé — Station 11 — ljiijpg vp (pompiste)"}
+{"timestamp":"2026-05-21 06:47:23","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 06:48:03","level":"info","message":"Employé supprimé (soft) — ljiijpg vp"}
+{"timestamp":"2026-05-21 06:48:17","level":"error","message":"POST /api/employes — la valeur d'une clé dupliquée rompt la contrainte unique « users_email_key »","stack":"error: la valeur d'une clé dupliquée rompt la contrainte unique « users_email_key »\n    at C:\\Users\\DIAKITE KABA\\mon-projet\\backend\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async C:\\Users\\DIAKITE KABA\\mon-projet\\backend\\controllers\\employeController.js:34:18","body":{"nom":"mmmmmmmm","email":"sadiYTUIKKo@gmail.com","password":"saaaadio123"},"user":16}
+{"timestamp":"2026-05-21 06:48:23","level":"info","message":"Employé créé — Station 11 — mmmmmmmm (pompiste)"}
+{"timestamp":"2026-05-21 06:48:29","level":"info","message":"Employé supprimé (soft) — mmmmmmmm"}
+{"timestamp":"2026-05-21 06:48:53","level":"info","message":"Employé créé — Station 11 — kjkmkcv (pompiste)"}
+{"timestamp":"2026-05-21 06:52:33","level":"info","message":"Employé supprimé (soft) — kjkmkcv"}
+{"timestamp":"2026-05-21 06:59:35","level":"error","message":"POST /api/employes — la valeur d'une clé dupliquée rompt la contrainte unique « users_email_key »","stack":"error: la valeur d'une clé dupliquée rompt la contrainte unique « users_email_key »\n    at C:\\Users\\DIAKITE KABA\\mon-projet\\backend\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async C:\\Users\\DIAKITE KABA\\mon-projet\\backend\\controllers\\employeController.js:34:18","body":{"nom":"jjjjjjjjjjj","email":"sadiYTUIKK@gmail.com","password":"saaaadio123"},"user":16}
+{"timestamp":"2026-05-21 06:59:39","level":"info","message":"Employé créé — Station 11 — jjjjjjjjjjj (pompiste)"}
+{"timestamp":"2026-05-21 06:59:47","level":"info","message":"Employé supprimé (soft) — jjjjjjjjjjj"}
+{"timestamp":"2026-05-21 07:04:52","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 07:05:19","level":"info","message":"Employé créé — Station 11 — kx,kdpepzp (pompiste)"}
+{"timestamp":"2026-05-21 07:12:01","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 07:14:35","level":"info","message":"Employé créé — Station 11 — :kdcjmoeizjmvkc  (pompiste)"}
+{"timestamp":"2026-05-21 07:14:56","level":"info","message":"Employé créé — Station 11 — m:M/Mc: (pompiste)"}
+{"timestamp":"2026-05-21 07:15:51","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 07:21:23","level":"info","message":"Employé créé — Station 11 — kùjiln, :njli (pompiste)"}
+{"timestamp":"2026-05-21 07:36:20","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 07:36:35","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 07:37:25","level":"error","message":"POST /api/employes — Cet email est déjà utilisé","stack":"Error: Cet email est déjà utilisé\n    at C:\\Users\\DIAKITE KABA\\mon-projet\\backend\\controllers\\employeController.js:29:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)","body":{"nom":"lancinetbalde","email":"balde@gmail.com","password":"saaaadio123"},"user":16}
+{"timestamp":"2026-05-21 07:37:32","level":"info","message":"Employé créé — Station 11 — lancinetbalde (pompiste)"}
+{"timestamp":"2026-05-21 07:46:11","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 07:48:19","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 07:49:35","level":"info","message":"Vente enregistrée — Station 11 — 33445L essence — 33445 GNF"}
