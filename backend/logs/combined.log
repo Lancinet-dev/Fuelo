@@ -121,3 +121,14 @@
 {"timestamp":"2026-05-21 07:48:19","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
 {"timestamp":"2026-05-21 07:49:35","level":"info","message":"Vente enregistrée — Station 11 — 33445L essence — 33445 GNF"}
 {"timestamp":"2026-05-21 07:52:56","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 08:07:09","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 08:08:12","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 08:10:44","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 08:12:05","level":"info","message":"Employé créé — Station 10 — jmdfkjkmodi (pompiste)"}
+{"timestamp":"2026-05-21 08:18:36","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 08:19:30","level":"info","message":"Employé créé — Station 10 — amadou (pompiste)"}
+{"timestamp":"2026-05-21 08:20:37","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 08:21:54","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 08:22:37","level":"info","message":"Employé créé — Station 11 — sadigou (pompiste)"}
+{"timestamp":"2026-05-21 08:24:47","level":"error","message":"POST /api/employes — Cet email est déjà utilisé","stack":"Error: Cet email est déjà utilisé\n    at C:\\Users\\DIAKITE KABA\\mon-projet\\backend\\controllers\\employeController.js:29:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)","body":{"nom":"sadigou","email":"sadigou@gmail.com","password":"sadio12kjkcvk,, "},"user":16}
+{"timestamp":"2026-05-21 08:24:53","level":"info","message":"Employé créé — Station 11 — sadigou (pompiste)"}
