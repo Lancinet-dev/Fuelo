@@ -54,6 +54,11 @@ const styleEl = document.createElement('style')
 styleEl.textContent = globalStyles
 document.head.appendChild(styleEl)
 
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+  })
+}
 // ── Rendu ─────────────────────────────────────────────
 createRoot(document.getElementById('root')).render(
   <StrictMode>
