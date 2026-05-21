@@ -23,6 +23,7 @@ const Stations   = lazy(() => import('../features/stations/Stations'))
 const Parametres = lazy(() => import('../features/parametres/Parametres'))
 const ForgotPassword = lazy(() => import('../features/auth/ForgotPassword'))
 const ResetPassword  = lazy(() => import('../features/auth/ResetPassword'))
+const GoogleSuccess = lazy(() => import('../features/auth/GoogleSuccess'))
 
 // ── Fallback loading ──────────────────────────────────
 const PageLoader = () => (
@@ -70,7 +71,8 @@ export default function Router() {
           <Route path="/login"    element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
          <Route path="/forgot-password" element={<ForgotPassword />} />
-<Route path="/reset-password"  element={<ResetPassword />} />
+         <Route path="/reset-password"  element={<ResetPassword />} />
+         <Route path="/auth/google/success" element={<GoogleSuccess />} />
           {/* Page pompiste — layout différent */}
           <Route path="/pompiste" element={
             <PrivateRoute allowedRoles={['pompiste']}>
