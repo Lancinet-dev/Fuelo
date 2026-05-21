@@ -79,3 +79,13 @@
 {"timestamp":"2026-05-21 05:34:15","level":"info","message":"Employé supprimé (soft) — sohan"}
 {"timestamp":"2026-05-21 05:34:26","level":"error","message":"POST /api/employes — la valeur d'une clé dupliquée rompt la contrainte unique « users_email_key »","stack":"error: la valeur d'une clé dupliquée rompt la contrainte unique « users_email_key »\n    at C:\\Users\\DIAKITE KABA\\mon-projet\\backend\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async C:\\Users\\DIAKITE KABA\\mon-projet\\backend\\controllers\\employeController.js:34:18","body":{"nom":"lancinet","email":"totaal@gmail.com","password":"12345678"},"user":7}
 {"timestamp":"2026-05-21 05:34:33","level":"info","message":"Employé créé — Station 7 — lancinet (pompiste)"}
+{"timestamp":"2026-05-21 05:47:12","level":"info","message":"Google OAuth — connexion lancinetbalde21@gmail.com"}
+{"timestamp":"2026-05-21 06:00:58","level":"info","message":"Employé créé — Station 10 — thierno (pompiste)"}
+{"timestamp":"2026-05-21 06:09:03","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 06:21:36","level":"info","message":"Employé créé — Station 11 — alpha (pompiste)"}
+{"timestamp":"2026-05-21 06:30:50","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 06:30:53","level":"info","message":"Employé supprimé (soft) — alpha"}
+{"timestamp":"2026-05-21 06:31:08","level":"info","message":"Employé créé — Station 11 — hfieio (pompiste)"}
+{"timestamp":"2026-05-21 06:31:16","level":"info","message":"Employé supprimé (soft) — hfieio"}
+{"timestamp":"2026-05-21 06:32:28","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 06:32:47","level":"info","message":"Employé créé — Station 11 — mkld,moiejopmi (pompiste)"}

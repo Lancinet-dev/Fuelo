@@ -29,10 +29,10 @@ function FueloLogo() {
 
 // ── Avantages ─────────────────────────────────────────
 const AVANTAGES = [
-  { emoji: '⚡', title: 'Démarrage en 2 minutes',   desc: 'Inscription simple, pas de carte bancaire' },
-  { emoji: '📊', title: 'Dashboard en temps réel',  desc: 'Stock, ventes et alertes accessibles partout' },
-  { emoji: '🔒', title: 'Données sécurisées',       desc: 'Chiffrement SSL, vos données vous appartiennent' },
-  { emoji: '🌍', title: "Fait pour l'Afrique",      desc: 'Conçu pour les stations africaines' },
+  { emoji: '⚡', title: 'Démarrage en 2 minutes',  desc: 'Inscription simple, pas de carte bancaire' },
+  { emoji: '📊', title: 'Dashboard en temps réel', desc: 'Stock, ventes et alertes accessibles partout' },
+  { emoji: '🔒', title: 'Données sécurisées',      desc: 'Chiffrement SSL, vos données vous appartiennent' },
+  { emoji: '🌍', title: "Fait pour l'Afrique",     desc: 'Conçu pour les stations africaines' },
 ]
 
 // ── Étapes ────────────────────────────────────────────
@@ -49,9 +49,8 @@ function getStrength(pwd) {
 const STRENGTH_COLOR = ['', '#EF4444', '#F59E0B', '#10B981']
 const STRENGTH_LABEL = ['', 'Faible', 'Moyen', 'Fort']
 
-// ── Champ de formulaire ───────────────────────────────
+// ── Champ de formulaire — sans setFocused ────────────
 function Field({ label, type = 'text', value, onChange, placeholder, error, suffix }) {
-  const [ setFocused] = useState(false)
   return (
     <div style={{ marginBottom: 14 }}>
       <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 7 }}>
@@ -63,8 +62,8 @@ function Field({ label, type = 'text', value, onChange, placeholder, error, suff
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
-          onFocus={e => { setFocused(true); e.target.style.borderColor = theme.colors.primary; e.target.style.boxShadow = `0 0 0 3px ${theme.colors.primaryLight}` }}
-          onBlur={e  => { setFocused(false); e.target.style.borderColor = error ? theme.colors.danger : '#1E2D42'; e.target.style.boxShadow = 'none' }}
+          onFocus={e => { e.target.style.borderColor = theme.colors.primary; e.target.style.boxShadow = `0 0 0 3px ${theme.colors.primaryLight}` }}
+          onBlur={e  => { e.target.style.borderColor = error ? theme.colors.danger : '#1E2D42'; e.target.style.boxShadow = 'none' }}
           style={{
             width:        '100%',
             height:       48,
@@ -92,8 +91,8 @@ function Field({ label, type = 'text', value, onChange, placeholder, error, suff
 
 // ── Register ──────────────────────────────────────────
 export default function Register() {
-  const navigate      = useNavigate()
-  const { register }  = useAuth()
+  const navigate     = useNavigate()
+  const { register } = useAuth()
 
   const [step,    setStep]    = useState(1)
   const [loading, setLoading] = useState(false)
@@ -117,19 +116,18 @@ export default function Register() {
   const emailValid = form.email.includes('@') && form.email.includes('.')
   const strength   = getStrength(form.password)
 
-  // ── Validation par étape ──────────────────────────
   const validateStep1 = () => {
     const e = {}
-    if (!form.nom.trim())          e.nom      = 'Obligatoire'
-    if (!emailValid)               e.email    = 'Email invalide'
-    if (form.password.length < 6)  e.password = 'Minimum 6 caractères'
+    if (!form.nom.trim())         e.nom      = 'Obligatoire'
+    if (!emailValid)              e.email    = 'Email invalide'
+    if (form.password.length < 6) e.password = 'Minimum 6 caractères'
     setErrors(e)
     return Object.keys(e).length === 0
   }
 
   const validateStep2 = () => {
     const e = {}
-    if (!form.nom_station.trim())  e.nom_station = 'Obligatoire'
+    if (!form.nom_station.trim()) e.nom_station = 'Obligatoire'
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -140,7 +138,6 @@ export default function Register() {
     setStep(s => s + 1)
   }
 
-  // ── Soumission finale ────────────────────────────
   const handleSubmit = async () => {
     setLoading(true)
     try {
@@ -161,38 +158,23 @@ export default function Register() {
     }
   }
 
-  // ── Styles ───────────────────────────────────────
   const btnPrimary = {
-    width:          '100%',
-    height:         50,
-    background:     theme.colors.primary,
-    border:         'none',
-    borderRadius:   theme.radius.md,
-    fontSize:       theme.font.size.base,
-    fontWeight:     theme.font.weight.bold,
-    color:          '#0F172A',
-    cursor:         'pointer',
-    display:        'flex',
-    alignItems:     'center',
-    justifyContent: 'center',
-    gap:            8,
-    fontFamily:     theme.font.family,
-    boxShadow:      theme.shadow.primary,
-    transition:     theme.transition.fast,
-    marginTop:      4,
+    width: '100%', height: 50,
+    background: theme.colors.primary, border: 'none',
+    borderRadius: theme.radius.md,
+    fontSize: theme.font.size.base, fontWeight: theme.font.weight.bold,
+    color: '#0F172A', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+    fontFamily: theme.font.family, boxShadow: theme.shadow.primary,
+    transition: theme.transition.fast, marginTop: 4,
   }
 
   const btnSecondary = {
-    height:       50,
-    background:   'transparent',
-    border:       '1.5px solid #1E2D42',
-    borderRadius: theme.radius.md,
-    fontSize:     theme.font.size.base,
-    fontWeight:   theme.font.weight.normal,
-    color:        '#475569',
-    cursor:       'pointer',
-    fontFamily:   theme.font.family,
-    transition:   theme.transition.fast,
+    height: 50, background: 'transparent',
+    border: '1.5px solid #1E2D42', borderRadius: theme.radius.md,
+    fontSize: theme.font.size.base, color: '#475569',
+    cursor: 'pointer', fontFamily: theme.font.family,
+    transition: theme.transition.fast,
   }
 
   return (
@@ -277,7 +259,13 @@ export default function Register() {
               <h1 style={{ fontSize: 22, fontWeight: 800, color: '#F1F5F9', letterSpacing: '-0.5px', marginBottom: 4 }}>Créez votre compte</h1>
               <p style={{ fontSize: 13, color: '#475569', marginBottom: 22 }}>14 jours gratuits — sans carte bancaire</p>
 
-              <Field label="Votre nom complet" value={form.nom} onChange={set('nom')} placeholder="Mamadou Diallo" error={errors.nom} />
+              <Field
+                label="Votre nom complet"
+                value={form.nom}
+                onChange={set('nom')}
+                placeholder="Mamadou Diallo"
+                error={errors.nom}
+              />
 
               <Field
                 label="Adresse email"
@@ -292,7 +280,7 @@ export default function Register() {
                 }
               />
 
-              {/* Mot de passe — géré manuellement pour le bouton œil */}
+              {/* Mot de passe avec bouton œil */}
               <div style={{ marginBottom: 22 }}>
                 <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 7 }}>
                   Mot de passe
@@ -301,17 +289,14 @@ export default function Register() {
                   <input
                     type={showPwd ? 'text' : 'password'}
                     value={form.password}
-                    onChange={e => { set('password')(e.target.value) }}
+                    onChange={e => set('password')(e.target.value)}
                     placeholder="Minimum 6 caractères"
                     onFocus={e => { e.target.style.borderColor = theme.colors.primary; e.target.style.boxShadow = `0 0 0 3px ${theme.colors.primaryLight}` }}
                     onBlur={e  => { e.target.style.borderColor = errors.password ? theme.colors.danger : '#1E2D42'; e.target.style.boxShadow = 'none' }}
                     style={{ width: '100%', height: 48, background: '#0A0F1E', border: `1.5px solid ${errors.password ? theme.colors.danger : '#1E2D42'}`, borderRadius: theme.radius.md, padding: '0 44px 0 16px', fontSize: theme.font.size.base, color: '#F1F5F9', fontFamily: theme.font.family, outline: 'none', transition: theme.transition.normal }}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPwd(v => !v)}
-                    style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center' }}
-                  >
+                  <button type="button" onClick={() => setShowPwd(v => !v)}
+                    style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center' }}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       {showPwd
                         ? <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></>
@@ -339,30 +324,28 @@ export default function Register() {
                 Continuer
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6" /></svg>
               </button>
-{/* Divider */}
-<div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16, marginBottom: 16 }}>
-  <div style={{ flex: 1, height: '0.5px', background: '#1E2D42' }} />
-  <span style={{ fontSize: 11, color: '#334155' }}>ou</span>
-  <div style={{ flex: 1, height: '0.5px', background: '#1E2D42' }} />
-</div>
 
-{/* Bouton Google */}
-<a
-  href="http://localhost:5000/api/auth/google"
-  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, width: '100%', height: 46, background: 'transparent', border: '1.5px solid #1E2D42', borderRadius: '10px', color: '#F1F5F9', fontSize: 14, fontFamily: 'inherit', textDecoration: 'none', marginBottom: 18, transition: 'all 0.2s' }}
-  onMouseEnter={e => { e.currentTarget.style.borderColor = '#3B82F6'; e.currentTarget.style.background = 'rgba(59,130,246,0.05)' }}
-  onMouseLeave={e => { e.currentTarget.style.borderColor = '#1E2D42'; e.currentTarget.style.background = 'transparent' }}
->
-  <svg width="18" height="18" viewBox="0 0 24 24">
-    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-  </svg>
-  Continuer avec Google
-</a>
-            
+              {/* Divider */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                <div style={{ flex: 1, height: '0.5px', background: '#1E2D42' }} />
+                <span style={{ fontSize: 11, color: '#334155' }}>ou</span>
+                <div style={{ flex: 1, height: '0.5px', background: '#1E2D42' }} />
+              </div>
 
+              {/* Bouton Google */}
+              <a href="http://localhost:5000/api/auth/google"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, width: '100%', height: 46, background: 'transparent', border: '1.5px solid #1E2D42', borderRadius: '10px', color: '#F1F5F9', fontSize: 14, fontFamily: 'inherit', textDecoration: 'none', marginBottom: 18, transition: 'all 0.2s' }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#3B82F6'; e.currentTarget.style.background = 'rgba(59,130,246,0.05)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#1E2D42'; e.currentTarget.style.background = 'transparent' }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Continuer avec Google
+              </a>
 
               <div style={{ textAlign: 'center', fontSize: 13, color: '#475569' }}>
                 Déjà un compte ?{' '}
@@ -380,15 +363,13 @@ export default function Register() {
               <h1 style={{ fontSize: 22, fontWeight: 800, color: '#F1F5F9', letterSpacing: '-0.5px', marginBottom: 4 }}>Votre station</h1>
               <p style={{ fontSize: 13, color: '#475569', marginBottom: 22 }}>Ces infos peuvent être modifiées plus tard</p>
 
-              <Field label="Nom de la station"   value={form.nom_station} onChange={set('nom_station')} placeholder="Ex: Station Almamya"      error={errors.nom_station} />
-              <Field label="Ville"               value={form.ville}       onChange={set('ville')}       placeholder="Conakry"                  error={errors.ville}       />
-              <Field label="Pays"                value={form.pays}        onChange={set('pays')}        placeholder="Guinée"                   error={errors.pays}        />
+              <Field label="Nom de la station" value={form.nom_station} onChange={set('nom_station')} placeholder="Ex: Station Almamya" error={errors.nom_station} />
+              <Field label="Ville"             value={form.ville}       onChange={set('ville')}       placeholder="Conakry" />
+              <Field label="Pays"              value={form.pays}        onChange={set('pays')}        placeholder="Guinée" />
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 8 }}>
-                <button onClick={() => setStep(1)} style={{ ...btnSecondary }}>
-                  Retour
-                </button>
-                <button onClick={nextStep} style={{ ...btnPrimary, marginTop: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <button onClick={() => setStep(1)} style={btnSecondary}>Retour</button>
+                <button onClick={nextStep} style={{ ...btnPrimary, marginTop: 0 }}>
                   Continuer
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6" /></svg>
                 </button>
@@ -426,14 +407,9 @@ export default function Register() {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <button onClick={() => setStep(2)} style={{ ...btnSecondary }}>
-                  Modifier
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  disabled={loading}
-                  style={{ ...btnPrimary, marginTop: 0, cursor: loading ? 'not-allowed' : 'pointer', background: loading ? theme.colors.primaryDark : theme.colors.primary }}
-                >
+                <button onClick={() => setStep(2)} style={btnSecondary}>Modifier</button>
+                <button onClick={handleSubmit} disabled={loading}
+                  style={{ ...btnPrimary, marginTop: 0, cursor: loading ? 'not-allowed' : 'pointer', background: loading ? theme.colors.primaryDark : theme.colors.primary }}>
                   {loading
                     ? <div style={{ width: 18, height: 18, border: '2px solid #0F172A', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                     : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
@@ -455,9 +431,7 @@ export default function Register() {
         @keyframes spin { to { transform: rotate(360deg); } }
         * { box-sizing: border-box; }
         @media (max-width: 768px) {
-          [style*="grid-template-columns: 1.1fr 0.9fr"] {
-            grid-template-columns: 1fr !important;
-          }
+          [style*="grid-template-columns: 1.1fr 0.9fr"] { grid-template-columns: 1fr !important; }
           [style*="padding: 44px"] { display: none !important; }
         }
       `}</style>

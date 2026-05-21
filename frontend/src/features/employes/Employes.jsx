@@ -215,7 +215,7 @@ export default function Employes() {
                   <button
                     key={val}
                     type="button"
-                    onClick={() => set('role')(val)}
+                  onClick={() => setForm(f => ({ ...f, role: val }))}
                     style={{
                       flex:         1,
                       padding:      '12px 16px',
