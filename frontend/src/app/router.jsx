@@ -24,8 +24,7 @@ const Parametres = lazy(() => import('../features/parametres/Parametres'))
 const ForgotPassword = lazy(() => import('../features/auth/ForgotPassword'))
 const ResetPassword  = lazy(() => import('../features/auth/ResetPassword'))
 const GoogleSuccess = lazy(() => import('../features/auth/GoogleSuccess'))
-
-
+const Profile = lazy(() => import('../features/profile/Profile'))
 // ── Fallback loading ──────────────────────────────────
 const PageLoader = () => (
   <>
@@ -94,6 +93,7 @@ export default function Router() {
             <Route path="/employes"  element={<Employes />} />
             <Route path="/stations"   element={<Stations />} />
             <Route path="/parametres" element={<Parametres />} />
+            <Route path="/profile" element={<Profile />} />
           </Route>
 
           {/* Route inconnue */}

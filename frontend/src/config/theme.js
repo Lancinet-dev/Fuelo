@@ -32,7 +32,7 @@ const theme = {
     bg:         '#F5F7FA',
     card:       '#FFFFFF',
     cardBorder: '#E5E7EB',
-    text:       '#080973',
+    text:       '#111827',
     textSub:    '#6B7280',
     textMuted:  '#9CA3AF',
     inputBg:    '#F9FAFB',
