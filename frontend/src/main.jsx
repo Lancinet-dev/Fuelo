@@ -2,6 +2,19 @@
 // FUELO V2 — Point d'entrée principal
 // Fichier : frontend/src/main.jsx
 // ================================================
+import * as Sentry from '@sentry/react'
+Sentry.init({
+  dsn: "https://287284428f711e01eeb5b4f031afec39@o4511425920565248.ingest.de.sentry.io/4511425923252304",
+  environment: import.meta.env.MODE,
+  tracesSampleRate: 1.0,
+})
+
+Sentry.init({
+  dsn: "https://287284428f711e01eeb5b4f031afec39@o4511425920565248.ingest.de.sentry.io/4511425923252304",
+  environment: import.meta.env.MODE,
+  tracesSampleRate: 1.0,
+  replaysOnErrorSampleRate: 1.0,
+})
 
 import { StrictMode }    from 'react'
 import { createRoot }    from 'react-dom/client'
