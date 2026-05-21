@@ -1,6 +1,6 @@
 // ================================================
 // FUELO V2.1 — Employé Controller
-// Avec soft delete + audit logs
+// Avec soft delete + audit logs + rôle manager/pompiste
 // ================================================
 
 const pool              = require('../config/database')
@@ -9,15 +9,21 @@ const { AppError, asyncHandler } = require('../utils/appError')
 const { auditLog }      = require('../middleware/auditLog')
 const logger            = require('../utils/logger')
 
-// ── Créer un employé (pompiste) ──────────────────────
+// ── Créer un employé ─────────────────────────────────
 const creerEmploye = asyncHandler(async (req, res) => {
-  const { nom, email, password } = req.body
-  const station_id  = req.user.station_id
-  const created_by  = req.user.id
+  const { nom, email, password, role = 'pompiste' } = req.body
+  const station_id = req.user.station_id
+  const created_by = req.user.id
+
+  // Vérifier que le rôle est valide
+  if (!['pompiste', 'manager'].includes(role)) {
+    throw new AppError('Rôle invalide. Choisissez pompiste ou manager.', 400)
+  }
 
   // Vérifier email existe déjà
   const existe = await pool.query(
-    'SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL', [email]
+    'SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL',
+    [email]
   )
   if (existe.rows.length > 0) {
     throw new AppError('Cet email est déjà utilisé', 400)
@@ -27,9 +33,9 @@ const creerEmploye = asyncHandler(async (req, res) => {
 
   const result = await pool.query(
     `INSERT INTO users (nom, email, password, role, created_by)
-     VALUES ($1, $2, $3, 'pompiste', $4)
+     VALUES ($1, $2, $3, $4, $5)
      RETURNING id, nom, email, role, actif, created_at`,
-    [nom, email, hash, created_by]
+    [nom, email, hash, role, created_by]
   )
 
   const employe = result.rows[0]
@@ -41,8 +47,8 @@ const creerEmploye = asyncHandler(async (req, res) => {
     [station_id, employe.id]
   )
 
-  await auditLog(req, 'CREATE', 'users', employe.id, { nom, email, role: 'pompiste' })
-  logger.info(`Employé créé — Station ${station_id} — ${nom}`)
+  await auditLog(req, 'CREATE', 'users', employe.id, { nom, email, role })
+  logger.info(`Employé créé — Station ${station_id} — ${nom} (${role})`)
 
   res.status(201).json({
     message: 'Employé créé avec succès',
@@ -50,22 +56,23 @@ const creerEmploye = asyncHandler(async (req, res) => {
   })
 })
 
-// ── Liste des employés actifs ────────────────────────
+// ── Liste des employés ───────────────────────────────
 const getEmployes = asyncHandler(async (req, res) => {
   const station_id = req.user.station_id
 
   const result = await pool.query(
     `SELECT
        u.id, u.nom, u.email, u.role, u.actif, u.created_at,
-       COUNT(v.id)                        as nb_ventes_jour,
-       COALESCE(SUM(v.montant_gnf), 0)   as total_ventes_jour
+       COUNT(v.id)                      AS nb_ventes_jour,
+       COALESCE(SUM(v.montant_gnf), 0)  AS total_ventes_jour
      FROM users u
      LEFT JOIN station_users su ON su.user_id = u.id
-     LEFT JOIN ventes v ON v.user_id = u.id
+     LEFT JOIN ventes v
+       ON v.user_id = u.id
        AND DATE(v.created_at) = CURRENT_DATE
        AND v.deleted_at IS NULL
      WHERE su.station_id = $1
-       AND u.role = 'pompiste'
+       AND u.role IN ('pompiste', 'manager')
        AND u.deleted_at IS NULL
      GROUP BY u.id
      ORDER BY u.created_at DESC`,
@@ -99,7 +106,7 @@ const toggleEmploye = asyncHandler(async (req, res) => {
   )
 
   await auditLog(req, newStatus ? 'ACTIVATE' : 'DEACTIVATE', 'users', parseInt(id), {
-    nom: check.rows[0].nom
+    nom: check.rows[0].nom,
   })
 
   res.json({
@@ -124,7 +131,6 @@ const supprimerEmploye = asyncHandler(async (req, res) => {
     throw new AppError('Employé non trouvé', 404)
   }
 
-  // Soft delete — on ne supprime jamais vraiment
   await pool.query(
     'UPDATE users SET deleted_at = NOW(), actif = false WHERE id = $1',
     [id]
@@ -142,7 +148,7 @@ const getVentesEmploye = asyncHandler(async (req, res) => {
   const { id }     = req.params
 
   const result = await pool.query(
-    `SELECT v.*, u.nom as employe_nom
+    `SELECT v.*, u.nom AS employe_nom
      FROM ventes v
      JOIN users u ON u.id = v.user_id
      WHERE v.station_id = $1

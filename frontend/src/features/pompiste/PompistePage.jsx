@@ -74,7 +74,7 @@ export default function PompistePage() {
           </div>
           <button
             onClick={logout}
-            style={{ fontSize: theme.font.size.xs, color: 'rgba(255,255,255,0.4)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: theme.font.family }}
+            style={{ fontSize: theme.font.size.xs, color: 'rgba(239, 68, 68, 1)', boxShadow: '0 0 30px rgba(239, 68, 68, 0.35)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: theme.font.family }}
           >
             Déconnexion
           </button>
