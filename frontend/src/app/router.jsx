@@ -21,6 +21,8 @@ const Employes     = lazy(() => import('../features/employes/Employes'))
 const PompistePage = lazy(() => import('../features/pompiste/PompistePage'))
 const Stations   = lazy(() => import('../features/stations/Stations'))
 const Parametres = lazy(() => import('../features/parametres/Parametres'))
+const ForgotPassword = lazy(() => import('../features/auth/ForgotPassword'))
+const ResetPassword  = lazy(() => import('../features/auth/ResetPassword'))
 
 // ── Fallback loading ──────────────────────────────────
 const PageLoader = () => (
@@ -67,7 +69,8 @@ export default function Router() {
           <Route path="/" element={<Landing />} />
           <Route path="/login"    element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-
+         <Route path="/forgot-password" element={<ForgotPassword />} />
+<Route path="/reset-password"  element={<ResetPassword />} />
           {/* Page pompiste — layout différent */}
           <Route path="/pompiste" element={
             <PrivateRoute allowedRoles={['pompiste']}>
