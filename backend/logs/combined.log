@@ -73,3 +73,9 @@
 {"timestamp":"2026-05-21 05:27:15","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
 {"timestamp":"2026-05-21 05:28:52","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
 {"timestamp":"2026-05-21 05:29:07","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 05:33:02","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 05:33:52","level":"info","message":"Employé créé — Station 7 — lancineiio (pompiste)"}
+{"timestamp":"2026-05-21 05:34:13","level":"info","message":"Employé supprimé (soft) — lancineiio"}
+{"timestamp":"2026-05-21 05:34:15","level":"info","message":"Employé supprimé (soft) — sohan"}
+{"timestamp":"2026-05-21 05:34:26","level":"error","message":"POST /api/employes — la valeur d'une clé dupliquée rompt la contrainte unique « users_email_key »","stack":"error: la valeur d'une clé dupliquée rompt la contrainte unique « users_email_key »\n    at C:\\Users\\DIAKITE KABA\\mon-projet\\backend\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async C:\\Users\\DIAKITE KABA\\mon-projet\\backend\\controllers\\employeController.js:34:18","body":{"nom":"lancinet","email":"totaal@gmail.com","password":"12345678"},"user":7}
+{"timestamp":"2026-05-21 05:34:33","level":"info","message":"Employé créé — Station 7 — lancinet (pompiste)"}
