@@ -3,12 +3,6 @@
 // Fichier : backend/server.js
 // ================================================
 
-Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  environment: process.env.NODE_ENV,
-  tracesSampleRate: 1.0,
-})
-
 const Sentry = require('@sentry/node')
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
@@ -16,8 +10,8 @@ Sentry.init({
   tracesSampleRate: 1.0,
 })
 
-
 require('dotenv').config()
+
 
 const checkEnv = require('./utils/checkEnv')
 checkEnv()

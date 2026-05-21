@@ -225,6 +225,28 @@ function Hero({ navigate }) {
           <span key={t} style={{ fontSize: 13, color: C.textMut, fontWeight: 500 }}>{t}</span>
         ))}
       </div>
+{/* Photos stations animées */}
+<div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, maxWidth: 960, width: '100%', marginBottom: 40, position: 'relative', zIndex: 1, animation: 'fadeUp 1s 0.45s both ease' }}>
+  {[
+    'https://images.pexels.com/photos/32133856/pexels-photo-32133856.jpeg?auto=compress&cs=tinysrgb&w=600',
+    'https://images.pexels.com/photos/18686324/pexels-photo-18686324.jpeg?auto=compress&cs=tinysrgb&w=600',
+    'https://images.pexels.com/photos/16673147/pexels-photo-16673147.jpeg?auto=compress&cs=tinysrgb&w=600',
+  ].map((src, i) => (
+    <div key={i}
+      style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(245,158,11,0.15)', height: 200, position: 'relative', cursor: 'pointer' }}
+      onMouseEnter={e => { e.currentTarget.querySelector('img').style.transform = 'scale(1.08)'; e.currentTarget.querySelector('img').style.opacity = '1' }}
+      onMouseLeave={e => { e.currentTarget.querySelector('img').style.transform = 'scale(1)'; e.currentTarget.querySelector('img').style.opacity = '0.72' }}
+    >
+      <img
+        src={src}
+        alt="Station service"
+        loading="lazy"
+        style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.72, transition: 'all 0.5s ease', display: 'block' }}
+      />
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(transparent 50%, rgba(0,0,0,0.6))' }} />
+    </div>
+  ))}
+</div>
 
       {/* Dashboard preview mockup */}
       <div style={{ maxWidth: 960, width: '100%', position: 'relative', zIndex: 1, animation: 'fadeUp 1s 0.5s both ease' }}>
@@ -633,11 +655,20 @@ function Footer() {
   return (
     <footer style={{ borderTop: `1px solid ${C.border}`, padding: '40px 24px' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 30, height: 30, background: C.primary, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>⛽</div>
-          <span style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>fuel<span style={{ color: C.primary }}>o</span></span>
+       <div onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+          <div style={{ width: 36, height: 36, background: `linear-gradient(135deg, ${C.primary}, #F97316)`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(245,158,11,0.4)' }}>
+            <svg width="18" height="18" viewBox="0 0 48 48">
+              <path d="M24 4C24 4 10 20 10 30C10 39.5 16.5 45 24 45C31.5 45 38 39.5 38 30C38 20 24 4 24 4Z" fill="#0F172A" />
+              <ellipse cx="18" cy="36" rx="4" ry="6" fill="#F59E0B" opacity="0.7" />
+            </svg>
+          </div>
+          <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.5px' }}>
+            <span style={{ color: '#fff' }}>fuel</span>
+            <span style={{ color: C.primary }}>o</span>
+          </span>
         </div>
-        <div style={{ fontSize: 13, color: C.textMut }}>© 2025 Fuelo Africa. Tous droits réservés.</div>
+
+        <div style={{ fontSize: 13, color: C.textMut }}>© 2026 Fuelo Africa. Tous droits réservés.</div>
         <div style={{ display: 'flex', gap: 24 }}>
           {['Confidentialité', 'Conditions', 'Contact'].map(l => (
             <span key={l} style={{ fontSize: 13, color: C.textMut, cursor: 'pointer', transition: 'color 0.2s' }}
