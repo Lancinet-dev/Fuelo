@@ -8,28 +8,13 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import theme from '../../config/theme'
 import toast from 'react-hot-toast'
-
+import FueloLogo from '../../components/FueloLogo'
 const BLUE      = '#2563EB'
 const BLUE_SOFT = '#60A5FA'
 const BLUE_DARK = '#1D4ED8'
 const ORANGE    = '#F59E0B'
 
-function FueloLogo() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <div style={{ width: 36, height: 36, background: ORANGE, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(245,158,11,0.4)' }}>
-        <svg width="18" height="18" viewBox="0 0 48 48">
-          <path d="M24 4C24 4 10 20 10 30C10 39.5 16.5 45 24 45C31.5 45 38 39.5 38 30C38 20 24 4 24 4Z" fill="#0F172A" />
-          <ellipse cx="18" cy="36" rx="4" ry="6" fill={ORANGE} opacity="0.6" />
-        </svg>
-      </div>
-      <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.5px' }}>
-        <span style={{ color: '#fff' }}>fuel</span>
-        <span style={{ color: ORANGE }}>o</span>
-      </span>
-    </div>
-  )
-}
+
 
 const AVANTAGES = [
   { emoji: '⚡', title: 'Démarrage en 2 minutes',  desc: 'Inscription simple, pas de carte bancaire' },
@@ -154,7 +139,7 @@ export default function Register() {
         <div style={{ position: 'absolute', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(37,99,235,0.12) 0%, transparent 70%)', top: -150, left: -150, pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(96,165,250,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(96,165,250,0.03) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
 
-        <div style={{ position: 'relative', zIndex: 2 }}><FueloLogo /></div>
+  <FueloLogo size={36} forceTextColor="#fff" />
 
         <div style={{ position: 'relative', zIndex: 2 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18, marginBottom: 32 }}>

@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-
+import FueloLogo from '../../components/FueloLogo'
 const C = {
   bg:       '#050B18',
   bg2:      '#070F1E',
@@ -104,19 +104,9 @@ function Navbar({ navigate }) {
     }}>
       <div style={{ maxWidth: 1140, margin: '0 auto', height: 70, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
 
-        {/* Logo */}
-        <div onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-          <div style={{ width: 36, height: 36, background: C.orange, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(245,158,11,0.5)' }}>
-            <svg width="18" height="18" viewBox="0 0 48 48">
-              <path d="M24 4C24 4 10 20 10 30C10 39.5 16.5 45 24 45C31.5 45 38 39.5 38 30C38 20 24 4 24 4Z" fill="#0F172A" />
-              <ellipse cx="18" cy="36" rx="4" ry="6" fill="#F59E0B" opacity="0.7" />
-            </svg>
-          </div>
-          <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.5px' }}>
-            <span style={{ color: '#fff' }}>fuel</span>
-            <span style={{ color: C.orange }}>o</span>
-          </span>
-        </div>
+      <div onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ cursor: 'pointer' }}>
+  <FueloLogo size={36} forceTextColor="#fff" />
+</div>
 
         {/* Nav links */}
         <div className="nav-links" style={{ display: 'flex', alignItems: 'center', gap: 36 }}>
@@ -593,17 +583,8 @@ function Footer() {
   return (
     <footer style={{ borderTop: `1px solid rgba(96,165,250,0.08)`, padding: '40px 24px' }}>
       <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-        <div onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-          <div style={{ width: 32, height: 32, background: C.orange, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(245,158,11,0.4)' }}>
-            <svg width="16" height="16" viewBox="0 0 48 48">
-              <path d="M24 4C24 4 10 20 10 30C10 39.5 16.5 45 24 45C31.5 45 38 39.5 38 30C38 20 24 4 24 4Z" fill="#0F172A" />
-              <ellipse cx="18" cy="36" rx="4" ry="6" fill="#F59E0B" opacity="0.7" />
-            </svg>
-          </div>
-          <span style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.5px' }}>
-            <span style={{ color: '#fff' }}>fuel</span>
-            <span style={{ color: C.orange }}>o</span>
-          </span>
+        <div onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ cursor: 'pointer' }}>
+          <FueloLogo size={32} forceTextColor="#fff" />
         </div>
         <div style={{ fontSize: 13, color: C.textMut }}>© 2026 Fuelo Africa. Tous droits réservés.</div>
         <div style={{ display: 'flex', gap: 24 }}>
@@ -618,7 +599,6 @@ function Footer() {
     </footer>
   )
 }
-
 // ── Landing principale ────────────────────────────────
 export default function Landing() {
   const navigate = useNavigate()

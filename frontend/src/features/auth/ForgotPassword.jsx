@@ -8,7 +8,7 @@ import { Link }     from 'react-router-dom'
 import api          from '../../services/api'
 import toast        from 'react-hot-toast'
 import theme        from '../../config/theme'
-
+import FueloLogo from '../../components/FueloLogo'
 export default function ForgotPassword() {
   const [email,   setEmail]   = useState('')
   const [loading, setLoading] = useState(false)
@@ -33,18 +33,9 @@ export default function ForgotPassword() {
     <div style={{ minHeight: '100vh', background: '#0A0F1E', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, fontFamily: theme.font.family }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
 
-        {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ width: 48, height: 48, background: theme.colors.primary, borderRadius: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', boxShadow: theme.shadow.primary }}>
-            <svg width="24" height="24" viewBox="0 0 48 48">
-              <path d="M24 4C24 4 10 20 10 30C10 39.5 16.5 45 24 45C31.5 45 38 39.5 38 30C38 20 24 4 24 4Z" fill="#0F172A" />
-              <ellipse cx="18" cy="36" rx="4" ry="6" fill="#F59E0B" opacity="0.6" />
-            </svg>
-          </div>
-          <span style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>
-            fuel<span style={{ color: theme.colors.primary }}>o</span>
-          </span>
-        </div>
+        <FueloLogo size={36} forceTextColor="#fff" />
+
+      
 
         <div style={{ background: '#0F172A', border: '0.5px solid #1E2D42', borderRadius: 16, padding: '32px 28px' }}>
 

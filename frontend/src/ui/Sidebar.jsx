@@ -7,9 +7,11 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
+import FueloLogo from '../components/FueloLogo'
+
 
 const BLUE = '#2563EB'
-const ORANGE = '#F59E0B'
+
 
 const normalizeRole = (value = '') => {
   const role = String(value).trim().toLowerCase()
@@ -24,20 +26,7 @@ const getRoleLabel = (role) => {
   return 'Pompiste'
 }
 
-const FueloLogo = () => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-    <div style={{ width: 32, height: 32, background: ORANGE, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(245,158,11,0.4)' }}>
-      <svg width="16" height="16" viewBox="0 0 48 48">
-        <path d="M24 4C24 4 10 20 10 30C10 39.5 16.5 45 24 45C31.5 45 38 39.5 38 30C38 20 24 4 24 4Z" fill="#0F172A" />
-        <ellipse cx="18" cy="36" rx="4" ry="6" fill={ORANGE} opacity="0.6" />
-      </svg>
-    </div>
-    <span style={{ fontSize: 17, fontWeight: 800, letterSpacing: '-0.5px' }}>
-      <span style={{ color: '#fff' }}>fuel</span>
-      <span style={{ color: ORANGE }}>o</span>
-    </span>
-  </div>
-)
+
 
 const ALL_NAV = [
   { path: '/dashboard', label: 'Dashboard', roles: ['owner', 'gerant', 'superadmin'], d: 'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z' },
@@ -51,15 +40,17 @@ const ALL_NAV = [
 ]
 
 function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logout, user, role, isDark, toggle }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '24px 14px' }}>
-      <div style={{ marginBottom: 32 }}>
-        <FueloLogo />
-      </div>
+return (
+  <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
 
-      <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8, paddingLeft: 12 }}>
-        Navigation
-      </div>
+    {/* Logo */}
+    <div style={{ padding: '24px 14px 16px' }}>
+      <FueloLogo size={34} forceTextColor="#fff" />
+    </div>
+
+    <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8, paddingLeft: 12 }}>
+      Navigation
+    </div>
 
       <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
         {navItems.map((item) => {

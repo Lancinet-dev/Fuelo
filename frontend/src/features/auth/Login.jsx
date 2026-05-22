@@ -8,31 +8,13 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import theme from '../../config/theme'
 import toast from 'react-hot-toast'
+import FueloLogo from '../../components/FueloLogo'
 
 const BLUE        = '#2563EB'
 const BLUE_SOFT   = '#60A5FA'
 const BLUE_DARK   = '#1D4ED8'
 const ORANGE      = '#F59E0B'
 
-// ── Logo ─────────────────────────────────────────────
-function FueloLogo() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-      <div style={{ width: 36, height: 36, background: ORANGE, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 20px rgba(245,158,11,0.4)' }}>
-        <svg width="18" height="18" viewBox="0 0 48 48">
-          <path d="M24 4C24 4 10 20 10 30C10 39.5 16.5 45 24 45C31.5 45 38 39.5 38 30C38 20 24 4 24 4Z" fill="#0F172A" />
-          <ellipse cx="18" cy="36" rx="4" ry="6" fill={ORANGE} opacity="0.6" />
-        </svg>
-      </div>
-      <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.5px' }}>
-        <span style={{ color: '#fff' }}>fuel</span>
-        <span style={{ color: ORANGE }}>o</span>
-      </span>
-    </div>
-  )
-}
-
-// ── Force mot de passe ────────────────────────────────
 function getStrength(pwd) {
   if (!pwd)                                                           return 0
   if (pwd.length >= 12 && /[A-Z]/.test(pwd) && /[0-9]/.test(pwd))  return 3
@@ -44,8 +26,8 @@ const STRENGTH_COLOR = ['', '#EF4444', ORANGE, '#10B981']
 const STRENGTH_LABEL = ['', 'Faible', 'Moyen', 'Fort']
 
 const PREVIEW_CARDS = [
-  { icon: '📊', label: 'Stock essence', value: '1 847 L', status: 'Normal',   color: '#10B981' },
-  { icon: '💰', label: 'Ventes du jour', value: '6,4M GNF', status: '↑ 12%', color: BLUE_SOFT },
+  { icon: '📊', label: 'Stock essence',  value: '1 847 L',  status: 'Normal',   color: '#10B981' },
+  { icon: '💰', label: 'Ventes du jour', value: '6,4M GNF', status: '↑ 12%',   color: BLUE_SOFT },
   { icon: '⚠️', label: 'Alerte gasoil', value: '280 L',    status: 'Critique', color: '#EF4444' },
 ]
 
@@ -84,6 +66,8 @@ export default function Login() {
     try {
       const user = await login(email, password)
       toast.success(`Bienvenue ${user.nom} ⛽`)
+      // Déclenche le splash screen à la prochaine connexion
+      sessionStorage.setItem('fuelo_just_logged_in', '1')
       if (user.role === 'pompiste') navigate('/pompiste')
       else                          navigate('/dashboard')
     } catch (err) {
@@ -115,28 +99,19 @@ export default function Login() {
       {/* ── GAUCHE ──────────────────────────────── */}
       <div style={{ background: 'linear-gradient(135deg, #0A1628 0%, #0D1F3C 60%, #0A1628 100%)', padding: '44px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}>
 
-        {/* Cercles déco bleus */}
         <div style={{ position: 'absolute', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle, rgba(37,99,235,0.12) 0%, transparent 70%)', top: -150, left: -150, pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(96,165,250,0.08) 0%, transparent 70%)', bottom: 50, right: -50, pointerEvents: 'none' }} />
-
-        {/* Grille subtile */}
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(96,165,250,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(96,165,250,0.03) 1px, transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }} />
 
         {/* Logo */}
-        <div style={{ position: 'relative', zIndex: 2 }}>
-          <FueloLogo />
-        </div>
+        <FueloLogo size={36} forceTextColor="#fff" />
 
         {/* Contenu central */}
         <div style={{ position: 'relative', zIndex: 2 }}>
-
-          {/* Preview cards */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 32 }}>
             {PREVIEW_CARDS.map(card => (
               <div key={card.label} style={{ background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(96,165,250,0.12)', borderRadius: theme.radius.lg, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 14, backdropFilter: 'blur(10px)' }}>
-                <div style={{ width: 36, height: 36, borderRadius: theme.radius.md, background: `${card.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
-                  {card.icon}
-                </div>
+                <div style={{ width: 36, height: 36, borderRadius: theme.radius.md, background: `${card.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{card.icon}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 2 }}>{card.label}</div>
                   <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>{card.status}</div>
@@ -170,18 +145,13 @@ export default function Login() {
       <div style={{ background: '#0B1A2E', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 36px', borderLeft: '0.5px solid rgba(96,165,250,0.08)' }}>
         <div style={{ width: '100%', maxWidth: 340 }}>
 
-          {/* Badge connexion */}
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.2)', borderRadius: 100, padding: '4px 14px', marginBottom: 16 }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: BLUE_SOFT, animation: 'pulse 2s infinite' }} />
             <span style={{ fontSize: 11, fontWeight: 600, color: BLUE_SOFT, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Connexion sécurisée</span>
           </div>
 
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: '#F1F5F9', letterSpacing: '-0.5px', marginBottom: 4 }}>
-            Bon retour 👋
-          </h1>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', marginBottom: 28 }}>
-            Connectez-vous à votre espace Fuelo.
-          </p>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: '#F1F5F9', letterSpacing: '-0.5px', marginBottom: 4 }}>Bon retour 👋</h1>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', marginBottom: 28 }}>Connectez-vous à votre espace Fuelo.</p>
 
           {errors.global && (
             <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: theme.radius.md, padding: '10px 14px', marginBottom: 16, fontSize: theme.font.size.sm, color: '#EF4444' }}>
@@ -193,13 +163,9 @@ export default function Login() {
 
             {/* Email */}
             <div style={{ marginBottom: 14 }}>
-              <label style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 7 }}>
-                Adresse email
-              </label>
+              <label style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 7 }}>Adresse email</label>
               <div style={{ position: 'relative' }}>
-                <input
-                  type="email"
-                  value={email}
+                <input type="email" value={email}
                   onChange={e => { setEmail(e.target.value); setErrors(er => ({ ...er, email: '' })) }}
                   placeholder="gerant@mastation.com"
                   style={{ ...inputBase(errors.email), paddingRight: emailValid && email ? 44 : 16 }}
@@ -218,17 +184,11 @@ export default function Login() {
             {/* Mot de passe */}
             <div style={{ marginBottom: 8 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
-                <label style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                  Mot de passe
-                </label>
-                <Link to="/forgot-password" style={{ fontSize: 12, color: BLUE_SOFT, textDecoration: 'none', fontWeight: 500 }}>
-                  Oublié ?
-                </Link>
+                <label style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Mot de passe</label>
+                <Link to="/forgot-password" style={{ fontSize: 12, color: BLUE_SOFT, textDecoration: 'none', fontWeight: 500 }}>Oublié ?</Link>
               </div>
               <div style={{ position: 'relative' }}>
-                <input
-                  type={showPwd ? 'text' : 'password'}
-                  value={password}
+                <input type={showPwd ? 'text' : 'password'} value={password}
                   onChange={e => { setPassword(e.target.value); setErrors(er => ({ ...er, password: '' })) }}
                   placeholder="••••••••"
                   style={{ ...inputBase(errors.password), paddingRight: 44 }}
@@ -246,7 +206,6 @@ export default function Login() {
                 </button>
               </div>
               {errors.password && <div style={{ fontSize: theme.font.size.xs, color: '#EF4444', marginTop: 4 }}>{errors.password}</div>}
-
               {password && (
                 <div style={{ marginTop: 8 }}>
                   <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
@@ -259,11 +218,9 @@ export default function Login() {
               )}
             </div>
 
-            {/* Bouton Se connecter */}
-            <button
-              type="submit"
-              disabled={loading}
-              style={{ width: '100%', height: 50, background: loading ? BLUE_DARK : `linear-gradient(135deg, ${BLUE}, ${BLUE_DARK})`, border: 'none', borderRadius: theme.radius.md, fontSize: theme.font.size.base, fontWeight: theme.font.weight.bold, color: '#fff', cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: theme.font.family, boxShadow: `0 4px 20px rgba(37,99,235,0.4)`, transition: theme.transition.fast, marginTop: 20, marginBottom: 18 }}
+            {/* Submit */}
+            <button type="submit" disabled={loading}
+              style={{ width: '100%', height: 50, background: loading ? BLUE_DARK : `linear-gradient(135deg, ${BLUE}, ${BLUE_DARK})`, border: 'none', borderRadius: theme.radius.md, fontSize: theme.font.size.base, fontWeight: theme.font.weight.bold, color: '#fff', cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: theme.font.family, boxShadow: '0 4px 20px rgba(37,99,235,0.4)', transition: theme.transition.fast, marginTop: 20, marginBottom: 18 }}
               onMouseEnter={e => { if (!loading) { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(37,99,235,0.5)' }}}
               onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(37,99,235,0.4)' }}
             >
