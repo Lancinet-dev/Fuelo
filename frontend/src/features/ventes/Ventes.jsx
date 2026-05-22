@@ -3,15 +3,15 @@
 // Fichier : frontend/src/features/ventes/Ventes.jsx
 // ================================================
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useVentes }  from '../../hooks/useVentes'
 import { useTheme }   from '../../context/ThemeContext'
-import { useAuth }    from '../../context/AuthContext'
 import StatCard       from '../../ui/StatCard'
 import EmptyState     from '../../ui/EmptyState'
 import { SkeletonStatCard, SkeletonRow, SkeletonStyle } from '../../ui/Skeleton'
 import { formatGNF, formatLitres, formatDateTime } from '../../utils/format'
 import { exportVentesPDF, exportVentesExcel }      from '../../utils/export'
+import api from '../../services/api'
 import theme from '../../config/theme'
 
 const ICONS = {
@@ -24,14 +24,28 @@ const ICONS = {
 
 export default function Ventes() {
   const { palette }  = useTheme()
-  const { role }     = useAuth()
   const [filterType, setFilterType] = useState('')
   const [page,       setPage]       = useState(1)
   const [exporting,  setExporting]  = useState('')
+  const [nomStation, setNomStation] = useState('Ma Station')
 
   const { ventes, meta, aujourdhui, loading } = useVentes({ page, limit: 20, type: filterType })
 
-  const nomStation = JSON.parse(localStorage.getItem('fuelo_station') || 'null') ?? 'Ma Station'
+  useEffect(() => {
+    let cancelled = false
+
+    api.get('/station')
+      .then((res) => {
+        if (cancelled) return
+        const stationName = res.data?.station?.nom?.trim()
+        if (stationName) setNomStation(stationName)
+      })
+      .catch(() => {})
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const handleExportPDF = async () => {
     setExporting('pdf')

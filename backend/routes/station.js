@@ -5,7 +5,7 @@
 const express     = require('express')
 const router      = express.Router()
 const verifyToken = require('../middleware/auth')
-const { isManager, isOwner } = require('../middleware/checkRole')
+const { isPompiste, isManager, isOwner } = require('../middleware/checkRole')
 const {
   getStation,
   getMesStations,
@@ -15,9 +15,9 @@ const {
   getConsolide
 } = require('../controllers/stationController')
 
-// Station actuelle
-router.get('/',           verifyToken, isManager, getStation)
-router.put('/',           verifyToken, isManager, updateStation)
+// Station actuelle — accessible par tous les rôles (pompiste lit les prix)
+router.get('/',  verifyToken, isPompiste, getStation)
+router.put('/',  verifyToken, isManager,  updateStation)
 
 // Multi-stations — propriétaire uniquement
 router.get('/mes-stations', verifyToken, isOwner, getMesStations)

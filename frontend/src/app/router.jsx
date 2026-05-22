@@ -9,6 +9,11 @@ import { useAuth } from '../context/AuthContext'
 import AppLayout from '../ui/AppLayout'
 import { SkeletonDashboard, SkeletonStyle } from '../ui/Skeleton'
 
+const normalizeRole = (value = '') => {
+  const role = String(value).trim().toLowerCase()
+  return role === 'manager' ? 'gerant' : role
+}
+
 // ── Lazy loading pages ────────────────────────────────
 const Landing      = lazy(() => import('../features/auth/Landing'))
 const Login        = lazy(() => import('../features/auth/Login'))
@@ -36,12 +41,14 @@ const PageLoader = () => (
 // ── Garde routes protégées ────────────────────────────
 function PrivateRoute({ children, allowedRoles }) {
   const { isAuthenticated, role } = useAuth()
+  const userRole = normalizeRole(role)
+  const normalizedAllowedRoles = allowedRoles?.map(normalizeRole)
 
   if (!isAuthenticated) return <Navigate to="/login" replace />
 
-  if (allowedRoles && !allowedRoles.includes(role)) {
+  if (normalizedAllowedRoles && !normalizedAllowedRoles.includes(userRole)) {
     // Rediriger pompiste vers sa page
-    if (role === 'pompiste') return <Navigate to="/pompiste" replace />
+    if (userRole === 'pompiste') return <Navigate to="/pompiste" replace />
     return <Navigate to="/dashboard" replace />
   }
 
@@ -51,11 +58,12 @@ function PrivateRoute({ children, allowedRoles }) {
 // ── Redirige si déjà connecté ─────────────────────────
 function PublicRoute({ children }) {
   const { isAuthenticated, role } = useAuth()
+  const userRole = normalizeRole(role)
 
   if (!isAuthenticated) return children
 
   // Rediriger selon le rôle
-  if (role === 'pompiste') return <Navigate to="/pompiste" replace />
+  if (userRole === 'pompiste') return <Navigate to="/pompiste" replace />
   return <Navigate to="/dashboard" replace />
 }
 
@@ -82,7 +90,7 @@ export default function Router() {
 
           {/* Pages manager + owner — avec sidebar */}
           <Route element={
-            <PrivateRoute allowedRoles={['manager', 'owner', 'superadmin']}>
+            <PrivateRoute allowedRoles={['gerant', 'owner', 'superadmin']}>
               <AppLayout />
             </PrivateRoute>
           }>

@@ -3,71 +3,77 @@
 // Fichier : frontend/src/context/ThemeContext.jsx
 // ================================================
 
-import { createContext, useContext, useState, useEffect, useMemo } from 'react'
+import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react'
 
 const ThemeContext = createContext(null)
 
 const THEMES = {
   light: {
-    name:          'light',
-    bg:            '#F0F4FF',
-    bgSecondary:   '#E8EEFF',
-    card:          '#FFFFFF',
-    cardBorder:    '#DBEAFE',
-    sidebar:       '#0F172A',
+    name: 'light',
+    bg: '#F0F4FF',
+    bgSecondary: '#E8EEFF',
+    card: '#FFFFFF',
+    cardBorder: '#DBEAFE',
+    sidebar: '#0F172A',
     sidebarBorder: 'rgba(255,255,255,0.06)',
-    text:          '#1E293B',
-    textSub:       '#64748B',
-    textMuted:     '#94A3B8',
-    inputBg:       '#F8FAFF',
-    inputBorder:   '#DBEAFE',
-    hover:         '#EFF6FF',
-    primary:       '#2563EB',
-    primaryLight:  'rgba(37,99,235,0.10)',
+    text: '#1E293B',
+    textSub: '#64748B',
+    textMuted: '#94A3B8',
+    inputBg: '#F8FAFF',
+    inputBorder: '#DBEAFE',
+    hover: '#EFF6FF',
+    primary: '#2563EB',
+    primaryLight: 'rgba(37,99,235,0.10)',
   },
   dark: {
-    name:          'dark',
-    bg:            '#0D1B2A',
-    bgSecondary:   '#112236',
-    card:          '#162032',
-    cardBorder:    '#1E3148',
-    sidebar:       '#0A1628',
+    name: 'dark',
+    bg: '#0D1B2A',
+    bgSecondary: '#112236',
+    card: '#162032',
+    cardBorder: '#1E3148',
+    sidebar: '#0A1628',
     sidebarBorder: 'rgba(255,255,255,0.05)',
-    text:          '#E2EAF4',
-    textSub:       '#8BA3BF',
-    textMuted:     '#4A6480',
-    inputBg:       '#112236',
-    inputBorder:   '#1E3148',
-    hover:         '#1A2E42',
-    primary:       '#3B82F6',
-    primaryLight:  'rgba(59,130,246,0.12)',
+    text: '#E2EAF4',
+    textSub: '#8BA3BF',
+    textMuted: '#4A6480',
+    inputBg: '#112236',
+    inputBorder: '#1E3148',
+    hover: '#1A2E42',
+    primary: '#3B82F6',
+    primaryLight: 'rgba(59,130,246,0.12)',
   },
 }
 
 export function ThemeProvider({ children }) {
   const [mode, setMode] = useState(() => {
-    return localStorage.getItem('fuelo_theme') ?? 'light'
+    if (typeof window === 'undefined') return 'light'
+    return window.localStorage.getItem('fuelo_theme') ?? 'light'
   })
 
-  const isDark  = mode === 'dark'
+  const isDark = mode === 'dark'
   const palette = THEMES[mode] ?? THEMES.light
 
   useEffect(() => {
+    if (typeof document === 'undefined') return
     document.body.style.background = palette.bg
-    document.body.style.color      = palette.text
+    document.body.style.color = palette.text
   }, [palette])
 
-  const toggle = () => {
+  const toggle = useCallback(() => {
     const next = mode === 'light' ? 'dark' : 'light'
     setMode(next)
-    localStorage.setItem('fuelo_theme', next)
-  }
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('fuelo_theme', next)
+    }
+  }, [mode])
 
-  const setTheme = (newMode) => {
+  const setTheme = useCallback((newMode) => {
     if (!THEMES[newMode]) return
     setMode(newMode)
-    localStorage.setItem('fuelo_theme', newMode)
-  }
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('fuelo_theme', newMode)
+    }
+  }, [])
 
   const value = useMemo(() => ({
     mode,
@@ -75,8 +81,7 @@ export function ThemeProvider({ children }) {
     palette,
     toggle,
     setTheme,
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [mode, isDark])
+  }), [mode, isDark, palette, toggle, setTheme])
 
   return (
     <ThemeContext.Provider value={value}>
@@ -91,3 +96,4 @@ export function useTheme() {
   if (!ctx) throw new Error('useTheme doit être dans un ThemeProvider')
   return ctx
 }
+

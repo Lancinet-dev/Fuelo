@@ -33,6 +33,7 @@ const employeSchema = z.object({
   nom:      z.string().min(2, 'Nom minimum 2 caractères').max(100),
   email:    z.string().email('Email invalide'),
   password: z.string().min(6, 'Mot de passe minimum 6 caractères').max(100),
+  role:     z.enum(['pompiste', 'gerant', 'manager', 'owner', 'superadmin']).optional(),
 })
 
 const stationSchema = z.object({
