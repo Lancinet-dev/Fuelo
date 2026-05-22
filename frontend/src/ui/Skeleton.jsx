@@ -15,7 +15,7 @@ const Shimmer = memo(function Shimmer({ width = '100%', height = 16, radius = th
       borderRadius: radius,
       background:   'linear-gradient(90deg, #F3F4F6 25%, #E9EAEC 50%, #F3F4F6 75%)',
       backgroundSize: '200% 100%',
-      animation:    'shimmer 1.5s infinite',
+      animation:    'shimmer 2.5s infinite',
       flexShrink:   0,
       ...style,
     }} />
