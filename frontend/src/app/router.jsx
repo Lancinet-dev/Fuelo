@@ -15,21 +15,22 @@ const normalizeRole = (value = '') => {
 }
 
 // ── Lazy loading pages ────────────────────────────────
-const Landing      = lazy(() => import('../features/auth/Landing'))
-const Login        = lazy(() => import('../features/auth/Login'))
-const Register     = lazy(() => import('../features/auth/Register'))
-const Dashboard    = lazy(() => import('../features/dashboard/Dashboard'))
-const Stock        = lazy(() => import('../features/stock/Stock'))
-const Ventes       = lazy(() => import('../features/ventes/Ventes'))
-const Alertes      = lazy(() => import('../features/alertes/Alertes'))
-const Employes     = lazy(() => import('../features/employes/Employes'))
-const PompistePage = lazy(() => import('../features/pompiste/PompistePage'))
-const Stations   = lazy(() => import('../features/stations/Stations'))
-const Parametres = lazy(() => import('../features/parametres/Parametres'))
+const Landing        = lazy(() => import('../features/auth/Landing'))
+const Login          = lazy(() => import('../features/auth/Login'))
+const Register       = lazy(() => import('../features/auth/Register'))
+const Dashboard      = lazy(() => import('../features/dashboard/Dashboard'))
+const Stock          = lazy(() => import('../features/stock/Stock'))
+const Ventes         = lazy(() => import('../features/ventes/Ventes'))
+const Alertes        = lazy(() => import('../features/alertes/Alertes'))
+const Employes       = lazy(() => import('../features/employes/Employes'))
+const PompistePage   = lazy(() => import('../features/pompiste/PompistePage'))
+const Stations       = lazy(() => import('../features/stations/Stations'))
+const Parametres     = lazy(() => import('../features/parametres/Parametres'))
 const ForgotPassword = lazy(() => import('../features/auth/ForgotPassword'))
 const ResetPassword  = lazy(() => import('../features/auth/ResetPassword'))
-const GoogleSuccess = lazy(() => import('../features/auth/GoogleSuccess'))
-const Profile = lazy(() => import('../features/profile/Profile'))
+const GoogleSuccess  = lazy(() => import('../features/auth/GoogleSuccess'))
+const Profile        = lazy(() => import('../features/profile/Profile'))
+
 // ── Fallback loading ──────────────────────────────────
 const PageLoader = () => (
   <>
@@ -47,7 +48,6 @@ function PrivateRoute({ children, allowedRoles }) {
   if (!isAuthenticated) return <Navigate to="/login" replace />
 
   if (normalizedAllowedRoles && !normalizedAllowedRoles.includes(userRole)) {
-    // Rediriger pompiste vers sa page
     if (userRole === 'pompiste') return <Navigate to="/pompiste" replace />
     return <Navigate to="/dashboard" replace />
   }
@@ -56,13 +56,14 @@ function PrivateRoute({ children, allowedRoles }) {
 }
 
 // ── Redirige si déjà connecté ─────────────────────────
+// Si connecté → dashboard/pompiste
+// Si pas connecté → affiche la page (landing, login, register)
 function PublicRoute({ children }) {
   const { isAuthenticated, role } = useAuth()
   const userRole = normalizeRole(role)
 
   if (!isAuthenticated) return children
 
-  // Rediriger selon le rôle
   if (userRole === 'pompiste') return <Navigate to="/pompiste" replace />
   return <Navigate to="/dashboard" replace />
 }
@@ -74,13 +75,22 @@ export default function Router() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
 
-          {/* Pages publiques */}
-          <Route path="/" element={<Landing />} />
+          {/* Landing — redirige vers dashboard si déjà connecté */}
+          <Route path="/" element={
+            <PublicRoute>
+              <Landing />
+            </PublicRoute>
+          } />
+
+          {/* Login + Register — redirige si déjà connecté */}
           <Route path="/login"    element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-         <Route path="/forgot-password" element={<ForgotPassword />} />
-         <Route path="/reset-password"  element={<ResetPassword />} />
-         <Route path="/auth/google/success" element={<GoogleSuccess />} />
+
+          {/* Pages publiques sans redirection */}
+          <Route path="/forgot-password"     element={<ForgotPassword />} />
+          <Route path="/reset-password"      element={<ResetPassword />} />
+          <Route path="/auth/google/success" element={<GoogleSuccess />} />
+
           {/* Page pompiste — layout différent */}
           <Route path="/pompiste" element={
             <PrivateRoute allowedRoles={['pompiste']}>
@@ -88,20 +98,20 @@ export default function Router() {
             </PrivateRoute>
           } />
 
-          {/* Pages manager + owner — avec sidebar */}
+          {/* Pages gérant + owner — avec sidebar */}
           <Route element={
             <PrivateRoute allowedRoles={['gerant', 'owner', 'superadmin']}>
               <AppLayout />
             </PrivateRoute>
           }>
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/stock"     element={<Stock />} />
-            <Route path="/ventes"    element={<Ventes />} />
-            <Route path="/alertes"   element={<Alertes />} />
-            <Route path="/employes"  element={<Employes />} />
+            <Route path="/dashboard"  element={<Dashboard />} />
+            <Route path="/stock"      element={<Stock />} />
+            <Route path="/ventes"     element={<Ventes />} />
+            <Route path="/alertes"    element={<Alertes />} />
+            <Route path="/employes"   element={<Employes />} />
             <Route path="/stations"   element={<Stations />} />
             <Route path="/parametres" element={<Parametres />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/profile"    element={<Profile />} />
           </Route>
 
           {/* Route inconnue */}
