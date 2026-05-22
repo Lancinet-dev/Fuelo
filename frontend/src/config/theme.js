@@ -1,16 +1,15 @@
 // ================================================
 // FUELO V2 — Design System
 // Fichier : frontend/src/config/theme.js
-// Valeurs statiques — couleurs dynamiques via useTheme()
 // ================================================
 
 const theme = {
 
-  // ── Couleurs fixes (accent, états) ───────────────
+  // ── Couleurs fixes ────────────────────────────────
   colors: {
-    primary:      '#F59E0B',
-    primaryDark:  '#D97706',
-    primaryLight: 'rgba(245,158,11,0.12)',
+    primary:      '#2563EB', 
+    primaryDark:  '#1D4ED8',
+    primaryLight: 'rgba(37,99,235,0.10)',
 
     success:      '#10B981',
     successLight: 'rgba(16,185,129,0.12)',
@@ -25,10 +24,10 @@ const theme = {
     infoLight:    'rgba(59,130,246,0.10)',
 
     // Sidebar — toujours sombre
-    sidebar:      '#111827',
+    sidebar:      '#0F172A',
     sidebarBorder:'rgba(255,255,255,0.06)',
 
-    // Thème clair par défaut (override via useTheme().palette)
+    // Thème clair par défaut
     bg:         '#F5F7FA',
     card:       '#FFFFFF',
     cardBorder: '#E5E7EB',
@@ -52,7 +51,7 @@ const theme = {
     sm:      '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
     md:      '0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04)',
     lg:      '0 8px 24px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.04)',
-    primary: '0 4px 14px rgba(245,158,11,0.25)',
+    primary: '0 4px 14px rgba(37,99,235,0.30)',
   },
 
   // ── Typographie ───────────────────────────────────

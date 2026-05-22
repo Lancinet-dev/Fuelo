@@ -136,3 +136,16 @@
 {"timestamp":"2026-05-21 08:25:37","level":"info","message":"Employé créé — Station 11 — xklmodv (pompiste)"}
 {"timestamp":"2026-05-21 08:35:51","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
 {"timestamp":"2026-05-21 08:36:11","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 09:31:32","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 09:40:23","level":"info","message":"Employé créé — Station 12 — saliou (pompiste)"}
+{"timestamp":"2026-05-21 09:46:56","level":"info","message":"Vente enregistrée — Station 12 — 10L essence — 100000 GNF"}
+{"timestamp":"2026-05-21 10:00:07","level":"info","message":"Vente enregistrée — Station 12 — 20L essence — 200000 GNF"}
+{"timestamp":"2026-05-21 10:02:04","level":"info","message":"Vente enregistrée — Station 12 — 8000L essence — 80000000 GNF"}
+{"timestamp":"2026-05-21 10:02:14","level":"info","message":"Vente enregistrée — Station 12 — 990L essence — 9900000 GNF"}
+{"timestamp":"2026-05-21 10:02:20","level":"info","message":"Vente enregistrée — Station 12 — 500L essence — 5000000 GNF"}
+{"timestamp":"2026-05-21 10:02:52","level":"info","message":"Vente enregistrée — Station 12 — 300L essence — 3000000 GNF"}
+{"timestamp":"2026-05-21 10:03:02","level":"info","message":"Vente enregistrée — Station 12 — 80L essence — 800000 GNF"}
+{"timestamp":"2026-05-21 10:03:12","level":"info","message":"Vente enregistrée — Station 12 — 50L essence — 500000 GNF"}
+{"timestamp":"2026-05-21 13:59:47","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 19:02:37","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-21 19:43:18","level":"info","message":"Profil mis à jour — user 37"}

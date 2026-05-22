@@ -1,9 +1,10 @@
 // ================================================
-// FUELO V2 — Alertes
+// FUELO V2 — Alertes avec theme dark/light
 // Fichier : frontend/src/features/alertes/Alertes.jsx
 // ================================================
 
 import { useAlertes }   from '../../hooks/useAlertes'
+import { useTheme }     from '../../context/ThemeContext'
 import StatCard         from '../../ui/StatCard'
 import EmptyState       from '../../ui/EmptyState'
 import { SkeletonStatCard, SkeletonStyle } from '../../ui/Skeleton'
@@ -11,9 +12,9 @@ import { formatRelative } from '../../utils/format'
 import theme from '../../config/theme'
 
 const TYPE_CONFIG = {
-  STOCK_FAIBLE: { color: theme.colors.danger,  bg: theme.colors.dangerLight,  icon: '⚠️', label: 'Stock faible'  },
-  ANOMALIE:     { color: theme.colors.warning,  bg: theme.colors.warningLight, icon: '🔍', label: 'Anomalie'      },
-  DEFAULT:      { color: theme.colors.info,     bg: theme.colors.infoLight,    icon: 'ℹ️', label: 'Information'   },
+  STOCK_FAIBLE: { color: theme.colors.danger,  bg: theme.colors.dangerLight,  icon: '⚠️', label: 'Stock faible' },
+  ANOMALIE:     { color: theme.colors.warning,  bg: theme.colors.warningLight, icon: '🔍', label: 'Anomalie'     },
+  DEFAULT:      { color: theme.colors.info,     bg: theme.colors.infoLight,    icon: 'ℹ️', label: 'Information'  },
 }
 
 const ICONS = {
@@ -22,10 +23,11 @@ const ICONS = {
 }
 
 export default function Alertes() {
+  const { palette } = useTheme()
   const { alertes, nonLues, loading, marquerLue, marquerToutesLues } = useAlertes()
 
-  const lues    = alertes.length - nonLues
-  const cfg     = (type) => TYPE_CONFIG[type] ?? TYPE_CONFIG.DEFAULT
+  const lues = alertes.length - nonLues
+  const cfg  = (type) => TYPE_CONFIG[type] ?? TYPE_CONFIG.DEFAULT
 
   return (
     <div style={{ padding: '32px 28px', maxWidth: 900, margin: '0 auto' }} className="fuelo-alertes">
@@ -33,7 +35,7 @@ export default function Alertes() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 14 }}>
         <div>
-          <h1 style={{ fontSize: theme.font.size['2xl'], fontWeight: theme.font.weight.black, color: theme.colors.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <h1 style={{ fontSize: theme.font.size['2xl'], fontWeight: theme.font.weight.black, color: palette.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 10 }}>
             Alertes
             {nonLues > 0 && (
               <span style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.bold, background: theme.colors.danger, color: '#fff', borderRadius: theme.radius.full, padding: '2px 10px' }}>
@@ -41,16 +43,14 @@ export default function Alertes() {
               </span>
             )}
           </h1>
-          <p style={{ fontSize: theme.font.size.md, color: theme.colors.textSub, margin: 0 }}>
+          <p style={{ fontSize: theme.font.size.md, color: palette.textSub, margin: 0 }}>
             {alertes.length} alerte{alertes.length > 1 ? 's' : ''} au total
           </p>
         </div>
 
         {nonLues > 0 && (
-          <button
-            onClick={() => marquerToutesLues()}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: theme.radius.md, border: `1px solid ${theme.colors.cardBorder}`, background: theme.colors.card, color: theme.colors.textSub, cursor: 'pointer', fontSize: theme.font.size.md, fontFamily: theme.font.family, boxShadow: theme.shadow.sm }}
-          >
+          <button onClick={() => marquerToutesLues()}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: palette.card, color: palette.textSub, cursor: 'pointer', fontSize: theme.font.size.md, fontFamily: theme.font.family, boxShadow: theme.shadow.sm }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.check} /></svg>
             Tout marquer comme lu
           </button>
@@ -67,9 +67,9 @@ export default function Alertes() {
         </>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }} className="fuelo-grid-3">
-          <StatCard label="Total alertes"  value={String(alertes.length)} icon={ICONS.alertes} color={theme.colors.textSub} />
-          <StatCard label="Non lues"        value={String(nonLues)}        icon={ICONS.alertes} color={nonLues > 0 ? theme.colors.danger : theme.colors.success} />
-          <StatCard label="Lues"            value={String(lues)}           icon={ICONS.check}   color={theme.colors.success} />
+          <StatCard label="Total alertes" value={String(alertes.length)} icon={ICONS.alertes} color={palette.textSub} />
+          <StatCard label="Non lues"      value={String(nonLues)}        icon={ICONS.alertes} color={nonLues > 0 ? theme.colors.danger : theme.colors.success} />
+          <StatCard label="Lues"          value={String(lues)}           icon={ICONS.check}   color={theme.colors.success} />
         </div>
       )}
 
@@ -77,62 +77,56 @@ export default function Alertes() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {loading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} style={{ background: theme.colors.card, border: `1px solid ${theme.colors.cardBorder}`, borderRadius: theme.radius.lg, padding: '18px 22px', display: 'flex', gap: 16, alignItems: 'center' }}>
-              <div style={{ width: 44, height: 44, borderRadius: theme.radius.md, background: '#F3F4F6', animation: 'shimmer 1.5s infinite', flexShrink: 0 }} />
+            <div key={i} style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.lg, padding: '18px 22px', display: 'flex', gap: 16, alignItems: 'center' }}>
+              <div style={{ width: 44, height: 44, borderRadius: theme.radius.md, background: palette.hover, flexShrink: 0 }} />
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div style={{ width: 80, height: 11, background: '#F3F4F6', borderRadius: 4, animation: 'shimmer 1.5s infinite' }} />
-                <div style={{ width: '70%', height: 14, background: '#F3F4F6', borderRadius: 4, animation: 'shimmer 1.5s infinite' }} />
-                <div style={{ width: 100, height: 10, background: '#F3F4F6', borderRadius: 4, animation: 'shimmer 1.5s infinite' }} />
+                <div style={{ width: 80,   height: 11, background: palette.hover, borderRadius: 4 }} />
+                <div style={{ width: '70%', height: 14, background: palette.hover, borderRadius: 4 }} />
+                <div style={{ width: 100,  height: 10, background: palette.hover, borderRadius: 4 }} />
               </div>
             </div>
           ))
         ) : alertes.length === 0 ? (
-          <div style={{ background: theme.colors.card, border: `1px solid ${theme.colors.cardBorder}`, borderRadius: theme.radius.lg, boxShadow: theme.shadow.sm }}>
+          <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.lg, boxShadow: theme.shadow.sm }}>
             <EmptyState type="alertes" />
           </div>
         ) : (
           alertes.map(alerte => {
             const c = cfg(alerte.type)
             return (
-              <div
-                key={alerte.id}
-                style={{ background: alerte.lu ? theme.colors.card : c.bg, border: `1px solid ${alerte.lu ? theme.colors.cardBorder : c.color + '30'}`, borderRadius: theme.radius.lg, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, transition: theme.transition.fast, boxShadow: theme.shadow.sm }}
-              >
-                {/* Icône */}
-                <div style={{ width: 44, height: 44, borderRadius: theme.radius.md, background: alerte.lu ? '#F3F4F6' : c.bg, border: `1px solid ${alerte.lu ? theme.colors.cardBorder : c.color + '30'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
+              <div key={alerte.id}
+                style={{ background: alerte.lu ? palette.card : c.bg, border: `1px solid ${alerte.lu ? palette.cardBorder : c.color + '30'}`, borderRadius: theme.radius.lg, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, transition: theme.transition.fast, boxShadow: theme.shadow.sm }}>
+
+                <div style={{ width: 44, height: 44, borderRadius: theme.radius.md, background: alerte.lu ? palette.hover : c.bg, border: `1px solid ${alerte.lu ? palette.cardBorder : c.color + '30'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
                   {c.icon}
                 </div>
 
-                {/* Contenu */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.bold, color: alerte.lu ? theme.colors.textSub : c.color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                    <span style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.bold, color: alerte.lu ? palette.textSub : c.color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                       {c.label}
                     </span>
                     {!alerte.lu && (
                       <span style={{ width: 6, height: 6, borderRadius: '50%', background: c.color, display: 'inline-block', animation: 'pulse 1.5s infinite', flexShrink: 0 }} />
                     )}
                   </div>
-                  <div style={{ fontSize: theme.font.size.md, fontWeight: alerte.lu ? theme.font.weight.normal : theme.font.weight.semi, color: alerte.lu ? theme.colors.textSub : theme.colors.text, marginBottom: 4 }}>
+                  <div style={{ fontSize: theme.font.size.md, fontWeight: alerte.lu ? theme.font.weight.normal : theme.font.weight.semi, color: alerte.lu ? palette.textSub : palette.text, marginBottom: 4 }}>
                     {alerte.message}
                   </div>
-                  <div style={{ fontSize: theme.font.size.xs, color: theme.colors.textMuted }}>
+                  <div style={{ fontSize: theme.font.size.xs, color: palette.textMuted }}>
                     {formatRelative(alerte.created_at)}
                   </div>
                 </div>
 
-                {/* Action */}
                 {!alerte.lu ? (
-                  <button
-                    onClick={() => marquerLue(alerte.id)}
-                    style={{ padding: '7px 14px', borderRadius: theme.radius.md, border: `1px solid ${c.color}40`, background: 'transparent', color: c.color, fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, cursor: 'pointer', fontFamily: theme.font.family, whiteSpace: 'nowrap', transition: theme.transition.fast, flexShrink: 0 }}
-                  >
+                  <button onClick={() => marquerLue(alerte.id)}
+                    style={{ padding: '7px 14px', borderRadius: theme.radius.md, border: `1px solid ${c.color}40`, background: 'transparent', color: c.color, fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, cursor: 'pointer', fontFamily: theme.font.family, whiteSpace: 'nowrap', transition: theme.transition.fast, flexShrink: 0 }}>
                     Marquer lue
                   </button>
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.colors.success} strokeWidth="2.5" strokeLinecap="round"><path d={ICONS.check} /></svg>
-                    <span style={{ fontSize: theme.font.size.xs, color: theme.colors.textMuted }}>Lu</span>
+                    <span style={{ fontSize: theme.font.size.xs, color: palette.textMuted }}>Lu</span>
                   </div>
                 )}
               </div>
@@ -142,8 +136,7 @@ export default function Alertes() {
       </div>
 
       <style>{`
-        @keyframes pulse   { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         @media (max-width: 768px) {
           .fuelo-alertes { padding: 20px 16px !important; }
           .fuelo-grid-3  { grid-template-columns: 1fr !important; }

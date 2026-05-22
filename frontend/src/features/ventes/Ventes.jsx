@@ -1,10 +1,11 @@
 // ================================================
-// FUELO V2 — Ventes avec Export PDF + Excel
+// FUELO V2 — Ventes avec theme dark/light
 // Fichier : frontend/src/features/ventes/Ventes.jsx
 // ================================================
 
 import { useState } from 'react'
 import { useVentes }  from '../../hooks/useVentes'
+import { useTheme }   from '../../context/ThemeContext'
 import StatCard       from '../../ui/StatCard'
 import EmptyState     from '../../ui/EmptyState'
 import { SkeletonStatCard, SkeletonRow, SkeletonStyle } from '../../ui/Skeleton'
@@ -22,56 +23,47 @@ const ICONS = {
 }
 
 export default function Ventes() {
-  const [showForm,    setShowForm]    = useState(false)
-  const [filterType,  setFilterType]  = useState('')
-  const [page,        setPage]        = useState(1)
-  const [form,        setForm]        = useState({ type: 'essence', litres: '', montant_gnf: '' })
-  const [exporting,   setExporting]   = useState('')
+  const { palette } = useTheme()
+  const [showForm,   setShowForm]   = useState(false)
+  const [filterType, setFilterType] = useState('')
+  const [page,       setPage]       = useState(1)
+  const [form,       setForm]       = useState({ type: 'essence', litres: '', montant_gnf: '' })
+  const [exporting,  setExporting]  = useState('')
 
   const { ventes, meta, aujourdhui, loading, venteLoading, enregistrerVente } = useVentes({ page, limit: 20, type: filterType })
 
-  // ── Nom station depuis localStorage ──────────────
   const nomStation = JSON.parse(localStorage.getItem('fuelo_station') || 'null') ?? 'Ma Station'
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.litres || !form.montant_gnf) return
-    await enregistrerVente({
-      type:        form.type,
-      litres:      parseFloat(form.litres),
-      montant_gnf: parseInt(form.montant_gnf),
-    })
+    await enregistrerVente({ type: form.type, litres: parseFloat(form.litres), montant_gnf: parseInt(form.montant_gnf) })
     setForm({ type: 'essence', litres: '', montant_gnf: '' })
     setShowForm(false)
   }
 
-  // ── Export PDF ────────────────────────────────────
   const handleExportPDF = async () => {
     setExporting('pdf')
-    try {
-      exportVentesPDF(ventes, nomStation)
-    } finally {
-      setExporting('')
-    }
+    try { exportVentesPDF(ventes, nomStation) } finally { setExporting('') }
   }
 
-  // ── Export Excel ──────────────────────────────────
   const handleExportExcel = async () => {
     setExporting('excel')
-    try {
-      exportVentesExcel(ventes, nomStation)
-    } finally {
-      setExporting('')
-    }
+    try { exportVentesExcel(ventes, nomStation) } finally { setExporting('') }
   }
 
   const inputStyle = {
-    width: '100%', height: 46, background: '#F9FAFB',
-    border: `1.5px solid ${theme.colors.cardBorder}`,
-    borderRadius: theme.radius.md, padding: '0 14px',
-    fontSize: 15, fontWeight: theme.font.weight.bold,
-    color: theme.colors.text, fontFamily: theme.font.mono,
-    outline: 'none', transition: theme.transition.fast,
+    width: '100%', height: 46,
+    background:   palette.inputBg,
+    border:       `1.5px solid ${palette.cardBorder}`,
+    borderRadius: theme.radius.md,
+    padding:      '0 14px',
+    fontSize:     15,
+    fontWeight:   theme.font.weight.bold,
+    color:        palette.text,
+    fontFamily:   theme.font.mono,
+    outline:      'none',
+    transition:   theme.transition.fast,
   }
 
   return (
@@ -80,42 +72,25 @@ export default function Ventes() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 14 }}>
         <div>
-          <h1 style={{ fontSize: theme.font.size['2xl'], fontWeight: theme.font.weight.black, color: theme.colors.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 4 }}>Ventes</h1>
-          <p style={{ fontSize: theme.font.size.md, color: theme.colors.textSub, margin: 0 }}>Historique et enregistrement</p>
+          <h1 style={{ fontSize: theme.font.size['2xl'], fontWeight: theme.font.weight.black, color: palette.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 4 }}>Ventes</h1>
+          <p style={{ fontSize: theme.font.size.md, color: palette.textSub, margin: 0 }}>Historique et enregistrement</p>
         </div>
 
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {/* Export Excel */}
-          <button
-            onClick={handleExportExcel}
-            disabled={exporting === 'excel' || ventes.length === 0}
-            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: theme.radius.md, border: `1px solid ${theme.colors.cardBorder}`, background: theme.colors.card, color: '#10B981', cursor: ventes.length === 0 ? 'not-allowed' : 'pointer', fontSize: theme.font.size.sm, fontFamily: theme.font.family, fontWeight: theme.font.weight.semi, boxShadow: theme.shadow.sm, opacity: ventes.length === 0 ? 0.5 : 1 }}
-          >
-            {exporting === 'excel'
-              ? <div style={{ width: 14, height: 14, border: '2px solid #10B981', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-              : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.excel} /></svg>
-            }
+          <button onClick={handleExportExcel} disabled={exporting === 'excel' || ventes.length === 0}
+            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: palette.card, color: '#10B981', cursor: ventes.length === 0 ? 'not-allowed' : 'pointer', fontSize: theme.font.size.sm, fontFamily: theme.font.family, fontWeight: theme.font.weight.semi, boxShadow: theme.shadow.sm, opacity: ventes.length === 0 ? 0.5 : 1 }}>
+            {exporting === 'excel' ? <div style={{ width: 14, height: 14, border: '2px solid #10B981', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.excel} /></svg>}
             Excel
           </button>
 
-          {/* Export PDF */}
-          <button
-            onClick={handleExportPDF}
-            disabled={exporting === 'pdf' || ventes.length === 0}
-            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: theme.radius.md, border: `1px solid ${theme.colors.cardBorder}`, background: theme.colors.card, color: '#EF4444', cursor: ventes.length === 0 ? 'not-allowed' : 'pointer', fontSize: theme.font.size.sm, fontFamily: theme.font.family, fontWeight: theme.font.weight.semi, boxShadow: theme.shadow.sm, opacity: ventes.length === 0 ? 0.5 : 1 }}
-          >
-            {exporting === 'pdf'
-              ? <div style={{ width: 14, height: 14, border: '2px solid #EF4444', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-              : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.pdf} /></svg>
-            }
+          <button onClick={handleExportPDF} disabled={exporting === 'pdf' || ventes.length === 0}
+            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: palette.card, color: '#EF4444', cursor: ventes.length === 0 ? 'not-allowed' : 'pointer', fontSize: theme.font.size.sm, fontFamily: theme.font.family, fontWeight: theme.font.weight.semi, boxShadow: theme.shadow.sm, opacity: ventes.length === 0 ? 0.5 : 1 }}>
+            {exporting === 'pdf' ? <div style={{ width: 14, height: 14, border: '2px solid #EF4444', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.pdf} /></svg>}
             PDF
           </button>
 
-          {/* Nouvelle vente */}
-          <button
-            onClick={() => setShowForm(v => !v)}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: theme.radius.md, border: 'none', background: theme.colors.primary, color: '#0F172A', cursor: 'pointer', fontSize: theme.font.size.md, fontWeight: theme.font.weight.bold, fontFamily: theme.font.family, boxShadow: theme.shadow.primary }}
-          >
+          <button onClick={() => setShowForm(v => !v)}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: theme.radius.md, border: 'none', background: theme.colors.primary, color: '#fff', cursor: 'pointer', fontSize: theme.font.size.md, fontWeight: theme.font.weight.bold, fontFamily: theme.font.family, boxShadow: theme.shadow.primary }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d={ICONS.plus} /></svg>
             Nouvelle vente
           </button>
@@ -140,38 +115,46 @@ export default function Ventes() {
 
       {/* Formulaire */}
       {showForm && (
-        <div style={{ background: theme.colors.card, border: `1px solid ${theme.colors.cardBorder}`, borderRadius: theme.radius.lg, padding: '24px 26px', marginBottom: 24, boxShadow: theme.shadow.sm }}>
-          <div style={{ fontSize: theme.font.size.base, fontWeight: theme.font.weight.bold, color: theme.colors.text, marginBottom: 20 }}>Enregistrer une vente</div>
+        <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.lg, padding: '24px 26px', marginBottom: 24, boxShadow: theme.shadow.sm }}>
+          <div style={{ fontSize: theme.font.size.base, fontWeight: theme.font.weight.bold, color: palette.text, marginBottom: 20 }}>Enregistrer une vente</div>
           <form onSubmit={handleSubmit}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 16 }} className="fuelo-grid-3">
               <div>
-                <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: theme.colors.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Type</div>
+                <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Type</div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   {[{ val: 'essence', emoji: '⛽' }, { val: 'gasoil', emoji: '🛢️' }].map(({ val, emoji }) => (
                     <button key={val} type="button" onClick={() => setForm(f => ({ ...f, type: val }))}
-                      style={{ flex: 1, padding: '11px 8px', borderRadius: theme.radius.md, border: `1.5px solid ${form.type === val ? theme.colors.primary : theme.colors.cardBorder}`, background: form.type === val ? theme.colors.primaryLight : '#F9FAFB', color: form.type === val ? theme.colors.primary : theme.colors.textSub, fontFamily: theme.font.family, fontSize: theme.font.size.sm, fontWeight: form.type === val ? theme.font.weight.bold : theme.font.weight.normal, cursor: 'pointer', transition: theme.transition.fast }}>
+                      style={{ flex: 1, padding: '11px 8px', borderRadius: theme.radius.md, border: `1.5px solid ${form.type === val ? theme.colors.primary : palette.cardBorder}`, background: form.type === val ? theme.colors.primaryLight : palette.inputBg, color: form.type === val ? theme.colors.primary : palette.textSub, fontFamily: theme.font.family, fontSize: theme.font.size.sm, fontWeight: form.type === val ? theme.font.weight.bold : theme.font.weight.normal, cursor: 'pointer', transition: theme.transition.fast }}>
                       {emoji} {val}
                     </button>
                   ))}
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: theme.colors.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Litres vendus</div>
-                <input type="number" min="0.1" step="0.1" placeholder="Ex: 50" value={form.litres} onChange={e => setForm(f => ({ ...f, litres: e.target.value }))} onFocus={e => { e.target.style.borderColor = theme.colors.primary }} onBlur={e => { e.target.style.borderColor = theme.colors.cardBorder }} style={inputStyle} />
+                <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Litres vendus</div>
+                <input type="number" min="0.1" step="0.1" placeholder="Ex: 50" value={form.litres}
+                  onChange={e => setForm(f => ({ ...f, litres: e.target.value }))}
+                  onFocus={e => { e.target.style.borderColor = theme.colors.primary }}
+                  onBlur={e  => { e.target.style.borderColor = palette.cardBorder }}
+                  style={inputStyle} />
               </div>
               <div>
-                <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: theme.colors.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Montant (GNF)</div>
-                <input type="number" min="1" placeholder="Ex: 500000" value={form.montant_gnf} onChange={e => setForm(f => ({ ...f, montant_gnf: e.target.value }))} onFocus={e => { e.target.style.borderColor = theme.colors.primary }} onBlur={e => { e.target.style.borderColor = theme.colors.cardBorder }} style={inputStyle} />
+                <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Montant (GNF)</div>
+                <input type="number" min="1" placeholder="Ex: 500000" value={form.montant_gnf}
+                  onChange={e => setForm(f => ({ ...f, montant_gnf: e.target.value }))}
+                  onFocus={e => { e.target.style.borderColor = theme.colors.primary }}
+                  onBlur={e  => { e.target.style.borderColor = palette.cardBorder }}
+                  style={inputStyle} />
               </div>
             </div>
             <div style={{ display: 'flex', gap: 10 }}>
               <button type="submit" disabled={venteLoading}
-                style={{ padding: '11px 24px', borderRadius: theme.radius.md, border: 'none', background: theme.colors.primary, color: '#0F172A', fontSize: theme.font.size.md, fontWeight: theme.font.weight.bold, cursor: venteLoading ? 'not-allowed' : 'pointer', fontFamily: theme.font.family, display: 'flex', alignItems: 'center', gap: 8, boxShadow: theme.shadow.primary }}>
-                {venteLoading && <div style={{ width: 14, height: 14, border: '2px solid #0F172A', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />}
+                style={{ padding: '11px 24px', borderRadius: theme.radius.md, border: 'none', background: theme.colors.primary, color: '#fff', fontSize: theme.font.size.md, fontWeight: theme.font.weight.bold, cursor: venteLoading ? 'not-allowed' : 'pointer', fontFamily: theme.font.family, display: 'flex', alignItems: 'center', gap: 8, boxShadow: theme.shadow.primary }}>
+                {venteLoading && <div style={{ width: 14, height: 14, border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />}
                 {venteLoading ? 'Enregistrement...' : 'Confirmer'}
               </button>
               <button type="button" onClick={() => setShowForm(false)}
-                style={{ padding: '11px 20px', borderRadius: theme.radius.md, border: `1px solid ${theme.colors.cardBorder}`, background: 'transparent', color: theme.colors.textSub, fontSize: theme.font.size.md, cursor: 'pointer', fontFamily: theme.font.family }}>
+                style={{ padding: '11px 20px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', color: palette.textSub, fontSize: theme.font.size.md, cursor: 'pointer', fontFamily: theme.font.family }}>
                 Annuler
               </button>
             </div>
@@ -183,22 +166,22 @@ export default function Ventes() {
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {[{ val: '', label: 'Toutes' }, { val: 'essence', label: '⛽ Essence' }, { val: 'gasoil', label: '🛢️ Gasoil' }].map(({ val, label }) => (
           <button key={val} onClick={() => { setFilterType(val); setPage(1) }}
-            style={{ padding: '7px 16px', borderRadius: theme.radius.full, border: `1px solid ${filterType === val ? theme.colors.primary : theme.colors.cardBorder}`, background: filterType === val ? theme.colors.primaryLight : theme.colors.card, color: filterType === val ? theme.colors.primary : theme.colors.textSub, fontSize: theme.font.size.sm, fontWeight: filterType === val ? theme.font.weight.semi : theme.font.weight.normal, cursor: 'pointer', fontFamily: theme.font.family, transition: theme.transition.fast }}>
+            style={{ padding: '7px 16px', borderRadius: theme.radius.full, border: `1px solid ${filterType === val ? theme.colors.primary : palette.cardBorder}`, background: filterType === val ? theme.colors.primaryLight : palette.card, color: filterType === val ? theme.colors.primary : palette.textSub, fontSize: theme.font.size.sm, fontWeight: filterType === val ? theme.font.weight.semi : theme.font.weight.normal, cursor: 'pointer', fontFamily: theme.font.family, transition: theme.transition.fast }}>
             {label}
           </button>
         ))}
         {ventes.length > 0 && (
-          <span style={{ marginLeft: 'auto', fontSize: theme.font.size.xs, color: theme.colors.textMuted, alignSelf: 'center' }}>
+          <span style={{ marginLeft: 'auto', fontSize: theme.font.size.xs, color: palette.textMuted, alignSelf: 'center' }}>
             {meta.total ?? 0} vente{(meta.total ?? 0) > 1 ? 's' : ''} au total
           </span>
         )}
       </div>
 
       {/* Tableau */}
-      <div style={{ background: theme.colors.card, border: `1px solid ${theme.colors.cardBorder}`, borderRadius: theme.radius.lg, overflow: 'hidden', boxShadow: theme.shadow.sm }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '50px 1fr 100px 130px 150px', padding: '10px 22px', background: '#F9FAFB', borderBottom: `1px solid ${theme.colors.cardBorder}`, gap: 8 }}>
+      <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.lg, overflow: 'hidden', boxShadow: theme.shadow.sm }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '50px 1fr 100px 130px 150px', padding: '10px 22px', background: palette.hover, borderBottom: `1px solid ${palette.cardBorder}`, gap: 8 }}>
           {['#', 'Type', 'Litres', 'Montant', 'Date'].map(h => (
-            <div key={h} style={{ fontSize: 10, fontWeight: theme.font.weight.bold, color: theme.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
+            <div key={h} style={{ fontSize: 10, fontWeight: theme.font.weight.bold, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
           ))}
         </div>
 
@@ -208,37 +191,35 @@ export default function Ventes() {
           ? <EmptyState type="ventes" />
           : ventes.map((v, i) => (
             <div key={v.id}
-              style={{ display: 'grid', gridTemplateColumns: '50px 1fr 100px 130px 150px', padding: '13px 22px', borderBottom: i < ventes.length - 1 ? `1px solid ${theme.colors.cardBorder}` : 'none', transition: theme.transition.fast, gap: 8, alignItems: 'center' }}
-              onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
+              style={{ display: 'grid', gridTemplateColumns: '50px 1fr 100px 130px 150px', padding: '13px 22px', borderBottom: i < ventes.length - 1 ? `1px solid ${palette.cardBorder}` : 'none', transition: theme.transition.fast, gap: 8, alignItems: 'center' }}
+              onMouseEnter={e => e.currentTarget.style.background = palette.hover}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
-              <div style={{ fontSize: theme.font.size.sm, color: theme.colors.textMuted, fontFamily: theme.font.mono }}>#{v.id}</div>
+              <div style={{ fontSize: theme.font.size.sm, color: palette.textMuted, fontFamily: theme.font.mono }}>#{v.id}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 15 }}>{v.type === 'essence' ? '⛽' : '🛢️'}</span>
                 <div>
-                  <div style={{ fontSize: theme.font.size.md, fontWeight: theme.font.weight.semi, color: theme.colors.text, textTransform: 'capitalize' }}>{v.type}</div>
-                  {v.employe_nom && <div style={{ fontSize: theme.font.size.xs, color: theme.colors.textMuted }}>{v.employe_nom}</div>}
+                  <div style={{ fontSize: theme.font.size.md, fontWeight: theme.font.weight.semi, color: palette.text, textTransform: 'capitalize' }}>{v.type}</div>
+                  {v.employe_nom && <div style={{ fontSize: theme.font.size.xs, color: palette.textMuted }}>{v.employe_nom}</div>}
                 </div>
               </div>
               <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.semi, color: theme.colors.success, fontFamily: theme.font.mono }}>{formatLitres(v.litres)}</div>
               <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.bold, color: theme.colors.primary, fontFamily: theme.font.mono }}>{formatGNF(v.montant_gnf)}</div>
-              <div style={{ fontSize: theme.font.size.xs, color: theme.colors.textSub }}>{formatDateTime(v.created_at)}</div>
+              <div style={{ fontSize: theme.font.size.xs, color: palette.textSub }}>{formatDateTime(v.created_at)}</div>
             </div>
           ))
         }
 
         {/* Pagination */}
         {meta.pages > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, padding: 16, borderTop: `1px solid ${theme.colors.cardBorder}` }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, padding: 16, borderTop: `1px solid ${palette.cardBorder}` }}>
             <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={!meta.has_prev}
-              style={{ padding: '7px 14px', borderRadius: theme.radius.md, border: `1px solid ${theme.colors.cardBorder}`, background: theme.colors.card, color: meta.has_prev ? theme.colors.text : theme.colors.textMuted, cursor: meta.has_prev ? 'pointer' : 'not-allowed', fontFamily: theme.font.family, fontSize: theme.font.size.sm }}>
+              style={{ padding: '7px 14px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: palette.card, color: meta.has_prev ? palette.text : palette.textMuted, cursor: meta.has_prev ? 'pointer' : 'not-allowed', fontFamily: theme.font.family, fontSize: theme.font.size.sm }}>
               ← Précédent
             </button>
-            <span style={{ fontSize: theme.font.size.sm, color: theme.colors.textSub }}>
-              Page {meta.page} / {meta.pages}
-            </span>
+            <span style={{ fontSize: theme.font.size.sm, color: palette.textSub }}>Page {meta.page} / {meta.pages}</span>
             <button onClick={() => setPage(p => p + 1)} disabled={!meta.has_next}
-              style={{ padding: '7px 14px', borderRadius: theme.radius.md, border: `1px solid ${theme.colors.cardBorder}`, background: theme.colors.card, color: meta.has_next ? theme.colors.text : theme.colors.textMuted, cursor: meta.has_next ? 'pointer' : 'not-allowed', fontFamily: theme.font.family, fontSize: theme.font.size.sm }}>
+              style={{ padding: '7px 14px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: palette.card, color: meta.has_next ? palette.text : palette.textMuted, cursor: meta.has_next ? 'pointer' : 'not-allowed', fontFamily: theme.font.family, fontSize: theme.font.size.sm }}>
               Suivant →
             </button>
           </div>

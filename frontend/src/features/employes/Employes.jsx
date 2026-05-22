@@ -1,10 +1,11 @@
 // ================================================
-// FUELO V2 — Employes
+// FUELO V2 — Employes avec theme dark/light
 // Fichier : frontend/src/features/employes/Employes.jsx
 // ================================================
 
 import { useState } from 'react'
 import { useEmployes } from '../../hooks/useEmployes'
+import { useTheme }    from '../../context/ThemeContext'
 import EmptyState      from '../../ui/EmptyState'
 import { SkeletonRow, SkeletonStyle } from '../../ui/Skeleton'
 import { formatGNF }   from '../../utils/format'
@@ -30,15 +31,15 @@ function StatusBadge({ actif }) {
   )
 }
 
-function ConfirmModal({ employe, onConfirm, onCancel }) {
+function ConfirmModal({ employe, onConfirm, onCancel, palette }) {
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
-      <div style={{ background: theme.colors.card, border: `1px solid ${theme.colors.cardBorder}`, borderRadius: theme.radius.xl, padding: '28px 32px', maxWidth: 400, width: '90%', boxShadow: theme.shadow.lg }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+      <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.xl, padding: '28px 32px', maxWidth: 400, width: '90%', boxShadow: theme.shadow.lg }}>
         <div style={{ fontSize: 32, marginBottom: 16, textAlign: 'center' }}>⚠️</div>
-        <div style={{ fontSize: theme.font.size.lg, fontWeight: theme.font.weight.bold, color: theme.colors.text, marginBottom: 8, textAlign: 'center' }}>Supprimer {employe.nom} ?</div>
-        <div style={{ fontSize: theme.font.size.md, color: theme.colors.textSub, marginBottom: 24, textAlign: 'center', lineHeight: 1.6 }}>Cette action est irréversible.</div>
+        <div style={{ fontSize: theme.font.size.lg, fontWeight: theme.font.weight.bold, color: palette.text, marginBottom: 8, textAlign: 'center' }}>Supprimer {employe.nom} ?</div>
+        <div style={{ fontSize: theme.font.size.md, color: palette.textSub, marginBottom: 24, textAlign: 'center', lineHeight: 1.6 }}>Cette action est irréversible.</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <button onClick={onCancel} style={{ padding: '11px', borderRadius: theme.radius.md, border: `1px solid ${theme.colors.cardBorder}`, background: 'transparent', color: theme.colors.textSub, cursor: 'pointer', fontFamily: theme.font.family, fontSize: theme.font.size.md }}>Annuler</button>
+          <button onClick={onCancel} style={{ padding: '11px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', color: palette.textSub, cursor: 'pointer', fontFamily: theme.font.family, fontSize: theme.font.size.md }}>Annuler</button>
           <button onClick={onConfirm} style={{ padding: '11px', borderRadius: theme.radius.md, border: 'none', background: theme.colors.danger, color: '#fff', cursor: 'pointer', fontFamily: theme.font.family, fontSize: theme.font.size.md, fontWeight: theme.font.weight.bold }}>Supprimer</button>
         </div>
       </div>
@@ -47,25 +48,19 @@ function ConfirmModal({ employe, onConfirm, onCancel }) {
 }
 
 export default function Employes() {
+  const { palette } = useTheme()
   const { employes, loading, createLoading, creerEmploye, toggleEmploye, supprimerEmploye } = useEmployes()
 
   const [showForm, setShowForm] = useState(false)
   const [toDelete, setToDelete] = useState(null)
   const [showPwd,  setShowPwd]  = useState(false)
   const [errors,   setErrors]   = useState({})
-
   const [nom,      setNom]      = useState('')
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
   const [role,     setRole]     = useState('pompiste')
 
-  const resetForm = () => {
-    setNom('')
-    setEmail('')
-    setPassword('')
-    setRole('pompiste')
-    setErrors({})
-  }
+  const resetForm = () => { setNom(''); setEmail(''); setPassword(''); setRole('pompiste'); setErrors({}) }
 
   const validate = () => {
     const e = {}
@@ -92,34 +87,32 @@ export default function Employes() {
 
   const inputStyle = (hasError) => ({
     width: '100%', height: 46,
-    background: '#F9FAFB',
-    border: `1.5px solid ${hasError ? theme.colors.danger : theme.colors.cardBorder}`,
+    background:   palette.inputBg,
+    border:       `1.5px solid ${hasError ? theme.colors.danger : palette.cardBorder}`,
     borderRadius: theme.radius.md,
-    padding: '0 14px',
-    fontSize: theme.font.size.base,
-    color: theme.colors.text,
-    fontFamily: theme.font.family,
-    outline: 'none',
-    transition: theme.transition.fast,
+    padding:      '0 14px',
+    fontSize:     theme.font.size.base,
+    color:        palette.text,
+    fontFamily:   theme.font.family,
+    outline:      'none',
+    transition:   theme.transition.fast,
   })
 
   return (
     <div style={{ padding: '32px 28px', maxWidth: 1000, margin: '0 auto' }} className="fuelo-employes">
 
-      {toDelete && <ConfirmModal employe={toDelete} onConfirm={handleDelete} onCancel={() => setToDelete(null)} />}
+      {toDelete && <ConfirmModal employe={toDelete} onConfirm={handleDelete} onCancel={() => setToDelete(null)} palette={palette} />}
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 14 }}>
         <div>
-          <h1 style={{ fontSize: theme.font.size['2xl'], fontWeight: theme.font.weight.black, color: theme.colors.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 4 }}>Employés</h1>
-          <p style={{ fontSize: theme.font.size.md, color: theme.colors.textSub, margin: 0 }}>
+          <h1 style={{ fontSize: theme.font.size['2xl'], fontWeight: theme.font.weight.black, color: palette.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 4 }}>Employés</h1>
+          <p style={{ fontSize: theme.font.size.md, color: palette.textSub, margin: 0 }}>
             {employes.length} membre{employes.length > 1 ? 's' : ''} dans votre station
           </p>
         </div>
-        <button
-          onClick={() => { resetForm(); setShowForm(v => !v) }}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: theme.radius.md, border: 'none', background: theme.colors.primary, color: '#0F172A', cursor: 'pointer', fontSize: theme.font.size.md, fontWeight: theme.font.weight.bold, fontFamily: theme.font.family, boxShadow: theme.shadow.primary }}
-        >
+        <button onClick={() => { resetForm(); setShowForm(v => !v) }}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: theme.radius.md, border: 'none', background: theme.colors.primary, color: '#fff', cursor: 'pointer', fontSize: theme.font.size.md, fontWeight: theme.font.weight.bold, fontFamily: theme.font.family, boxShadow: theme.shadow.primary }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d={ICONS.plus} /></svg>
           Ajouter un membre
         </button>
@@ -127,62 +120,43 @@ export default function Employes() {
 
       {/* Formulaire */}
       {showForm && (
-        <div style={{ background: theme.colors.card, border: `1px solid ${theme.colors.cardBorder}`, borderRadius: theme.radius.lg, padding: '24px 26px', marginBottom: 24, boxShadow: theme.shadow.sm }}>
-          <div style={{ fontSize: theme.font.size.base, fontWeight: theme.font.weight.bold, color: theme.colors.text, marginBottom: 20 }}>Nouveau membre</div>
+        <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.lg, padding: '24px 26px', marginBottom: 24, boxShadow: theme.shadow.sm }}>
+          <div style={{ fontSize: theme.font.size.base, fontWeight: theme.font.weight.bold, color: palette.text, marginBottom: 20 }}>Nouveau membre</div>
           <form onSubmit={handleSubmit}>
-
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 16 }} className="fuelo-grid-3">
 
-              {/* Nom */}
               <div>
-                <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: theme.colors.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Nom complet</div>
-                <input
-                  type="text"
-                  placeholder="Mamadou Diallo"
-                  value={nom}
+                <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Nom complet</div>
+                <input type="text" placeholder="Mamadou Diallo" value={nom}
                   onChange={e => { setNom(e.target.value); setErrors(er => ({ ...er, nom: '' })) }}
                   onFocus={e => { e.target.style.borderColor = theme.colors.primary }}
-                  onBlur={e  => { e.target.style.borderColor = errors.nom ? theme.colors.danger : theme.colors.cardBorder }}
-                  style={inputStyle(errors.nom)}
-                />
+                  onBlur={e  => { e.target.style.borderColor = errors.nom ? theme.colors.danger : palette.cardBorder }}
+                  style={inputStyle(errors.nom)} />
                 {errors.nom && <div style={{ fontSize: theme.font.size.xs, color: theme.colors.danger, marginTop: 4 }}>{errors.nom}</div>}
               </div>
 
-              {/* Email */}
               <div>
-                <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: theme.colors.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Email</div>
-                <input
-                  type="email"
-                  placeholder="membre@mastation.com"
-                  value={email}
+                <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Email</div>
+                <input type="email" placeholder="membre@mastation.com" value={email}
                   onChange={e => { setEmail(e.target.value); setErrors(er => ({ ...er, email: '' })) }}
                   onFocus={e => { e.target.style.borderColor = theme.colors.primary }}
-                  onBlur={e  => { e.target.style.borderColor = errors.email ? theme.colors.danger : theme.colors.cardBorder }}
-                  style={inputStyle(errors.email)}
-                />
+                  onBlur={e  => { e.target.style.borderColor = errors.email ? theme.colors.danger : palette.cardBorder }}
+                  style={inputStyle(errors.email)} />
                 {errors.email && <div style={{ fontSize: theme.font.size.xs, color: theme.colors.danger, marginTop: 4 }}>{errors.email}</div>}
               </div>
 
-              {/* Mot de passe */}
               <div>
-                <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: theme.colors.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Mot de passe</div>
+                <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Mot de passe</div>
                 <div style={{ position: 'relative' }}>
-                  <input
-                    type={showPwd ? 'text' : 'password'}
-                    placeholder="Minimum 6 caractères"
-                    value={password}
+                  <input type={showPwd ? 'text' : 'password'} placeholder="Minimum 6 caractères" value={password}
                     onChange={e => { setPassword(e.target.value); setErrors(er => ({ ...er, password: '' })) }}
                     onFocus={e => { e.target.style.borderColor = theme.colors.primary }}
-                    onBlur={e  => { e.target.style.borderColor = errors.password ? theme.colors.danger : theme.colors.cardBorder }}
-                    style={{ ...inputStyle(errors.password), paddingRight: 44 }}
-                  />
+                    onBlur={e  => { e.target.style.borderColor = errors.password ? theme.colors.danger : palette.cardBorder }}
+                    style={{ ...inputStyle(errors.password), paddingRight: 44 }} />
                   <button type="button" onClick={() => setShowPwd(v => !v)}
-                    style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: theme.colors.textMuted }}>
+                    style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: palette.textMuted }}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      {showPwd
-                        ? <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></>
-                        : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>
-                      }
+                      {showPwd ? <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></> : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>}
                     </svg>
                   </button>
                 </div>
@@ -192,34 +166,22 @@ export default function Employes() {
 
             {/* Rôle */}
             <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: theme.colors.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
-                Rôle dans la station
-              </div>
-              <select
-                value={role}
-                onChange={e => setRole(e.target.value)}
-                style={{ width: '100%', height: 46, background: '#F9FAFB', border: `1.5px solid ${theme.colors.cardBorder}`, borderRadius: theme.radius.md, padding: '0 14px', fontSize: theme.font.size.base, color: theme.colors.text, fontFamily: theme.font.family, outline: 'none', cursor: 'pointer' }}
-              >
+              <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Rôle dans la station</div>
+              <select value={role} onChange={e => setRole(e.target.value)}
+                style={{ width: '100%', height: 46, background: palette.inputBg, border: `1.5px solid ${palette.cardBorder}`, borderRadius: theme.radius.md, padding: '0 14px', fontSize: theme.font.size.base, color: palette.text, fontFamily: theme.font.family, outline: 'none', cursor: 'pointer' }}>
                 <option value="pompiste">⛽ Pompiste — Enregistre les ventes uniquement</option>
                 <option value="manager">👔 Gérant — Accès complet au dashboard</option>
               </select>
             </div>
 
-            {/* Boutons submit */}
             <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                type="submit"
-                disabled={createLoading}
-                style={{ padding: '11px 24px', borderRadius: theme.radius.md, border: 'none', background: theme.colors.primary, color: '#0F172A', fontSize: theme.font.size.md, fontWeight: theme.font.weight.bold, cursor: createLoading ? 'not-allowed' : 'pointer', fontFamily: theme.font.family, display: 'flex', alignItems: 'center', gap: 8, boxShadow: theme.shadow.primary }}
-              >
-                {createLoading && <div style={{ width: 14, height: 14, border: '2px solid #0F172A', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />}
+              <button type="submit" disabled={createLoading}
+                style={{ padding: '11px 24px', borderRadius: theme.radius.md, border: 'none', background: theme.colors.primary, color: '#fff', fontSize: theme.font.size.md, fontWeight: theme.font.weight.bold, cursor: createLoading ? 'not-allowed' : 'pointer', fontFamily: theme.font.family, display: 'flex', alignItems: 'center', gap: 8, boxShadow: theme.shadow.primary }}>
+                {createLoading && <div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />}
                 {createLoading ? 'Création...' : 'Créer le compte'}
               </button>
-              <button
-                type="button"
-                onClick={() => { resetForm(); setShowForm(false) }}
-                style={{ padding: '11px 20px', borderRadius: theme.radius.md, border: `1px solid ${theme.colors.cardBorder}`, background: 'transparent', color: theme.colors.textSub, fontSize: theme.font.size.md, cursor: 'pointer', fontFamily: theme.font.family }}
-              >
+              <button type="button" onClick={() => { resetForm(); setShowForm(false) }}
+                style={{ padding: '11px 20px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', color: palette.textSub, fontSize: theme.font.size.md, cursor: 'pointer', fontFamily: theme.font.family }}>
                 Annuler
               </button>
             </div>
@@ -228,10 +190,10 @@ export default function Employes() {
       )}
 
       {/* Tableau */}
-      <div style={{ background: theme.colors.card, border: `1px solid ${theme.colors.cardBorder}`, borderRadius: theme.radius.lg, overflow: 'hidden', boxShadow: theme.shadow.sm }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px 90px 100px 110px 100px', padding: '10px 22px', background: '#F9FAFB', borderBottom: `1px solid ${theme.colors.cardBorder}`, gap: 8 }}>
+      <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.lg, overflow: 'hidden', boxShadow: theme.shadow.sm }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px 90px 100px 110px 100px', padding: '10px 22px', background: palette.hover, borderBottom: `1px solid ${palette.cardBorder}`, gap: 8 }}>
           {['Membre', 'Email', 'Rôle', 'Ventes/jour', 'Revenu/jour', 'Actions'].map(h => (
-            <div key={h} style={{ fontSize: 10, fontWeight: theme.font.weight.bold, color: theme.colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
+            <div key={h} style={{ fontSize: 10, fontWeight: theme.font.weight.bold, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
           ))}
         </div>
 
@@ -244,57 +206,41 @@ export default function Employes() {
           <EmptyState type="employes" actionLabel="Ajouter un membre" onAction={() => setShowForm(true)} />
         ) : (
           employes.map((emp, i) => (
-            <div
-              key={emp.id}
-              style={{ display: 'grid', gridTemplateColumns: '1fr 160px 90px 100px 110px 100px', padding: '14px 22px', borderBottom: i < employes.length - 1 ? `1px solid ${theme.colors.cardBorder}` : 'none', transition: theme.transition.fast, gap: 8, alignItems: 'center' }}
-              onMouseEnter={e => e.currentTarget.style.background = '#F9FAFB'}
+            <div key={emp.id}
+              style={{ display: 'grid', gridTemplateColumns: '1fr 160px 90px 100px 110px 100px', padding: '14px 22px', borderBottom: i < employes.length - 1 ? `1px solid ${palette.cardBorder}` : 'none', transition: theme.transition.fast, gap: 8, alignItems: 'center' }}
+              onMouseEnter={e => e.currentTarget.style.background = palette.hover}
               onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: theme.colors.primaryLight, border: `1px solid ${theme.colors.primary}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: theme.font.weight.bold, color: theme.colors.primary, flexShrink: 0 }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: theme.colors.primaryLight, border: `1px solid ${theme.colors.primary}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: theme.font.weight.bold, color: theme.colors.primary, flexShrink: 0 }}>
                   {emp.nom.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                  <div style={{ fontSize: theme.font.size.md, fontWeight: theme.font.weight.semi, color: theme.colors.text }}>{emp.nom}</div>
+                  <div style={{ fontSize: theme.font.size.md, fontWeight: theme.font.weight.semi, color: palette.text }}>{emp.nom}</div>
                   <StatusBadge actif={emp.actif} />
                 </div>
               </div>
-
-              <div style={{ fontSize: theme.font.size.sm, color: theme.colors.textSub, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{emp.email}</div>
-
+              <div style={{ fontSize: theme.font.size.sm, color: palette.textSub, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{emp.email}</div>
               <div>
                 <span style={{ fontSize: 11, fontWeight: theme.font.weight.semi, color: emp.role === 'manager' ? theme.colors.info : theme.colors.success, background: emp.role === 'manager' ? theme.colors.infoLight : theme.colors.successLight, padding: '2px 8px', borderRadius: theme.radius.full }}>
                   {ROLE_LABELS[emp.role] || emp.role}
                 </span>
               </div>
-
-              <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.semi, color: theme.colors.text, fontFamily: theme.font.mono }}>
-                {emp.nb_ventes_jour ?? 0}
-              </div>
-
-              <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.bold, color: theme.colors.primary, fontFamily: theme.font.mono }}>
-                {formatGNF(emp.total_ventes_jour ?? 0)}
-              </div>
-
+              <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.semi, color: palette.text, fontFamily: theme.font.mono }}>{emp.nb_ventes_jour ?? 0}</div>
+              <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.bold, color: theme.colors.primary, fontFamily: theme.font.mono }}>{formatGNF(emp.total_ventes_jour ?? 0)}</div>
               <div style={{ display: 'flex', gap: 6 }}>
-                <button
-                  onClick={() => toggleEmploye(emp.id)}
-                  title={emp.actif ? 'Désactiver' : 'Activer'}
-                  style={{ width: 32, height: 32, borderRadius: theme.radius.md, border: `1px solid ${theme.colors.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: emp.actif ? theme.colors.warning : theme.colors.success, transition: theme.transition.fast }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#F3F4F6'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
+                <button onClick={() => toggleEmploye(emp.id)} title={emp.actif ? 'Désactiver' : 'Activer'}
+                  style={{ width: 32, height: 32, borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: emp.actif ? theme.colors.warning : theme.colors.success, transition: theme.transition.fast }}
+                  onMouseEnter={e => e.currentTarget.style.background = palette.hover}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                     <path d={emp.actif ? 'M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636' : 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'} />
                   </svg>
                 </button>
-                <button
-                  onClick={() => setToDelete(emp)}
-                  title="Supprimer"
-                  style={{ width: 32, height: 32, borderRadius: theme.radius.md, border: `1px solid ${theme.colors.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: theme.colors.danger, transition: theme.transition.fast }}
+                <button onClick={() => setToDelete(emp)} title="Supprimer"
+                  style={{ width: 32, height: 32, borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: theme.colors.danger, transition: theme.transition.fast }}
                   onMouseEnter={e => e.currentTarget.style.background = theme.colors.dangerLight}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.trash} /></svg>
                 </button>
               </div>

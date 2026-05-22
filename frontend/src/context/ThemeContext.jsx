@@ -1,60 +1,49 @@
 // ================================================
 // FUELO V2 — ThemeContext
 // Fichier : frontend/src/context/ThemeContext.jsx
-// Dark / Light mode global persisté
 // ================================================
 
 import { createContext, useContext, useState, useEffect, useMemo } from 'react'
 
 const ThemeContext = createContext(null)
 
-// ── Thèmes ────────────────────────────────────────────
 const THEMES = {
   light: {
     name:          'light',
-    // Fonds
-    bg:            '#F5F7FA',
-    bgSecondary:   '#ECEEF2',
-    // Cards
+    bg:            '#F0F4FF',
+    bgSecondary:   '#E8EEFF',
     card:          '#FFFFFF',
-    cardBorder:    '#E5E7EB',
-    // Sidebar — toujours sombre
-    sidebar:       '#111827',
+    cardBorder:    '#DBEAFE',
+    sidebar:       '#0F172A',
     sidebarBorder: 'rgba(255,255,255,0.06)',
-    // Textes
-    text:          '#111827',
-    textSub:       '#6B7280',
-    textMuted:     '#9CA3AF',
-    // Inputs
-    inputBg:       '#F9FAFB',
-    inputBorder:   '#E5E7EB',
-    // Hover
-    hover:         '#F3F4F6',
+    text:          '#1E293B',
+    textSub:       '#64748B',
+    textMuted:     '#94A3B8',
+    inputBg:       '#F8FAFF',
+    inputBorder:   '#DBEAFE',
+    hover:         '#EFF6FF',
+    primary:       '#2563EB',
+    primaryLight:  'rgba(37,99,235,0.10)',
   },
   dark: {
     name:          'dark',
-    // Fonds
-    bg:            '#0A0F1E',
-    bgSecondary:   '#0D1528',
-    // Cards
-    card:          '#111827',
-    cardBorder:    '#1E2D42',
-    // Sidebar — toujours sombre
-    sidebar:       '#080D18',
+    bg:            '#0D1B2A',
+    bgSecondary:   '#112236',
+    card:          '#162032',
+    cardBorder:    '#1E3148',
+    sidebar:       '#0A1628',
     sidebarBorder: 'rgba(255,255,255,0.05)',
-    // Textes
-    text:           '#F1F5F9',      
-    textSub:       '#64748B',
-    textMuted:     '#334155',
-    // Inputs
-    inputBg:       '#0A0F1E',
-    inputBorder:   '#1E2D42',
-    // Hover
-    hover:         '#1E293B',
+    text:          '#E2EAF4',
+    textSub:       '#8BA3BF',
+    textMuted:     '#4A6480',
+    inputBg:       '#112236',
+    inputBorder:   '#1E3148',
+    hover:         '#1A2E42',
+    primary:       '#3B82F6',
+    primaryLight:  'rgba(59,130,246,0.12)',
   },
 }
 
-// ── Provider ─────────────────────────────────────────
 export function ThemeProvider({ children }) {
   const [mode, setMode] = useState(() => {
     return localStorage.getItem('fuelo_theme') ?? 'light'
@@ -63,7 +52,6 @@ export function ThemeProvider({ children }) {
   const isDark  = mode === 'dark'
   const palette = THEMES[mode] ?? THEMES.light
 
-  // Appliquer la couleur de fond sur <body>
   useEffect(() => {
     document.body.style.background = palette.bg
     document.body.style.color      = palette.text
@@ -97,7 +85,6 @@ export function ThemeProvider({ children }) {
   )
 }
 
-// ── Hook ─────────────────────────────────────────────
 // eslint-disable-next-line react-refresh/only-export-components
 export function useTheme() {
   const ctx = useContext(ThemeContext)
