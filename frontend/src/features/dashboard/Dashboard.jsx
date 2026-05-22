@@ -1,5 +1,5 @@
 // ================================================
-// FUELO V2 — Dashboard
+// FUELO V2 — Dashboard responsive
 // Fichier : frontend/src/features/dashboard/Dashboard.jsx
 // ================================================
 
@@ -38,14 +38,15 @@ function CustomTooltip({ active, payload, label, palette }) {
   )
 }
 
-function VenteRow({ vente, isLast, palette }) {
+// Desktop row
+function VenteRowDesktop({ vente, isLast, palette }) {
   return (
-    <div
-      style={{ display: 'grid', gridTemplateColumns: '36px 1fr 90px 110px 90px', alignItems: 'center', padding: '12px 20px', borderBottom: isLast ? 'none' : `1px solid ${palette.cardBorder}`, transition: theme.transition.fast, gap: 8 }}
+    <div className="vente-row-desktop"
+      style={{ display: 'grid', gridTemplateColumns: '36px 1fr 90px 110px 90px', alignItems: 'center', padding: '11px 20px', borderBottom: isLast ? 'none' : `1px solid ${palette.cardBorder}`, transition: theme.transition.fast, gap: 8 }}
       onMouseEnter={e => e.currentTarget.style.background = palette.hover}
       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
     >
-      <div style={{ width: 32, height: 32, borderRadius: theme.radius.md, background: vente.type === 'essence' ? theme.colors.warningLight : theme.colors.infoLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>
+      <div style={{ width: 30, height: 30, borderRadius: theme.radius.md, background: vente.type === 'essence' ? theme.colors.warningLight : theme.colors.infoLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
         {vente.type === 'essence' ? '⛽' : '🛢️'}
       </div>
       <div>
@@ -55,6 +56,30 @@ function VenteRow({ vente, isLast, palette }) {
       <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.semi, color: theme.colors.success, fontFamily: theme.font.mono }}>{formatLitres(vente.litres)}</div>
       <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.bold, color: theme.colors.primary, fontFamily: theme.font.mono }}>{formatGNF(vente.montant_gnf)}</div>
       <div style={{ fontSize: theme.font.size.xs, color: palette.textSub }}>{formatRelative(vente.created_at)}</div>
+    </div>
+  )
+}
+
+// Mobile card
+function VenteRowMobile({ vente, isLast, palette }) {
+  return (
+    <div className="vente-row-mobile"
+      style={{ display: 'none', padding: '12px 16px', borderBottom: isLast ? 'none' : `1px solid ${palette.cardBorder}` }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 32, height: 32, borderRadius: theme.radius.md, background: vente.type === 'essence' ? theme.colors.warningLight : theme.colors.infoLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0 }}>
+            {vente.type === 'essence' ? '⛽' : '🛢️'}
+          </div>
+          <div>
+            <div style={{ fontSize: theme.font.size.md, fontWeight: theme.font.weight.semi, color: palette.text, textTransform: 'capitalize' }}>{vente.type}</div>
+            <div style={{ fontSize: theme.font.size.xs, color: palette.textMuted }}>{vente.employe_nom ?? 'Pompiste'} · {formatRelative(vente.created_at)}</div>
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.bold, color: theme.colors.primary, fontFamily: theme.font.mono }}>{formatGNF(vente.montant_gnf)}</div>
+          <div style={{ fontSize: theme.font.size.xs, color: theme.colors.success, fontFamily: theme.font.mono }}>{formatLitres(vente.litres)}</div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -75,14 +100,7 @@ export default function Dashboard() {
     montant: parseFloat(d.montant) / 1_000_000,
   }))
 
-  if (loading) {
-    return (
-      <>
-        <SkeletonStyle />
-        <SkeletonDashboard />
-      </>
-    )
-  }
+  if (loading) return (<><SkeletonStyle /><SkeletonDashboard /></>)
 
   return (
     <div style={{ padding: '32px 28px', maxWidth: 1200, margin: '0 auto' }} className="fuelo-dashboard">
@@ -139,6 +157,7 @@ export default function Dashboard() {
       {/* Graphique + Ventes récentes */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 14, marginBottom: 14 }} className="fuelo-grid-2">
 
+        {/* Graphique */}
         <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.lg, padding: '22px 24px', boxShadow: theme.shadow.sm }}>
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: theme.font.size.base, fontWeight: theme.font.weight.bold, color: palette.text, marginBottom: 3 }}>Ventes — 7 derniers jours</div>
@@ -150,7 +169,7 @@ export default function Dashboard() {
                 <defs>
                   <linearGradient id="gradBlue" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%"  stopColor={theme.colors.primary} stopOpacity={0.2} />
-                    <stop offset="95%" stopColor={theme.colors.primary} stopOpacity={0}   />
+                    <stop offset="95%" stopColor={theme.colors.primary} stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke={palette.cardBorder} vertical={false} />
@@ -165,6 +184,7 @@ export default function Dashboard() {
           )}
         </div>
 
+        {/* Ventes récentes */}
         <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.lg, boxShadow: theme.shadow.sm, overflow: 'hidden' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', borderBottom: `1px solid ${palette.cardBorder}` }}>
             <div style={{ fontSize: theme.font.size.base, fontWeight: theme.font.weight.bold, color: palette.text }}>Ventes récentes</div>
@@ -172,13 +192,21 @@ export default function Dashboard() {
               Voir tout →
             </button>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '36px 1fr 90px 110px 90px', padding: '8px 20px', background: palette.hover, borderBottom: `1px solid ${palette.cardBorder}`, gap: 8 }}>
+
+          {/* Header desktop uniquement */}
+          <div className="vente-header-desktop" style={{ display: 'grid', gridTemplateColumns: '36px 1fr 90px 110px 90px', padding: '8px 20px', background: palette.hover, borderBottom: `1px solid ${palette.cardBorder}`, gap: 8 }}>
             {['', 'Type', 'Litres', 'Montant', 'Quand'].map(h => (
               <div key={h} style={{ fontSize: 10, fontWeight: 700, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
             ))}
           </div>
+
           {recentes.length > 0
-            ? recentes.map((v, i) => <VenteRow key={v.id} vente={v} isLast={i === recentes.length - 1} palette={palette} />)
+            ? recentes.map((v, i) => (
+              <div key={v.id}>
+                <VenteRowDesktop vente={v} isLast={i === recentes.length - 1} palette={palette} />
+                <VenteRowMobile  vente={v} isLast={i === recentes.length - 1} palette={palette} />
+              </div>
+            ))
             : <EmptyState type="ventes" message="Aucune vente aujourd'hui" />
           }
         </div>
@@ -206,8 +234,16 @@ export default function Dashboard() {
 
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        @media (max-width: 1024px) { .fuelo-grid-2 { grid-template-columns: 1fr !important; } }
-        @media (max-width: 768px)  { .fuelo-dashboard { padding: 20px 16px !important; } .fuelo-grid-3 { grid-template-columns: 1fr !important; } }
+        @media (max-width: 1024px) {
+          .fuelo-grid-2 { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 768px) {
+          .fuelo-dashboard        { padding: 20px 16px !important; }
+          .fuelo-grid-3           { grid-template-columns: 1fr !important; }
+          .vente-row-desktop      { display: none !important; }
+          .vente-row-mobile       { display: block !important; }
+          .vente-header-desktop   { display: none !important; }
+        }
       `}</style>
     </div>
   )
