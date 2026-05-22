@@ -1,5 +1,5 @@
 // ================================================
-// FUELO V2 — Dashboard avec Dark/Light support
+// FUELO V2 — Dashboard
 // Fichier : frontend/src/features/dashboard/Dashboard.jsx
 // ================================================
 
@@ -20,13 +20,12 @@ const ICONS = {
   ventes:   'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
   alertes:  'M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01',
   trend:    'M23 6l-9.5 9.5-5-5L1 18',
-  plus:     'M12 5v14M5 12h14',
   refresh:  'M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15',
   stock:    'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4',
   employes: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 7a4 4 0 100 8 4 4 0 000-8z',
+  eye:      'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 100 6 3 3 0 000-6z',
 }
 
-// ── Tooltip graphique ─────────────────────────────────
 function CustomTooltip({ active, payload, label, palette }) {
   if (!active || !payload?.length) return null
   return (
@@ -39,7 +38,6 @@ function CustomTooltip({ active, payload, label, palette }) {
   )
 }
 
-// ── Ligne vente récente ───────────────────────────────
 function VenteRow({ vente, isLast, palette }) {
   return (
     <div
@@ -54,24 +52,17 @@ function VenteRow({ vente, isLast, palette }) {
         <div style={{ fontSize: theme.font.size.md, fontWeight: theme.font.weight.semi, color: palette.text, textTransform: 'capitalize' }}>{vente.type}</div>
         <div style={{ fontSize: theme.font.size.xs, color: palette.textMuted }}>{vente.employe_nom ?? 'Pompiste'}</div>
       </div>
-      <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.semi, color: theme.colors.success, fontFamily: theme.font.mono }}>
-        {formatLitres(vente.litres)}
-      </div>
-      <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.bold, color: theme.colors.primary, fontFamily: theme.font.mono }}>
-        {formatGNF(vente.montant_gnf)}
-      </div>
-      <div style={{ fontSize: theme.font.size.xs, color: palette.textSub }}>
-        {formatRelative(vente.created_at)}
-      </div>
+      <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.semi, color: theme.colors.success, fontFamily: theme.font.mono }}>{formatLitres(vente.litres)}</div>
+      <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.bold, color: theme.colors.primary, fontFamily: theme.font.mono }}>{formatGNF(vente.montant_gnf)}</div>
+      <div style={{ fontSize: theme.font.size.xs, color: palette.textSub }}>{formatRelative(vente.created_at)}</div>
     </div>
   )
 }
 
-// ── Dashboard ─────────────────────────────────────────
 export default function Dashboard() {
-  const navigate     = useNavigate()
-  const { user }     = useAuth()
-  const { palette }  = useTheme()
+  const navigate    = useNavigate()
+  const { user }    = useAuth()
+  const { palette } = useTheme()
 
   const { stocks, aujourdhui, cemois, graphique7j, alertesNonLues, loading, refetch } = useDashboard()
   const { recentes } = useVentes()
@@ -96,7 +87,7 @@ export default function Dashboard() {
   return (
     <div style={{ padding: '32px 28px', maxWidth: 1200, margin: '0 auto' }} className="fuelo-dashboard">
 
-      {/* ── Header ─────────────────────────────── */}
+      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 14 }}>
         <div>
           <h1 style={{ fontSize: theme.font.size['2xl'], fontWeight: theme.font.weight.black, color: palette.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 4 }}>
@@ -107,29 +98,23 @@ export default function Dashboard() {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button
-            onClick={refetch}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: palette.card, color: palette.textSub, cursor: 'pointer', fontSize: theme.font.size.md, fontFamily: theme.font.family, boxShadow: theme.shadow.sm }}
-          >
+          <button onClick={refetch}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: palette.card, color: palette.textSub, cursor: 'pointer', fontSize: theme.font.size.md, fontFamily: theme.font.family, boxShadow: theme.shadow.sm }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.refresh} /></svg>
             Actualiser
           </button>
-          <button
-            onClick={() => navigate('/ventes')}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: theme.radius.md, border: 'none', background: theme.colors.primary, color: '#0F172A', cursor: 'pointer', fontSize: theme.font.size.md, fontWeight: theme.font.weight.bold, fontFamily: theme.font.family, boxShadow: theme.shadow.primary }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d={ICONS.plus} /></svg>
-            Nouvelle vente
+          <button onClick={() => navigate('/ventes')}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: theme.radius.md, border: 'none', background: theme.colors.primary, color: '#fff', cursor: 'pointer', fontSize: theme.font.size.md, fontWeight: theme.font.weight.bold, fontFamily: theme.font.family, boxShadow: theme.shadow.primary }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.eye} /></svg>
+            Voir les ventes
           </button>
         </div>
       </div>
 
-      {/* ── Bannière alertes ─────────────────────── */}
+      {/* Bannière alertes */}
       {alertesNonLues > 0 && (
-        <div
-          onClick={() => navigate('/alertes')}
-          style={{ display: 'flex', alignItems: 'center', gap: 12, background: theme.colors.dangerLight, border: `1px solid ${theme.colors.danger}30`, borderRadius: theme.radius.md, padding: '12px 18px', marginBottom: 24, cursor: 'pointer' }}
-        >
+        <div onClick={() => navigate('/alertes')}
+          style={{ display: 'flex', alignItems: 'center', gap: 12, background: theme.colors.dangerLight, border: `1px solid ${theme.colors.danger}30`, borderRadius: theme.radius.md, padding: '12px 18px', marginBottom: 24, cursor: 'pointer' }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: theme.colors.danger, animation: 'pulse 1.5s infinite', flexShrink: 0 }} />
           <span style={{ fontSize: theme.font.size.md, color: theme.colors.danger, fontWeight: theme.font.weight.semi, flex: 1 }}>
             {alertesNonLues} alerte{alertesNonLues > 1 ? 's' : ''} active{alertesNonLues > 1 ? 's' : ''} — Cliquez pour voir
@@ -138,23 +123,22 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Stocks ──────────────────────────────── */}
+      {/* Stocks */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }} className="fuelo-grid-2">
         <StockGauge label="Essence" quantite={stockEssence} onAction={() => navigate('/stock')} actionLabel="Commander" />
         <StockGauge label="Gasoil"  quantite={stockGasoil}  onAction={() => navigate('/stock')} actionLabel="Commander" />
       </div>
 
-      {/* ── Stat Cards ──────────────────────────── */}
+      {/* Stat Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }} className="fuelo-grid-3">
         <StatCard label="Ventes aujourd'hui" value={formatGNF(aujourdhui.montant)} sub={`${aujourdhui.nb} transactions · ${formatLitres(aujourdhui.litres)}`} icon={ICONS.ventes} color={theme.colors.primary} onClick={() => navigate('/ventes')} />
         <StatCard label="Ventes ce mois"     value={formatGNF(cemois.montant)}     sub={`${cemois.nb} transactions · ${formatLitres(cemois.litres)}`}     icon={ICONS.trend}   color={theme.colors.success} onClick={() => navigate('/ventes')} />
         <StatCard label="Alertes actives"    value={String(alertesNonLues)}        sub={alertesNonLues === 0 ? 'Tout est normal ✓' : 'Action requise'}     icon={ICONS.alertes} color={alertesNonLues > 0 ? theme.colors.danger : theme.colors.success} onClick={() => navigate('/alertes')} />
       </div>
 
-      {/* ── Graphique + Ventes récentes ──────────── */}
+      {/* Graphique + Ventes récentes */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 14, marginBottom: 14 }} className="fuelo-grid-2">
 
-        {/* Graphique */}
         <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.lg, padding: '22px 24px', boxShadow: theme.shadow.sm }}>
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: theme.font.size.base, fontWeight: theme.font.weight.bold, color: palette.text, marginBottom: 3 }}>Ventes — 7 derniers jours</div>
@@ -164,7 +148,7 @@ export default function Dashboard() {
             <ResponsiveContainer width="100%" height={200}>
               <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="gradAmbre" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="gradBlue" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%"  stopColor={theme.colors.primary} stopOpacity={0.2} />
                     <stop offset="95%" stopColor={theme.colors.primary} stopOpacity={0}   />
                   </linearGradient>
@@ -173,7 +157,7 @@ export default function Dashboard() {
                 <XAxis dataKey="jour" tick={{ fill: palette.textSub, fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: palette.textSub, fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip content={<CustomTooltip palette={palette} />} />
-                <Area type="monotone" dataKey="montant" stroke={theme.colors.primary} strokeWidth={2.5} fill="url(#gradAmbre)" dot={{ fill: theme.colors.primary, r: 4, strokeWidth: 0 }} activeDot={{ r: 6, fill: theme.colors.primary }} />
+                <Area type="monotone" dataKey="montant" stroke={theme.colors.primary} strokeWidth={2.5} fill="url(#gradBlue)" dot={{ fill: theme.colors.primary, r: 4, strokeWidth: 0 }} activeDot={{ r: 6, fill: theme.colors.primary }} />
               </AreaChart>
             </ResponsiveContainer>
           ) : (
@@ -181,7 +165,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Ventes récentes */}
         <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.lg, boxShadow: theme.shadow.sm, overflow: 'hidden' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '18px 20px', borderBottom: `1px solid ${palette.cardBorder}` }}>
             <div style={{ fontSize: theme.font.size.base, fontWeight: theme.font.weight.bold, color: palette.text }}>Ventes récentes</div>
@@ -201,16 +184,14 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── Actions rapides ──────────────────────── */}
+      {/* Actions rapides */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }} className="fuelo-grid-3">
         {[
           { label: 'Ajouter livraison', icon: ICONS.stock,    path: '/stock',    color: theme.colors.success },
           { label: 'Voir les alertes',  icon: ICONS.alertes,  path: '/alertes',  color: theme.colors.danger  },
           { label: 'Gérer employés',    icon: ICONS.employes, path: '/employes', color: theme.colors.info    },
         ].map(({ label, icon, path, color }) => (
-          <button
-            key={path}
-            onClick={() => navigate(path)}
+          <button key={path} onClick={() => navigate(path)}
             style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', borderRadius: theme.radius.lg, border: `1px solid ${palette.cardBorder}`, background: palette.card, cursor: 'pointer', fontFamily: theme.font.family, fontSize: theme.font.size.md, fontWeight: theme.font.weight.semi, color: palette.text, boxShadow: theme.shadow.sm, transition: theme.transition.fast, textAlign: 'left', width: '100%' }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = color; e.currentTarget.style.boxShadow = theme.shadow.md }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = palette.cardBorder; e.currentTarget.style.boxShadow = theme.shadow.sm }}
