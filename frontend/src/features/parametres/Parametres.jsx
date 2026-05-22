@@ -301,7 +301,7 @@ export default function Parametres() {
         {[
           ['Nom',   user?.nom],
           ['Email', user?.email],
-          ['Rôle',  user?.role === 'owner' ? 'Propriétaire' : user?.role === 'manager' ? 'Gérant' : 'Pompiste'],
+          ['Rôle',  user?.role === 'owner' ? 'Propriétaire' : ['manager','gerant'].includes(user?.role) ? 'Gérant' : 'Pompiste'],
         ].map(([label, val]) => (
           <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: `1px solid ${palette.cardBorder}` }}>
             <span style={{ fontSize: theme.font.size.sm, color: palette.textSub }}>{label}</span>

@@ -1,5 +1,5 @@
 // ================================================
-// FUELO V2 — Auth Controller avec rôles
+// FUELO V2 — Auth Controller
 // ================================================
 
 const pool   = require('../config/database')
@@ -11,17 +11,13 @@ const register = async (req, res) => {
   try {
     const { nom, email, password, nom_station } = req.body
 
-    // Vérifier email existe déjà
-    const existe = await pool.query(
-      'SELECT id FROM users WHERE email = $1', [email]
-    )
+    const existe = await pool.query('SELECT id FROM users WHERE email = $1', [email])
     if (existe.rows.length > 0) {
       return res.status(400).json({ error: 'Email déjà utilisé' })
     }
 
     const hash = await bcrypt.hash(password, 10)
 
-    // Créer le user avec rôle 'owner' par défaut à l'inscription
     const user = await pool.query(
       `INSERT INTO users (nom, email, password, role)
        VALUES ($1, $2, $3, 'owner')
@@ -29,26 +25,20 @@ const register = async (req, res) => {
       [nom, email, hash]
     )
 
-    // Créer la station automatiquement
     const station = await pool.query(
-      `INSERT INTO stations (owner_id, nom)
-       VALUES ($1, $2) RETURNING id`,
+      `INSERT INTO stations (owner_id, nom) VALUES ($1, $2) RETURNING id`,
       [user.rows[0].id, nom_station || 'Ma Station']
     )
 
     const station_id = station.rows[0].id
 
-    // Lier le owner à sa station
     await pool.query(
-      `INSERT INTO station_users (station_id, user_id)
-       VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+      `INSERT INTO station_users (station_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
       [station_id, user.rows[0].id]
     )
 
-    // Créer stocks initiaux
     await pool.query(
-      `INSERT INTO stocks (station_id, type, quantite)
-       VALUES ($1, 'essence', 0), ($1, 'gasoil', 0)`,
+      `INSERT INTO stocks (station_id, type, quantite) VALUES ($1, 'essence', 0), ($1, 'gasoil', 0)`,
       [station_id]
     )
 
@@ -58,11 +48,7 @@ const register = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRE }
     )
 
-    res.status(201).json({
-      token,
-      user: user.rows[0],
-      station_id
-    })
+    res.status(201).json({ token, user: user.rows[0], station_id })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
@@ -73,16 +59,13 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body
 
-    const result = await pool.query(
-      'SELECT * FROM users WHERE email = $1', [email]
-    )
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email])
     if (result.rows.length === 0) {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' })
     }
 
     const user = result.rows[0]
 
-    // Vérifier si compte actif
     if (!user.actif) {
       return res.status(403).json({ error: 'Compte désactivé. Contactez votre gérant.' })
     }
@@ -92,12 +75,10 @@ const login = async (req, res) => {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' })
     }
 
-    // Trouver la station liée à cet utilisateur
     const station = await pool.query(
       `SELECT s.id FROM stations s
        JOIN station_users su ON su.station_id = s.id
-       WHERE su.user_id = $1
-       LIMIT 1`,
+       WHERE su.user_id = $1 LIMIT 1`,
       [user.id]
     )
 
@@ -111,7 +92,13 @@ const login = async (req, res) => {
 
     res.json({
       token,
-      user: { id: user.id, nom: user.nom, email: user.email, role: user.role },
+      user: {
+        id:        user.id,
+        nom:       user.nom,
+        email:     user.email,
+        role:      user.role,
+        telephone: user.telephone ?? null,
+      },
       station_id,
       role: user.role
     })
@@ -120,11 +107,11 @@ const login = async (req, res) => {
   }
 }
 
-// ── ME ────────────────────────────────────────────────
+// ── ME — inclut telephone ─────────────────────────────
 const me = async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT id, nom, email, role, actif, created_at FROM users WHERE id = $1',
+      'SELECT id, nom, email, role, telephone, actif, created_at FROM users WHERE id = $1',
       [req.user.id]
     )
     res.json({ user: result.rows[0] })
@@ -133,4 +120,26 @@ const me = async (req, res) => {
   }
 }
 
-module.exports = { register, login, me }
+// ── CHANGE PASSWORD ───────────────────────────────────
+const changePassword = async (req, res) => {
+  try {
+    const { mot_de_passe_actuel, nouveau_mot_de_passe } = req.body
+    const user_id = req.user.id
+
+    const result = await pool.query('SELECT password FROM users WHERE id = $1', [user_id])
+    const valid  = await bcrypt.compare(mot_de_passe_actuel, result.rows[0].password)
+
+    if (!valid) {
+      return res.status(400).json({ error: 'Mot de passe actuel incorrect' })
+    }
+
+    const hash = await bcrypt.hash(nouveau_mot_de_passe, 10)
+    await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hash, user_id])
+
+    res.json({ message: 'Mot de passe modifié avec succès' })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+}
+
+module.exports = { register, login, me, changePassword }
