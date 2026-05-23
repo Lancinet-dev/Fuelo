@@ -5,8 +5,8 @@
 
 const Sentry = require('@sentry/node')
 Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  environment: process.env.NODE_ENV,
+  dsn:              process.env.SENTRY_DSN,
+  environment:      process.env.NODE_ENV,
   tracesSampleRate: 1.0,
 })
 
@@ -26,7 +26,7 @@ const logger     = require('./utils/logger')
 const app    = express()
 const server = http.createServer(app)
 
-// ── Socket.IO ─────────────────────────────────────────
+// ── Origins autorisées ────────────────────────────────
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
@@ -34,26 +34,19 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
 ].filter(Boolean)
 
+// ── Socket.IO ─────────────────────────────────────────
 const io = new Server(server, {
-  cors: {
-    origin: allowedOrigins,
-    methods: ['GET', 'POST'],
-    credentials: true,
-  }
+  cors: { origin: allowedOrigins, methods: ['GET', 'POST'], credentials: true }
 })
 
-// Rendre io accessible dans toute l'app
 app.set('io', io)
 
 io.on('connection', (socket) => {
   logger.info(`🔌 Socket connecté: ${socket.id}`)
-
-  // Rejoindre une room par station
   socket.on('join_station', (station_id) => {
     socket.join(`station_${station_id}`)
     logger.info(`Socket ${socket.id} rejoint station_${station_id}`)
   })
-
   socket.on('disconnect', () => {
     logger.info(`🔌 Socket déconnecté: ${socket.id}`)
   })
@@ -92,7 +85,7 @@ const alerteRoutes  = require('./routes/alertes')
 const statsRoutes   = require('./routes/stats')
 const stationRoutes = require('./routes/station')
 const employeRoutes = require('./routes/employes')
-const reportsRoute = require('./routes/reports')
+const reportsRoute  = require('./routes/reports')
 
 app.use('/api/auth',     limiterAuth, authRoutes)
 app.use('/api/stock',    stockRoutes)
@@ -101,7 +94,7 @@ app.use('/api/alertes',  alerteRoutes)
 app.use('/api/stats',    statsRoutes)
 app.use('/api/station',  stationRoutes)
 app.use('/api/employes', employeRoutes)
-app.use('/api/reports', reportsRoute)
+app.use('/api/reports',  reportsRoute)
 
 // ── Route test ────────────────────────────────────────
 app.get('/', (req, res) => {
@@ -121,10 +114,10 @@ app.use(errorHandler)
 const PORT = process.env.PORT || 5000
 server.listen(PORT, () => {
   logger.info(`⛽ Fuelo V2.1 démarré sur le port ${PORT}`)
+  // Cron jobs démarrés après que le serveur est prêt
+  const { initCronJobs } = require('./utils/cronJobs')
+  initCronJobs()
 })
-
-const { initCronJobs } = require('./utils/cronJobs')
-initCronJobs()
 
 process.on('unhandledRejection', (err) => { logger.error('UnhandledRejection', err); process.exit(1) })
 process.on('uncaughtException',  (err) => { logger.error('UncaughtException',  err); process.exit(1) })
