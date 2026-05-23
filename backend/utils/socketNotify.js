@@ -1,0 +1,59 @@
+// ================================================
+// FUELO — Helper pour émettre des events Socket.IO
+// Fichier : backend/utils/socketNotify.js
+// ================================================
+
+// Émettre une alerte stock critique
+const notifyAlerte = (app, station_id, data) => {
+  try {
+    const io = app.get('io')
+    if (io) {
+      io.to(`station_${station_id}`).emit('alerte_stock', {
+        station_id,
+        type:    data.type,
+        message: data.message,
+        at:      new Date().toISOString(),
+      })
+    }
+  } catch (err) {
+    console.error('Socket notify error:', err.message)
+  }
+}
+
+// Émettre une nouvelle vente
+const notifyVente = (app, station_id, vente) => {
+  try {
+    const io = app.get('io')
+    if (io) {
+      io.to(`station_${station_id}`).emit('nouvelle_vente', {
+        station_id,
+        type:        vente.type,
+        litres:      vente.litres,
+        montant_gnf: vente.montant_gnf,
+        employe:     vente.employe_nom,
+        at:          new Date().toISOString(),
+      })
+    }
+  } catch (err) {
+    console.error('Socket notify error:', err.message)
+  }
+}
+
+// Émettre une mise à jour de stock
+const notifyStock = (app, station_id, stock) => {
+  try {
+    const io = app.get('io')
+    if (io) {
+      io.to(`station_${station_id}`).emit('stock_update', {
+        station_id,
+        type:     stock.type,
+        quantite: stock.quantite,
+        at:       new Date().toISOString(),
+      })
+    }
+  } catch (err) {
+    console.error('Socket notify error:', err.message)
+  }
+}
+
+module.exports = { notifyAlerte, notifyVente, notifyStock }

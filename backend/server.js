@@ -1,5 +1,5 @@
 // ================================================
-// FUELO V2.1 — Serveur principal avec Google OAuth
+// FUELO V2.1 — Serveur principal avec Socket.IO
 // Fichier : backend/server.js
 // ================================================
 
@@ -12,22 +12,21 @@ Sentry.init({
 
 require('dotenv').config()
 
-
 const checkEnv = require('./utils/checkEnv')
 checkEnv()
 
-const express  = require('express')
-const cors     = require('cors')
-const helmet   = require('helmet')
-const passport = require('./config/passport')
-const logger   = require('./utils/logger')
+const express    = require('express')
+const http       = require('http')
+const { Server } = require('socket.io')
+const cors       = require('cors')
+const helmet     = require('helmet')
+const passport   = require('./config/passport')
+const logger     = require('./utils/logger')
 
-const app = express()
+const app    = express()
+const server = http.createServer(app)
 
-// ── Sécurité ──────────────────────────────────────────
-app.use(helmet())
-
-// ── CORS ──────────────────────────────────────────────
+// ── Socket.IO ─────────────────────────────────────────
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
@@ -35,6 +34,35 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
 ].filter(Boolean)
 
+const io = new Server(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ['GET', 'POST'],
+    credentials: true,
+  }
+})
+
+// Rendre io accessible dans toute l'app
+app.set('io', io)
+
+io.on('connection', (socket) => {
+  logger.info(`🔌 Socket connecté: ${socket.id}`)
+
+  // Rejoindre une room par station
+  socket.on('join_station', (station_id) => {
+    socket.join(`station_${station_id}`)
+    logger.info(`Socket ${socket.id} rejoint station_${station_id}`)
+  })
+
+  socket.on('disconnect', () => {
+    logger.info(`🔌 Socket déconnecté: ${socket.id}`)
+  })
+})
+
+// ── Sécurité ──────────────────────────────────────────
+app.use(helmet())
+
+// ── CORS ──────────────────────────────────────────────
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true)
@@ -89,7 +117,7 @@ app.use(errorHandler)
 
 // ── Démarrage ─────────────────────────────────────────
 const PORT = process.env.PORT || 5000
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   logger.info(`⛽ Fuelo V2.1 démarré sur le port ${PORT}`)
 })
 

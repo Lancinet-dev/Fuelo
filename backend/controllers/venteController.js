@@ -1,5 +1,5 @@
 // ================================================
-// FUELO V2 — Vente Controller (léger grâce au service)
+// FUELO V2 — Vente Controller
 // ================================================
 
 const venteService = require('../services/venteService')
@@ -7,10 +7,9 @@ const { getPagination, formatPaginatedResponse } = require('../utils/pagination'
 const logger = require('../utils/logger')
 const pool   = require('../config/database')
 
-// ── Enregistrer une vente ────────────────────────────
 const enregistrerVente = async (req, res) => {
   try {
-    const result = await venteService.createVente(req.user, req.body)
+    const result = await venteService.createVente(req.user, req.body, req.app)
     res.status(201).json(result)
   } catch (err) {
     logger.error('enregistrerVente', err)
@@ -18,22 +17,15 @@ const enregistrerVente = async (req, res) => {
   }
 }
 
-// ── Historique ventes paginé ─────────────────────────
 const getVentes = async (req, res) => {
   try {
     const station_id  = req.user.station_id
     const pagination  = getPagination(req)
     const filters     = { type: req.query.type }
-
-    const { ventes, total } = await venteService.getVentesPaginated(
-      station_id, filters, pagination
-    )
-
+    const { ventes, total } = await venteService.getVentesPaginated(station_id, filters, pagination)
     res.json(formatPaginatedResponse('ventes', {
-      data: ventes,
-      ...pagination,
-      total,
-      pages: Math.ceil(total / pagination.limit),
+      data: ventes, ...pagination, total,
+      pages:    Math.ceil(total / pagination.limit),
       has_next: pagination.page < Math.ceil(total / pagination.limit),
       has_prev: pagination.page > 1,
     }))
@@ -43,7 +35,6 @@ const getVentes = async (req, res) => {
   }
 }
 
-// ── 5 dernières ventes (dashboard) ──────────────────
 const getVentesRecentes = async (req, res) => {
   try {
     const ventes = await venteService.getVentesRecentes(req.user.station_id)
@@ -54,7 +45,6 @@ const getVentesRecentes = async (req, res) => {
   }
 }
 
-// ── Ventes du jour ────────────────────────────────────
 const getVentesAujourdhui = async (req, res) => {
   try {
     const result = await pool.query(
@@ -62,7 +52,7 @@ const getVentesAujourdhui = async (req, res) => {
        COALESCE(SUM(litres), 0) as total_litres,
        COALESCE(SUM(montant_gnf), 0) as total_gnf
        FROM ventes
-       WHERE station_id = $1 AND DATE(created_at) = CURRENT_DATE`,
+       WHERE station_id = $1 AND DATE(created_at) = CURRENT_DATE AND deleted_at IS NULL`,
       [req.user.station_id]
     )
     res.json({ aujourdhui: result.rows[0] })

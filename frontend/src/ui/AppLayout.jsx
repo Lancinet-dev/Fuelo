@@ -1,26 +1,24 @@
 // ================================================
-// FUELO V2 — AppLayout
+// FUELO V2 — AppLayout avec notifications temps réel
 // Fichier : frontend/src/ui/AppLayout.jsx
 // ================================================
 
 import { memo, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
-import { useAlertes } from '../hooks/useAlertes'
-import { useTheme }   from '../context/ThemeContext'
-import SplashScreen   from './SplashScreen'
+import { useAlertes }       from '../hooks/useAlertes'
+import { useTheme }         from '../context/ThemeContext'
+import { useNotifications } from '../hooks/useNotifications'
+import SplashScreen         from './SplashScreen'
 
 const AppLayout = memo(function AppLayout() {
   const { nonLues } = useAlertes()
   const { palette }  = useTheme()
+  useNotifications() // Active les notifications temps réel en arrière-plan
 
   const [showSplash, setShowSplash] = useState(() => {
-    // Affiche uniquement si on vient de se connecter via Login
     const fromLogin = sessionStorage.getItem('fuelo_just_logged_in')
-    if (fromLogin) {
-      sessionStorage.removeItem('fuelo_just_logged_in')
-      return true
-    }
+    if (fromLogin) { sessionStorage.removeItem('fuelo_just_logged_in'); return true }
     return false
   })
 
@@ -37,16 +35,13 @@ const AppLayout = memo(function AppLayout() {
       }}>
         <Sidebar alertesNb={nonLues} />
 
-        <main
-          className="fuelo-main"
-          style={{
-            marginLeft: '220px',
-            flex:       1,
-            minHeight:  '100vh',
-            overflowX:  'hidden',
-            transition: 'background 0.3s ease',
-          }}
-        >
+        <main className="fuelo-main" style={{
+          marginLeft: '220px',
+          flex:       1,
+          minHeight:  '100vh',
+          overflowX:  'hidden',
+          transition: 'background 0.3s ease',
+        }}>
           <Outlet />
         </main>
 
