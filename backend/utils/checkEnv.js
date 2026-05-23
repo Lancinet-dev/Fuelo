@@ -1,21 +1,19 @@
 // ================================================
 // FUELO V2.1 — Validation variables d'environnement
-// Le serveur refuse de démarrer si une var manque
 // ================================================
 
-const REQUIRED_VARS = [
-  'PORT',
-  'DB_HOST',
-  'DB_PORT',
-  'DB_NAME',
-  'DB_USER',
-  'DB_PASSWORD',
-  'JWT_SECRET',
-  'JWT_EXPIRE',
-]
-
 const checkEnv = () => {
-  const missing = REQUIRED_VARS.filter(v => !process.env[v])
+  const missing = []
+
+  // Accepte soit DATABASE_URL (Render) soit les variables séparées (local)
+  if (!process.env.DATABASE_URL) {
+    const dbVars = ['DB_HOST', 'DB_PORT', 'DB_NAME', 'DB_USER', 'DB_PASSWORD']
+    dbVars.forEach(v => { if (!process.env[v]) missing.push(v) })
+  }
+
+  // Variables toujours requises
+  const required = ['JWT_SECRET', 'JWT_EXPIRE']
+  required.forEach(v => { if (!process.env[v]) missing.push(v) })
 
   if (missing.length > 0) {
     console.error('❌ Variables d\'environnement manquantes :')
