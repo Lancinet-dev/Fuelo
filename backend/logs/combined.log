@@ -40,3 +40,14 @@
 {"timestamp":"2026-05-23 08:23:44","level":"info","message":"🔌 Socket connecté: y2FXb7Ass7XIA4u_AAAD"}
 {"timestamp":"2026-05-23 08:23:44","level":"info","message":"Socket y2FXb7Ass7XIA4u_AAAD rejoint station_12"}
 {"timestamp":"2026-05-23 08:23:46","level":"info","message":"🔌 Socket connecté: 1ulQ32XiuIE7rsTMAAAF"}
+{"timestamp":"2026-05-23 08:24:11","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-23 08:24:12","level":"info","message":"🔌 Socket connecté: vxp8zlekdioLbH4vAAAB"}
+{"timestamp":"2026-05-23 08:24:14","level":"info","message":"🔌 Socket connecté: -jKvkyCA5A861RjgAAAD"}
+{"timestamp":"2026-05-23 08:24:14","level":"info","message":"Socket -jKvkyCA5A861RjgAAAD rejoint station_12"}
+{"timestamp":"2026-05-23 08:24:43","level":"info","message":"Vente enregistrée — Station 12 — 400L essence — 400000 GNF"}
+{"timestamp":"2026-05-23 08:24:54","level":"info","message":"Vente enregistrée — Station 12 — 100L essence — 100000 GNF"}
+{"timestamp":"2026-05-23 08:25:03","level":"info","message":"Vente enregistrée — Station 12 — 67L essence — 67000 GNF"}
+{"timestamp":"2026-05-23 08:25:13","level":"info","message":"Socket -jKvkyCA5A861RjgAAAD rejoint station_12"}
+{"timestamp":"2026-05-23 08:25:13","level":"info","message":"Socket -jKvkyCA5A861RjgAAAD rejoint station_12"}
+{"timestamp":"2026-05-23 08:36:37","level":"info","message":"🔌 Socket déconnecté: vxp8zlekdioLbH4vAAAB"}
+{"timestamp":"2026-05-23 08:36:39","level":"info","message":"🔌 Socket déconnecté: -jKvkyCA5A861RjgAAAD"}
