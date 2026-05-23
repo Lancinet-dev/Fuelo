@@ -30,3 +30,13 @@
 {"timestamp":"2026-05-23 05:40:42","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
 {"timestamp":"2026-05-23 05:46:08","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
 {"timestamp":"2026-05-23 07:35:01","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-23 08:03:43","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-23 08:06:16","level":"info","message":"🔌 Socket connecté: mUX2fjAJQekCzPYaAAAB"}
+{"timestamp":"2026-05-23 08:06:53","level":"info","message":"Vente enregistrée — Station 12 — 500L essence — 500000 GNF"}
+{"timestamp":"2026-05-23 08:06:58","level":"info","message":"Vente enregistrée — Station 12 — 400L essence — 400000 GNF"}
+{"timestamp":"2026-05-23 08:07:20","level":"info","message":"Vente enregistrée — Station 12 — 3L essence — 3000 GNF"}
+{"timestamp":"2026-05-23 08:07:26","level":"info","message":"Vente enregistrée — Station 12 — 37L essence — 37000 GNF"}
+{"timestamp":"2026-05-23 08:16:36","level":"info","message":"🔌 Socket déconnecté: mUX2fjAJQekCzPYaAAAB"}
+{"timestamp":"2026-05-23 08:23:44","level":"info","message":"🔌 Socket connecté: y2FXb7Ass7XIA4u_AAAD"}
+{"timestamp":"2026-05-23 08:23:44","level":"info","message":"Socket y2FXb7Ass7XIA4u_AAAD rejoint station_12"}
+{"timestamp":"2026-05-23 08:23:46","level":"info","message":"🔌 Socket connecté: 1ulQ32XiuIE7rsTMAAAF"}
