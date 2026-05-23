@@ -92,6 +92,7 @@ const alerteRoutes  = require('./routes/alertes')
 const statsRoutes   = require('./routes/stats')
 const stationRoutes = require('./routes/station')
 const employeRoutes = require('./routes/employes')
+const reportsRoute = require('./routes/reports')
 
 app.use('/api/auth',     limiterAuth, authRoutes)
 app.use('/api/stock',    stockRoutes)
@@ -100,6 +101,7 @@ app.use('/api/alertes',  alerteRoutes)
 app.use('/api/stats',    statsRoutes)
 app.use('/api/station',  stationRoutes)
 app.use('/api/employes', employeRoutes)
+app.use('/api/reports', reportsRoute)
 
 // ── Route test ────────────────────────────────────────
 app.get('/', (req, res) => {
@@ -120,6 +122,9 @@ const PORT = process.env.PORT || 5000
 server.listen(PORT, () => {
   logger.info(`⛽ Fuelo V2.1 démarré sur le port ${PORT}`)
 })
+
+const { initCronJobs } = require('./utils/cronJobs')
+initCronJobs()
 
 process.on('unhandledRejection', (err) => { logger.error('UnhandledRejection', err); process.exit(1) })
 process.on('uncaughtException',  (err) => { logger.error('UncaughtException',  err); process.exit(1) })

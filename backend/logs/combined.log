@@ -51,3 +51,15 @@
 {"timestamp":"2026-05-23 08:25:13","level":"info","message":"Socket -jKvkyCA5A861RjgAAAD rejoint station_12"}
 {"timestamp":"2026-05-23 08:36:37","level":"info","message":"🔌 Socket déconnecté: vxp8zlekdioLbH4vAAAB"}
 {"timestamp":"2026-05-23 08:36:39","level":"info","message":"🔌 Socket déconnecté: -jKvkyCA5A861RjgAAAD"}
+{"timestamp":"2026-05-23 08:38:56","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-05-23 08:39:19","level":"info","message":"🔌 Socket connecté: V_OhxLXRdWquYQT9AAAB"}
+{"timestamp":"2026-05-23 08:39:19","level":"info","message":"Socket V_OhxLXRdWquYQT9AAAB rejoint station_12"}
+{"timestamp":"2026-05-23 08:39:19","level":"info","message":"🔌 Socket connecté: 95zbGXKJaZMbofLrAAAD"}
+{"timestamp":"2026-05-23 08:39:21","level":"info","message":"🔌 Socket déconnecté: 95zbGXKJaZMbofLrAAAD"}
+{"timestamp":"2026-05-23 08:39:21","level":"info","message":"🔌 Socket déconnecté: V_OhxLXRdWquYQT9AAAB"}
+{"timestamp":"2026-05-23 08:39:22","level":"info","message":"🔌 Socket connecté: rB_kyuuh_OLW21gRAAAF"}
+{"timestamp":"2026-05-23 08:39:22","level":"info","message":"Socket rB_kyuuh_OLW21gRAAAF rejoint station_12"}
+{"timestamp":"2026-05-23 08:41:57","level":"info","message":"Vente enregistrée — Station 12 — 94L essence — 94000 GNF"}
+{"timestamp":"2026-05-23 08:42:09","level":"info","message":"Socket rB_kyuuh_OLW21gRAAAF rejoint station_12"}
+{"timestamp":"2026-05-23 08:42:09","level":"info","message":"Socket rB_kyuuh_OLW21gRAAAF rejoint station_12"}
+{"timestamp":"2026-05-23 08:45:25","level":"info","message":"🔌 Socket déconnecté: rB_kyuuh_OLW21gRAAAF"}

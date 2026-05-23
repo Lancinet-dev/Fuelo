@@ -19,6 +19,7 @@ const ICONS = {
   save:    'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4',
   eye:     'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 100 6 3 3 0 000-6z',
   eyeOff:  'M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22',
+  rapport: 'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8',
 }
 
 function SectionCard({ icon, title, desc, children, palette }) {
@@ -41,24 +42,14 @@ function SectionCard({ icon, title, desc, children, palette }) {
 function Field({ label, type = 'text', value, onChange, placeholder, suffix, error, hint, palette }) {
   return (
     <div style={{ marginBottom: 16 }}>
-      <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
-        {label}
-      </div>
+      <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{label}</div>
       <div style={{ position: 'relative' }}>
-        <input
-          type={type}
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          placeholder={placeholder}
+        <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
           onFocus={e => { e.target.style.borderColor = theme.colors.primary; e.target.style.boxShadow = `0 0 0 3px ${theme.colors.primaryLight}` }}
           onBlur={e  => { e.target.style.borderColor = error ? theme.colors.danger : palette.cardBorder; e.target.style.boxShadow = 'none' }}
           style={{ width: '100%', height: 46, background: palette.inputBg, border: `1.5px solid ${error ? theme.colors.danger : palette.cardBorder}`, borderRadius: theme.radius.md, padding: suffix ? '0 60px 0 14px' : '0 14px', fontSize: theme.font.size.base, color: palette.text, fontFamily: theme.font.family, outline: 'none', transition: theme.transition.fast }}
         />
-        {suffix && (
-          <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textMuted, pointerEvents: 'none' }}>
-            {suffix}
-          </span>
-        )}
+        {suffix && <span style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textMuted, pointerEvents: 'none' }}>{suffix}</span>}
       </div>
       {error  && <div style={{ fontSize: theme.font.size.xs, color: theme.colors.danger, marginTop: 4 }}>{error}</div>}
       {hint && !error && <div style={{ fontSize: theme.font.size.xs, color: palette.textMuted, marginTop: 4 }}>{hint}</div>}
@@ -96,10 +87,11 @@ export default function Parametres() {
   const [seuilSaved,     setSeuilSaved]     = useState(false)
   const [stationErrors,  setStationErrors]  = useState({})
   const [prixErrors,     setPrixErrors]     = useState({})
-  const [pwd,        setPwd]        = useState({ actuel: '', nouveau: '', confirm: '' })
-  const [showPwd,    setShowPwd]    = useState({ actuel: false, nouveau: false, confirm: false })
-  const [pwdLoading, setPwdLoading] = useState(false)
-  const [pwdErrors,  setPwdErrors]  = useState({})
+  const [pwd,            setPwd]            = useState({ actuel: '', nouveau: '', confirm: '' })
+  const [showPwd,        setShowPwd]        = useState({ actuel: false, nouveau: false, confirm: false })
+  const [pwdLoading,     setPwdLoading]     = useState(false)
+  const [pwdErrors,      setPwdErrors]      = useState({})
+  const [rapportLoading, setRapportLoading] = useState(false)
 
   useEffect(() => {
     api.get('/station')
@@ -177,6 +169,30 @@ export default function Parametres() {
     } finally { setPwdLoading(false) }
   }
 
+  const handleEnvoyerRapport = async (mois) => {
+    setRapportLoading(true)
+    try {
+      const now   = new Date()
+      const year  = mois === 'current'
+        ? now.getFullYear()
+        : (now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear())
+      const month = mois === 'current'
+        ? now.getMonth() + 1
+        : (now.getMonth() === 0 ? 12 : now.getMonth())
+      await api.post('/reports/envoyer', { year, month })
+      toast.success('Rapport envoyé par email ✅')
+    } catch (err) {
+      toast.error(err?.response?.data?.error ?? 'Erreur envoi rapport')
+    } finally {
+      setRapportLoading(false)
+    }
+  }
+
+  const moisLabels = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
+  const now         = new Date()
+  const moisCourant = moisLabels[now.getMonth()]
+  const moisPrec    = moisLabels[now.getMonth() === 0 ? 11 : now.getMonth() - 1]
+
   const setS = (k) => (v) => { setStation(f => ({ ...f, [k]: v })); setStationErrors(e => ({ ...e, [k]: '' })) }
   const setP = (k) => (v) => { setPrix(f => ({ ...f, [k]: v })); setPrixErrors(e => ({ ...e, [k]: '' })) }
   const setQ = (k) => (v) => setSeuils(f => ({ ...f, [k]: v }))
@@ -195,10 +211,10 @@ export default function Parametres() {
       {/* Infos station */}
       <SectionCard icon={ICONS.station} title="Informations de la station" desc="Ces informations apparaissent sur vos rapports PDF" palette={palette}>
         <form onSubmit={handleStationSave}>
-          <Field label="Nom de la station" value={station.nom}     onChange={setS('nom')}     placeholder="Ex: Station Almamya" error={stationErrors.nom} {...fieldProps} />
+          <Field label="Nom de la station" value={station.nom} onChange={setS('nom')} placeholder="Ex: Station Almamya" error={stationErrors.nom} {...fieldProps} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            <Field label="Ville" value={station.ville}   onChange={setS('ville')}   placeholder="Conakry" {...fieldProps} />
-            <Field label="Pays"  value={station.pays}    onChange={setS('pays')}    placeholder="Guinée"  {...fieldProps} />
+            <Field label="Ville" value={station.ville} onChange={setS('ville')} placeholder="Conakry" {...fieldProps} />
+            <Field label="Pays"  value={station.pays}  onChange={setS('pays')}  placeholder="Guinée"  {...fieldProps} />
           </div>
           <Field label="Adresse" value={station.adresse} onChange={setS('adresse')} placeholder="Ex: Rue KA-020, Kaloum" hint="Optionnel" {...fieldProps} />
           <SaveBtn loading={stationLoading} saved={stationSaved} />
@@ -245,6 +261,40 @@ export default function Parametres() {
         </form>
       </SectionCard>
 
+      {/* Rapports mensuels */}
+      <SectionCard icon={ICONS.rapport} title="Rapports mensuels" desc="Envoyé automatiquement le 1er de chaque mois à 8h00" palette={palette}>
+        {/* Info automatique */}
+        <div style={{ background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.15)', borderRadius: 10, padding: '12px 16px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <span style={{ fontSize: 18, flexShrink: 0 }}>🤖</span>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: theme.colors.primary, marginBottom: 3 }}>Envoi automatique actif</div>
+            <div style={{ fontSize: 12, color: palette.textSub, lineHeight: 1.6 }}>
+              Chaque 1er du mois, un rapport PDF complet est envoyé automatiquement sur votre email avec les ventes, stocks et performance du mois écoulé.
+            </div>
+          </div>
+        </div>
+
+        {/* Envoi manuel */}
+        <div style={{ fontSize: 12, fontWeight: 600, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
+          Envoyer maintenant
+        </div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button onClick={() => handleEnvoyerRapport('current')} disabled={rapportLoading}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 10, border: 'none', background: theme.colors.primary, color: '#fff', fontSize: 13, fontWeight: 600, cursor: rapportLoading ? 'not-allowed' : 'pointer', opacity: rapportLoading ? 0.7 : 1, fontFamily: theme.font.family, transition: 'all 0.2s' }}>
+            {rapportLoading
+              ? <div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              : <span>📧</span>
+            }
+            Rapport {moisCourant}
+          </button>
+          <button onClick={() => handleEnvoyerRapport('prev')} disabled={rapportLoading}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 10, border: `1px solid ${palette.cardBorder}`, background: 'transparent', color: palette.text, fontSize: 13, fontWeight: 500, cursor: rapportLoading ? 'not-allowed' : 'pointer', opacity: rapportLoading ? 0.7 : 1, fontFamily: theme.font.family, transition: 'all 0.2s' }}>
+            <span>📄</span>
+            Rapport {moisPrec}
+          </button>
+        </div>
+      </SectionCard>
+
       {/* Mot de passe */}
       <SectionCard icon={ICONS.lock} title="Changer le mot de passe" desc="Utilisez un mot de passe fort d'au moins 8 caractères" palette={palette}>
         <form onSubmit={handlePwdSave}>
@@ -287,8 +337,7 @@ export default function Parametres() {
           <button type="submit" disabled={pwdLoading}
             style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: palette.hover, color: palette.text, fontSize: theme.font.size.md, fontWeight: theme.font.weight.semi, cursor: pwdLoading ? 'not-allowed' : 'pointer', fontFamily: theme.font.family, transition: theme.transition.fast }}
             onMouseEnter={e => { if (!pwdLoading) { e.currentTarget.style.background = theme.colors.primary; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = theme.colors.primary }}}
-            onMouseLeave={e => { e.currentTarget.style.background = palette.hover; e.currentTarget.style.color = palette.text; e.currentTarget.style.borderColor = palette.cardBorder }}
-          >
+            onMouseLeave={e => { e.currentTarget.style.background = palette.hover; e.currentTarget.style.color = palette.text; e.currentTarget.style.borderColor = palette.cardBorder }}>
             {pwdLoading ? <div style={{ width: 16, height: 16, border: `2px solid ${palette.textSub}`, borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.lock} /></svg>}
             {pwdLoading ? 'Modification...' : 'Modifier le mot de passe'}
           </button>
