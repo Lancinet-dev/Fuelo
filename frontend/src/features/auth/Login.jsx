@@ -239,7 +239,7 @@ export default function Login() {
             </div>
 
             {/* Google */}
-            <a href="http://localhost:5000/api/auth/google"
+          <a href="https://fuelo.onrender.com/api/auth/google"
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, width: '100%', height: 46, background: 'rgba(255,255,255,0.03)', border: '1.5px solid rgba(96,165,250,0.12)', borderRadius: '10px', color: '#F1F5F9', fontSize: 14, fontFamily: 'inherit', textDecoration: 'none', marginBottom: 18, transition: 'all 0.2s' }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(96,165,250,0.3)'; e.currentTarget.style.background = 'rgba(37,99,235,0.06)' }}
               onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(96,165,250,0.12)'; e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
