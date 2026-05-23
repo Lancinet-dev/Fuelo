@@ -14,7 +14,7 @@ const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://
 let socket = null
 
 export function useNotifications() {
-  const { user, isAuthenticated } = useAuth()
+  const { user, stationId, isAuthenticated } = useAuth()
   const queryClient = useQueryClient()
   const [notifications, setNotifications] = useState([])
   const [connected, setConnected] = useState(false)
@@ -22,7 +22,6 @@ export function useNotifications() {
   useEffect(() => {
     if (!isAuthenticated || !user) return
 
-    // Connexion socket
     if (!socket) {
       socket = io(SOCKET_URL, {
         transports: ['websocket', 'polling'],
@@ -32,19 +31,16 @@ export function useNotifications() {
       })
     }
 
-    socket.on('connect', () => {
+    const onConnect = () => {
       setConnected(true)
-      // Rejoindre la room station
-      const stationId = user.station_id || localStorage.getItem('station_id')
       if (stationId) {
         socket.emit('join_station', stationId)
       }
-    })
+    }
 
-    socket.on('disconnect', () => setConnected(false))
+    const onDisconnect = () => setConnected(false)
 
-    // ── Nouvelle alerte stock critique ────────────────
-    socket.on('alerte_stock', (data) => {
+    const onAlerteStock = (data) => {
       toast.error(`⚠️ Stock critique : ${data.message}`, {
         duration: 6000,
         icon: '🔔',
@@ -53,33 +49,45 @@ export function useNotifications() {
       setNotifications(prev => [{ ...data, id: Date.now(), lu: false }, ...prev.slice(0, 19)])
       queryClient.invalidateQueries({ queryKey: ['alertes'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
-    })
+    }
 
-    // ── Nouvelle vente enregistrée ────────────────────
-    socket.on('nouvelle_vente', (data) => {
-      toast.success(`💰 Vente : ${data.litres}L ${data.type} — ${data.montant_gnf?.toLocaleString('fr-FR')} GNF`, {
+    const onNouvelleVente = (data) => {
+      const montant = data.montant_gnf
+        ? String(Math.round(data.montant_gnf)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+        : '0'
+      toast.success(`💰 Vente : ${data.litres}L ${data.type} — ${montant} GNF`, {
         duration: 4000,
         style: { background: '#1E293B', color: '#F1F5F9', border: '1px solid #2563EB' }
       })
       queryClient.invalidateQueries({ queryKey: ['ventes'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       queryClient.invalidateQueries({ queryKey: ['stocks'] })
-    })
+    }
 
-    // ── Stock mis à jour ──────────────────────────────
-   socket.on('stock_update', () => {
+    const onStockUpdate = () => {
       queryClient.invalidateQueries({ queryKey: ['stocks'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
-    })
+    }
+
+    socket.on('connect',       onConnect)
+    socket.on('disconnect',    onDisconnect)
+    socket.on('alerte_stock',  onAlerteStock)
+    socket.on('nouvelle_vente', onNouvelleVente)
+    socket.on('stock_update',  onStockUpdate)
+
+    // Si déjà connecté, rejoindre la room immédiatement
+    if (socket.connected && stationId) {
+      socket.emit('join_station', stationId)
+    }
 
     return () => {
-      socket.off('alerte_stock')
-      socket.off('nouvelle_vente')
-      socket.off('stock_update')
-      socket.off('connect')
-      socket.off('disconnect')
+      socket.off('connect',       onConnect)
+      socket.off('disconnect',    onDisconnect)
+      socket.off('alerte_stock',  onAlerteStock)
+      socket.off('nouvelle_vente', onNouvelleVente)
+      socket.off('stock_update',  onStockUpdate)
     }
-  }, [isAuthenticated, user, queryClient])
+  }, [isAuthenticated, user, stationId, queryClient])
 
   const marquerLu = useCallback((id) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, lu: true } : n))
