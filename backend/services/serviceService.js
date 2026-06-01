@@ -74,11 +74,15 @@ const terminerService = async (user, serviceId, data, photoUrl, app) => {
     let ecart_gasoil  = null
 
     if (service.compteur_essence_debut != null && compteur_essence_fin != null) {
-      const conso_reelle = parseFloat(compteur_essence_fin) - parseFloat(service.compteur_essence_debut)
+      const finNum = parseFloat(compteur_essence_fin)
+      if (isNaN(finNum)) throw new Error('Compteur essence invalide (doit être un nombre)')
+      const conso_reelle = finNum - parseFloat(service.compteur_essence_debut)
       ecart_essence = conso_reelle - ventesByType.essence
     }
     if (service.compteur_gasoil_debut != null && compteur_gasoil_fin != null) {
-      const conso_reelle = parseFloat(compteur_gasoil_fin) - parseFloat(service.compteur_gasoil_debut)
+      const finNum = parseFloat(compteur_gasoil_fin)
+      if (isNaN(finNum)) throw new Error('Compteur gasoil invalide (doit être un nombre)')
+      const conso_reelle = finNum - parseFloat(service.compteur_gasoil_debut)
       ecart_gasoil = conso_reelle - ventesByType.gasoil
     }
 

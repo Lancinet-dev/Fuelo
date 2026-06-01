@@ -45,12 +45,12 @@ const demarrerTrajet = async (user, { citerne_id, qty_depart, station_destinatio
 }
 
 // ── Enregistrer une position GPS ─────────────────
-const ajouterPosition = async (trajet_id, { lat, lng, vitesse }, app) => {
+const ajouterPosition = async (trajet_id, chauffeur_id, { lat, lng, vitesse }, app) => {
   const trajetResult = await pool.query(
     `SELECT t.*, s.id as station_id FROM trajets t
      JOIN stations s ON s.id = t.station_destination_id
-     WHERE t.id = $1 AND t.statut = 'en_cours'`,
-    [trajet_id]
+     WHERE t.id = $1 AND t.chauffeur_id = $2 AND t.statut = 'en_cours'`,
+    [trajet_id, chauffeur_id]
   )
   const trajet = trajetResult.rows[0]
   if (!trajet) throw new Error('Trajet introuvable ou déjà terminé')
@@ -115,14 +115,17 @@ const arriverDestination = async (user, trajet_id, { qty_arrivee }, app) => {
   const trajet = trajetResult.rows[0]
   if (!trajet) throw new Error('Trajet introuvable ou déjà terminé')
 
-  const ecart    = parseFloat(trajet.qty_depart) - parseFloat(qty_arrivee)
-  const aFraude  = ecart > parseFloat(trajet.seuil_fraude)
-  const statut   = aFraude ? 'alerte' : 'arrive'
+  const qtyNum = parseFloat(qty_arrivee)
+  if (isNaN(qtyNum) || qtyNum < 0) throw new Error('Quantité arrivée invalide (doit être un nombre positif)')
+
+  const ecart   = parseFloat(trajet.qty_depart) - qtyNum
+  const aFraude = Math.abs(ecart) > parseFloat(trajet.seuil_fraude)
+  const statut  = aFraude ? 'alerte' : 'arrive'
 
   const updated = await pool.query(
     `UPDATE trajets SET ended_at = NOW(), qty_arrivee = $1, ecart = $2, statut = $3
      WHERE id = $4 RETURNING *`,
-    [qty_arrivee, ecart, statut, trajet_id]
+    [qtyNum, ecart, statut, trajet_id]
   )
 
   if (aFraude) {

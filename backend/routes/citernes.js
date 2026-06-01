@@ -58,10 +58,13 @@ router.put('/:id', verifyToken, isTransport, async (req, res) => {
     const { code, capacite, chauffeur_id } = req.body
     const result = await pool.query(
       `UPDATE citernes SET code = COALESCE($1, code), capacite = COALESCE($2, capacite),
-       chauffeur_id = $3 WHERE id = $4 RETURNING *`,
-      [code, capacite, chauffeur_id || null, req.params.id]
+       chauffeur_id = $3
+       WHERE id = $4 AND owner_id IN (
+         SELECT owner_id FROM stations WHERE id = $5
+       ) RETURNING *`,
+      [code, capacite, chauffeur_id || null, req.params.id, req.user.station_id]
     )
-    if (!result.rows[0]) return res.status(404).json({ error: 'Citerne introuvable' })
+    if (!result.rows[0]) return res.status(403).json({ error: 'Citerne introuvable ou accès refusé' })
     res.json({ citerne: result.rows[0] })
   } catch (err) {
     logger.error('updateCiterne', err)
@@ -72,7 +75,14 @@ router.put('/:id', verifyToken, isTransport, async (req, res) => {
 // DELETE /api/citernes/:id (soft)
 router.delete('/:id', verifyToken, isTransport, async (req, res) => {
   try {
-    await pool.query(`UPDATE citernes SET actif = FALSE WHERE id = $1`, [req.params.id])
+    const result = await pool.query(
+      `UPDATE citernes SET actif = FALSE
+       WHERE id = $1 AND owner_id IN (
+         SELECT owner_id FROM stations WHERE id = $2
+       ) RETURNING id`,
+      [req.params.id, req.user.station_id]
+    )
+    if (!result.rows[0]) return res.status(403).json({ error: 'Citerne introuvable ou accès refusé' })
     res.json({ message: 'Citerne supprimée' })
   } catch (err) {
     logger.error('deleteCiterne', err)

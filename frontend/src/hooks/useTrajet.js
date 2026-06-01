@@ -27,7 +27,13 @@ export function useTrajet() {
 
   const { mutateAsync: envoyerPosition } = useMutation({
     mutationFn: ({ id, ...pos }) => api.post(`/trajets/${id}/position`, pos).then(r => r.data),
-    onError: () => {},  // silencieux — ne pas spammer l'UI si le réseau flanche
+    // Toast avec id fixe : remplace le précédent au lieu de s'accumuler
+    onError: () => {
+      toast.error('Position GPS non envoyée — vérifiez votre connexion', {
+        id: 'gps-sync-error',
+        duration: 5000,
+      })
+    },
   })
 
   const { mutateAsync: arriver, isPending: arriverLoading } = useMutation({

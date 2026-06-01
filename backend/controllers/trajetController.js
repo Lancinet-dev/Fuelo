@@ -17,7 +17,7 @@ const demarrerTrajet = async (req, res) => {
 
 const ajouterPosition = async (req, res) => {
   try {
-    await trajetService.ajouterPosition(parseInt(req.params.id), req.body, req.app)
+    await trajetService.ajouterPosition(parseInt(req.params.id), req.user.id, req.body, req.app)
     res.json({ ok: true })
   } catch (err) {
     logger.error('ajouterPosition', err)
