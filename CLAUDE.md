@@ -25,22 +25,24 @@ depuis leur téléphone, en temps réel.
 - `routes/` → définition des endpoints
 - `controllers/` → reçoivent req/res, appellent les services
 - `services/` → logique métier (ex: venteService.js avec transactions ACID)
-- `middleware/` → auth (JWT), rateLimit, checkRole, errorHandler
-- `config/` → database.js (pool pg), passport.js (Google OAuth)
-- `utils/` → logger (Winston), checkEnv, socketNotify, cronJobs
-- Base de données : PostgreSQL
-- Temps réel : Socket.IO (rooms par station : `station_${id}`)
+- `middleware/` → auth (JWT), rateLimit, checkRole, errorHandler, upload (multer+Cloudinary)
+- `config/` → database.js (pool pg), passport.js (Google OAuth), cloudinary.js
+- `utils/` → logger (Winston), checkEnv, socketNotify (ventes/alertes/GPS), cronJobs
+- Base de données : PostgreSQL sur **Neon** (migré le 2026-06-01, ex-Render)
+- Temps réel : Socket.IO (rooms par station : `station_${id}`) — events : `nouvelle_vente`, `alerte_stock`, `gps_update`
 - Sécurité : JWT, bcrypt, helmet, CORS, rate limiting, validation Zod, RBAC
+- Stockage photos : Cloudinary (anti-fraude pompistes, dossier `fuelo/services/`)
 - Monitoring : Sentry
 
 **Frontend** — React + Vite + React Query
-- `features/` → pages par domaine (auth, dashboard, ventes, stock, alertes, employes, parametres, profile, stations)
-- `ui/` → composants partagés (Sidebar, AppLayout, StatCard, SplashScreen, etc.)
-- `hooks/` → useAuth, useAlertes, useNotifications, useSocket
+- `features/` → auth, dashboard, ventes, stock, alertes, employes, parametres, profile, stations, **services**, **trajets**, pompiste
+- `ui/` → Sidebar, AppLayout, StatCard, SplashScreen, etc.
+- `hooks/` → useAuth, useAlertes, useNotifications, useSocket, useService, useServices, useTrajet, useTrajets
 - `context/` → AuthContext, ThemeContext (dark/light)
 - `components/` → FueloLogo
 - `config/` → theme.js
 - `services/` → api.js (axios)
+- Carte GPS : Leaflet + OpenStreetMap (gratuit, pas de clé API)
 
 ---
 
@@ -61,6 +63,7 @@ depuis leur téléphone, en temps réel.
 - `owner` (propriétaire) → accès complet, voit tout
 - `gerant` (alias `manager`, normalisé en `gerant`) → gère sa station
 - `pompiste` → interface dédiée, enregistre les ventes
+- `chauffeur` → interface dédiée `/chauffeur`, gère ses trajets GPS
 - `superadmin` → (prévu, pas encore implémenté)
 
 Comptes test :
@@ -76,15 +79,20 @@ Comptes test :
 - Dashboard (stats temps réel, graphique 7 jours, ventes récentes)
 - Ventes (CRUD, pagination, filtres, export PDF + Excel)
 - Stock (niveaux, livraisons, seuils)
-- Alertes (liste, marquer lu, tout marquer lu)
-- Employés (CRUD, soft delete, rôles)
+- Alertes (liste, marquer lu, tout marquer lu) — types : STOCK_FAIBLE, FRAUDE, FRAUDE_CITERNE, ARRET_SUSPECT
+- Employés (CRUD, soft delete, rôles dont `chauffeur`)
 - Multi-stations (switch station)
-- Paramètres (infos station, prix carburants, seuils, mot de passe, )
+- Paramètres (infos station, prix carburants, seuils stock + seuil fraude citerne, gestion citernes)
 - Profil
-- Interface pompiste dédiée
-- Notifications temps réel Socket.IO (ventes + alertes stock)
--
+- Interface pompiste dédiée (`/pompiste`)
+- Notifications temps réel Socket.IO (ventes, alertes stock, GPS)
 - PWA installable
+- **Anti-fraude pompistes** — photos compteur début/fin (Cloudinary), calcul écart théorique/réel, alerte si > 10L
+  - Backend : `services` table, `POST /api/services`, `POST /api/services/:id/terminer`
+  - Frontend : `/services` (owner/gérant) avec carte détail + photos, modal bottom-sheet pompiste
+- **GPS citernes** — suivi temps réel trajet chauffeur, détection arrêt suspect, comparaison quantités
+  - Backend : tables `citernes`, `trajets`, `gps_points` ; Haversine stop detection (300m/10min) ; alerte fraude citerne si écart > seuil
+  - Frontend : `/chauffeur` (interface mobile GPS watchPosition), `/trajets` (carte Leaflet + OpenStreetMap, historique)
 
 ---
 
@@ -104,6 +112,8 @@ Comptes test :
 
 ## ⏳ FONCTIONNALITÉS À CODER (les grosses, demandées par le client)
 
+### ✅ Anti-fraude pompistes → LIVRÉ (2026-06-01)
+### ✅ GPS citernes → LIVRÉ (2026-06-01)
 
 ## 📋 AUTRES TÂCHES (moins prioritaires)
 
