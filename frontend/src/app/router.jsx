@@ -24,7 +24,8 @@ const Ventes         = lazy(() => import('../features/ventes/Ventes'))
 const Alertes        = lazy(() => import('../features/alertes/Alertes'))
 const ServicesPage   = lazy(() => import('../features/services/ServicesPage'))
 const TrajetsPage    = lazy(() => import('../features/trajets/TrajetsPage'))
-const ChauffeurPage  = lazy(() => import('../features/trajets/ChauffeurPage'))
+const ChauffeurPage    = lazy(() => import('../features/trajets/ChauffeurPage'))
+const LogistiquePage   = lazy(() => import('../features/logistique/LogistiquePage'))
 const Employes       = lazy(() => import('../features/employes/Employes'))
 const PompistePage   = lazy(() => import('../features/pompiste/PompistePage'))
 const Stations       = lazy(() => import('../features/stations/Stations'))
@@ -51,8 +52,9 @@ function PrivateRoute({ children, allowedRoles }) {
   if (!isAuthenticated) return <Navigate to="/login" replace />
 
   if (normalizedAllowedRoles && !normalizedAllowedRoles.includes(userRole)) {
-    if (userRole === 'pompiste')  return <Navigate to="/pompiste"  replace />
-    if (userRole === 'chauffeur') return <Navigate to="/chauffeur" replace />
+    if (userRole === 'pompiste')     return <Navigate to="/pompiste"    replace />
+    if (userRole === 'chauffeur')    return <Navigate to="/chauffeur"   replace />
+    if (userRole === 'logisticien')  return <Navigate to="/logistique"  replace />
     return <Navigate to="/dashboard" replace />
   }
 
@@ -68,8 +70,9 @@ function PublicRoute({ children }) {
 
   if (!isAuthenticated) return children
 
-  if (userRole === 'pompiste')  return <Navigate to="/pompiste"  replace />
-  if (userRole === 'chauffeur') return <Navigate to="/chauffeur" replace />
+  if (userRole === 'pompiste')    return <Navigate to="/pompiste"   replace />
+  if (userRole === 'chauffeur')   return <Navigate to="/chauffeur"  replace />
+  if (userRole === 'logisticien') return <Navigate to="/logistique" replace />
   return <Navigate to="/dashboard" replace />
 }
 
@@ -107,6 +110,13 @@ export default function Router() {
           <Route path="/chauffeur" element={
             <PrivateRoute allowedRoles={['chauffeur']}>
               <ChauffeurPage />
+            </PrivateRoute>
+          } />
+
+          {/* Page logisticien — layout différent */}
+          <Route path="/logistique" element={
+            <PrivateRoute allowedRoles={['logisticien']}>
+              <LogistiquePage />
             </PrivateRoute>
           } />
 

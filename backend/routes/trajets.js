@@ -5,22 +5,23 @@
 const express     = require('express')
 const router      = express.Router()
 const verifyToken = require('../middleware/auth')
-const { checkRole, isManager } = require('../middleware/checkRole')
+const { checkRole, isTransport } = require('../middleware/checkRole')
 const {
   demarrerTrajet, ajouterPosition, arriverDestination,
-  getTrajetActif, getTrajets, getGpsPoints,
+  getTrajetActif, getTrajets, getGpsPoints, exportCSV,
 } = require('../controllers/trajetController')
 
 const isChauffeur = checkRole(['chauffeur'])
 
 // Chauffeur
-router.post('/',               verifyToken, isChauffeur, demarrerTrajet)
-router.post('/:id/position',   verifyToken, isChauffeur, ajouterPosition)
-router.post('/:id/arriver',    verifyToken, isChauffeur, arriverDestination)
-router.get('/actif',           verifyToken, isChauffeur, getTrajetActif)
+router.post('/',               verifyToken, isChauffeur,  demarrerTrajet)
+router.post('/:id/position',   verifyToken, isChauffeur,  ajouterPosition)
+router.post('/:id/arriver',    verifyToken, isChauffeur,  arriverDestination)
+router.get('/actif',           verifyToken, isChauffeur,  getTrajetActif)
 
-// Owner + gérant — routes spécifiques avant paramétrées
-router.get('/',                verifyToken, isManager,   getTrajets)
-router.get('/:id/points',      verifyToken, isManager,   getGpsPoints)
+// Owner + gérant + logisticien — routes spécifiques avant paramétrées
+router.get('/export/csv',      verifyToken, isTransport,  exportCSV)
+router.get('/',                verifyToken, isTransport,  getTrajets)
+router.get('/:id/points',      verifyToken, isTransport,  getGpsPoints)
 
 module.exports = router

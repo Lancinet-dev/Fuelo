@@ -5,10 +5,12 @@
 const express    = require('express')
 const router     = express.Router()
 const verifyToken = require('../middleware/auth')
-const { getAlertes, marquerLue, marquerToutesLues } = require('../controllers/alerteController')
+const { isTransport } = require('../middleware/checkRole')
+const { getAlertes, marquerLue, marquerToutesLues, getAlertesTransport } = require('../controllers/alerteController')
 
+router.get('/transport',   verifyToken, isTransport, getAlertesTransport) // ← avant /:id
 router.get('/',            verifyToken, getAlertes)
-router.put('/toutes/lire', verifyToken, marquerToutesLues)  // ← avant /:id/lire
+router.put('/toutes/lire', verifyToken, marquerToutesLues)
 router.put('/:id/lire',    verifyToken, marquerLue)
 
 module.exports = router

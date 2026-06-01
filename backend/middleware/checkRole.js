@@ -3,11 +3,12 @@
 // ================================================
 
 const ROLE_LEVELS = Object.freeze({
-  pompiste:  1,
-  chauffeur: 1,
-  gerant:    2,
-  owner:     4,
-  superadmin: 5,
+  pompiste:     1,
+  chauffeur:    1,
+  logisticien:  1,
+  gerant:       2,
+  owner:        4,
+  superadmin:   5,
 })
 
 const normalizeRole = (value = '') => {
@@ -54,10 +55,13 @@ const checkRole = (rolesAutorises = []) => {
   }
 }
 
-const isPompiste = checkRole(['pompiste'])
-const isManager = checkRole(['gerant'])
-const isOwner = checkRole(['owner'])
-const isAdmin = checkRole(['superadmin'])
+const isPompiste    = checkRole(['pompiste'])
+const isManager     = checkRole(['gerant'])
+const isOwner       = checkRole(['owner'])
+const isAdmin       = checkRole(['superadmin'])
+const isChauffeur   = checkRole(['chauffeur'])
+// Accès transport : logisticien + gérant + owner
+const isTransport   = checkRole(['logisticien', 'gerant', 'owner'])
 
 module.exports = {
   checkRole,
@@ -65,4 +69,6 @@ module.exports = {
   isManager,
   isOwner,
   isAdmin,
+  isChauffeur,
+  isTransport,
 }

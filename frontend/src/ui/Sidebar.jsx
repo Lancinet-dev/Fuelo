@@ -20,9 +20,11 @@ const normalizeRole = (value = '') => {
 
 const getRoleLabel = (role) => {
   const normalizedRole = normalizeRole(role)
-  if (normalizedRole === 'owner') return 'Proprietaire'
-  if (normalizedRole === 'gerant') return 'Gerant'
-  if (normalizedRole === 'superadmin') return 'Super Admin'
+  if (normalizedRole === 'owner')        return 'Proprietaire'
+  if (normalizedRole === 'gerant')       return 'Gerant'
+  if (normalizedRole === 'superadmin')   return 'Super Admin'
+  if (normalizedRole === 'chauffeur')    return 'Chauffeur'
+  if (normalizedRole === 'logisticien')  return 'Logisticien'
   return 'Pompiste'
 }
 

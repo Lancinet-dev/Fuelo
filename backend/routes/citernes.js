@@ -5,12 +5,12 @@
 const express     = require('express')
 const router      = express.Router()
 const verifyToken = require('../middleware/auth')
-const { isManager } = require('../middleware/checkRole')
+const { isTransport } = require('../middleware/checkRole')
 const pool   = require('../config/database')
 const logger = require('../utils/logger')
 
 // GET /api/citernes
-router.get('/', verifyToken, isManager, async (req, res) => {
+router.get('/', verifyToken, isTransport, async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT c.*, u.nom as chauffeur_nom
@@ -30,7 +30,7 @@ router.get('/', verifyToken, isManager, async (req, res) => {
 })
 
 // POST /api/citernes
-router.post('/', verifyToken, isManager, async (req, res) => {
+router.post('/', verifyToken, isTransport, async (req, res) => {
   try {
     const { code, capacite, chauffeur_id } = req.body
     if (!code || !capacite) return res.status(400).json({ error: 'code et capacite requis' })
@@ -53,7 +53,7 @@ router.post('/', verifyToken, isManager, async (req, res) => {
 })
 
 // PUT /api/citernes/:id
-router.put('/:id', verifyToken, isManager, async (req, res) => {
+router.put('/:id', verifyToken, isTransport, async (req, res) => {
   try {
     const { code, capacite, chauffeur_id } = req.body
     const result = await pool.query(
@@ -70,7 +70,7 @@ router.put('/:id', verifyToken, isManager, async (req, res) => {
 })
 
 // DELETE /api/citernes/:id (soft)
-router.delete('/:id', verifyToken, isManager, async (req, res) => {
+router.delete('/:id', verifyToken, isTransport, async (req, res) => {
   try {
     await pool.query(`UPDATE citernes SET actif = FALSE WHERE id = $1`, [req.params.id])
     res.json({ message: 'Citerne supprimée' })

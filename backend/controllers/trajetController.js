@@ -68,4 +68,27 @@ const getGpsPoints = async (req, res) => {
   }
 }
 
-module.exports = { demarrerTrajet, ajouterPosition, arriverDestination, getTrajetActif, getTrajets, getGpsPoints }
+const exportCSV = async (req, res) => {
+  try {
+    const trajets = await trajetService.getTrajets(req.user.station_id, {})
+    const lignes = [
+      ['ID','Chauffeur','Citerne','Départ (L)','Arrivée (L)','Écart (L)','Statut','Date début','Date fin'],
+      ...trajets.map(t => [
+        t.id, t.chauffeur_nom ?? '', t.citerne_code ?? '',
+        t.qty_depart ?? '', t.qty_arrivee ?? '', t.ecart ?? '',
+        t.statut,
+        t.started_at ? new Date(t.started_at).toLocaleString('fr-FR') : '',
+        t.ended_at   ? new Date(t.ended_at).toLocaleString('fr-FR')   : '',
+      ])
+    ]
+    const csv = lignes.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n')
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+    res.setHeader('Content-Disposition', 'attachment; filename="trajets_fuelo.csv"')
+    res.send('﻿' + csv) // BOM UTF-8 pour Excel
+  } catch (err) {
+    logger.error('exportCSV', err)
+    res.status(500).json({ error: err.message })
+  }
+}
+
+module.exports = { demarrerTrajet, ajouterPosition, arriverDestination, getTrajetActif, getTrajets, getGpsPoints, exportCSV }

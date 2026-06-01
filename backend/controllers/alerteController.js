@@ -58,4 +58,22 @@ const marquerToutesLues = async (req, res) => {
   }
 }
 
-module.exports = { getAlertes, marquerLue, marquerToutesLues }
+// ── Alertes transport uniquement (logisticien) ───
+const TYPES_TRANSPORT = ['FRAUDE_CITERNE', 'ARRET_SUSPECT']
+
+const getAlertesTransport = async (req, res) => {
+  try {
+    const station_id = req.user.station_id
+    const result = await pool.query(
+      `SELECT * FROM alertes
+       WHERE station_id = $1 AND type = ANY($2::text[])
+       ORDER BY created_at DESC`,
+      [station_id, TYPES_TRANSPORT]
+    )
+    res.json({ alertes: result.rows, non_lues: result.rows.filter(a => !a.lu).length })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+}
+
+module.exports = { getAlertes, marquerLue, marquerToutesLues, getAlertesTransport }
