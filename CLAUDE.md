@@ -35,9 +35,9 @@ depuis leur téléphone, en temps réel.
 - Monitoring : Sentry
 
 **Frontend** — React + Vite + React Query
-- `features/` → auth, dashboard, ventes, stock, alertes, employes, parametres, profile, stations, **services**, **trajets**, pompiste
+- `features/` → auth, dashboard, ventes, stock, alertes, employes, parametres, profile, stations, **services**, **trajets**, **logistique**, pompiste
 - `ui/` → Sidebar, AppLayout, StatCard, SplashScreen, etc.
-- `hooks/` → useAuth, useAlertes, useNotifications, useSocket, useService, useServices, useTrajet, useTrajets
+- `hooks/` → useAuth, useAlertes, useNotifications, useSocket, useService, useServices, useTrajet, useTrajets, useCiternes
 - `context/` → AuthContext, ThemeContext (dark/light)
 - `components/` → FueloLogo
 - `config/` → theme.js
@@ -62,8 +62,9 @@ depuis leur téléphone, en temps réel.
 
 - `owner` (propriétaire) → accès complet, voit tout
 - `gerant` (alias `manager`, normalisé en `gerant`) → gère sa station
-- `pompiste` → interface dédiée, enregistre les ventes
+- `pompiste` → interface dédiée `/pompiste`, enregistre les ventes
 - `chauffeur` → interface dédiée `/chauffeur`, gère ses trajets GPS
+- `logisticien` → interface dédiée `/logistique`, gère citernes/trajets/alertes transport/exports (pas accès ventes/stocks/employés)
 - `superadmin` → (prévu, pas encore implémenté)
 
 Comptes test :
@@ -80,7 +81,7 @@ Comptes test :
 - Ventes (CRUD, pagination, filtres, export PDF + Excel)
 - Stock (niveaux, livraisons, seuils)
 - Alertes (liste, marquer lu, tout marquer lu) — types : STOCK_FAIBLE, FRAUDE, FRAUDE_CITERNE, ARRET_SUSPECT
-- Employés (CRUD, soft delete, rôles dont `chauffeur`)
+- Employés (CRUD, soft delete, rôles dont `chauffeur` et `logisticien`)
 - Multi-stations (switch station)
 - Paramètres (infos station, prix carburants, seuils stock + seuil fraude citerne, gestion citernes)
 - Profil
@@ -93,6 +94,10 @@ Comptes test :
 - **GPS citernes** — suivi temps réel trajet chauffeur, détection arrêt suspect, comparaison quantités
   - Backend : tables `citernes`, `trajets`, `gps_points` ; Haversine stop detection (300m/10min) ; alerte fraude citerne si écart > seuil
   - Frontend : `/chauffeur` (interface mobile GPS watchPosition), `/trajets` (carte Leaflet + OpenStreetMap, historique)
+- **Rôle logisticien** — interface dédiée `/logistique` avec 4 onglets
+  - Backend : middleware `isTransport` (logisticien + gerant + owner), `GET /alertes/transport` (FRAUDE_CITERNE + ARRET_SUSPECT), `GET /trajets/export/csv`
+  - Frontend : Trajets (carte GPS inline), Citernes (CRUD), Alertes transport, Rapports (stats + export CSV Excel BOM UTF-8)
+  - RBAC : niveau 1 — bloqué sur ventes, stocks, employés, dashboard
 
 ---
 
@@ -114,6 +119,7 @@ Comptes test :
 
 ### ✅ Anti-fraude pompistes → LIVRÉ (2026-06-01)
 ### ✅ GPS citernes → LIVRÉ (2026-06-01)
+### ✅ Rôle logisticien → LIVRÉ (2026-06-01)
 
 ## 📋 AUTRES TÂCHES (moins prioritaires)
 
