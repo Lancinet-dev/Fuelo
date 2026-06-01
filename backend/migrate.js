@@ -115,6 +115,25 @@ CREATE TABLE IF NOT EXISTS password_resets (
   used       BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Services pompistes (anti-fraude)
+CREATE TABLE IF NOT EXISTS services (
+  id                     SERIAL PRIMARY KEY,
+  station_id             INT REFERENCES stations(id) ON DELETE CASCADE,
+  user_id                INT REFERENCES users(id),
+  started_at             TIMESTAMP DEFAULT NOW(),
+  ended_at               TIMESTAMP,
+  photo_debut_url        VARCHAR(500),
+  photo_fin_url          VARCHAR(500),
+  compteur_essence_debut FLOAT,
+  compteur_essence_fin   FLOAT,
+  compteur_gasoil_debut  FLOAT,
+  compteur_gasoil_fin    FLOAT,
+  ecart_essence          FLOAT,
+  ecart_gasoil           FLOAT,
+  statut                 VARCHAR(20) DEFAULT 'en_cours',
+  created_at             TIMESTAMP DEFAULT NOW()
+);
 `
 
 async function migrate() {
