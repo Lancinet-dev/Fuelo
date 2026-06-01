@@ -87,6 +87,8 @@ const stationRoutes  = require('./routes/station')
 const employeRoutes  = require('./routes/employes')
 const reportsRoute   = require('./routes/reports')
 const serviceRoutes  = require('./routes/services')
+const trajetRoutes   = require('./routes/trajets')
+const citerneRoutes  = require('./routes/citernes')
 
 app.use('/api/auth',      limiterAuth, authRoutes)
 app.use('/api/stock',     stockRoutes)
@@ -97,6 +99,8 @@ app.use('/api/station',   stationRoutes)
 app.use('/api/employes',  employeRoutes)
 app.use('/api/reports',   reportsRoute)
 app.use('/api/services',  serviceRoutes)
+app.use('/api/trajets',   trajetRoutes)
+app.use('/api/citernes',  citerneRoutes)
 
 // ── Route test ────────────────────────────────────────
 app.get('/', (req, res) => {

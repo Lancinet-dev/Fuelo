@@ -56,4 +56,23 @@ const notifyStock = (app, station_id, stock) => {
   }
 }
 
-module.exports = { notifyAlerte, notifyVente, notifyStock }
+// Émettre une position GPS chauffeur
+const notifyGps = (app, station_id, data) => {
+  try {
+    const io = app.get('io')
+    if (io) {
+      io.to(`station_${station_id}`).emit('gps_update', {
+        station_id,
+        trajet_id: data.trajet_id,
+        lat:       data.lat,
+        lng:       data.lng,
+        vitesse:   data.vitesse,
+        at:        new Date().toISOString(),
+      })
+    }
+  } catch (err) {
+    console.error('Socket notify error:', err.message)
+  }
+}
+
+module.exports = { notifyAlerte, notifyVente, notifyStock, notifyGps }

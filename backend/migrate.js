@@ -134,6 +134,46 @@ CREATE TABLE IF NOT EXISTS services (
   statut                 VARCHAR(20) DEFAULT 'en_cours',
   created_at             TIMESTAMP DEFAULT NOW()
 );
+
+-- Citernes (GPS logistique)
+ALTER TABLE stations ADD COLUMN IF NOT EXISTS seuil_fraude_citerne FLOAT DEFAULT 50;
+
+CREATE TABLE IF NOT EXISTS citernes (
+  id           SERIAL PRIMARY KEY,
+  code         VARCHAR(50) UNIQUE NOT NULL,
+  capacite     FLOAT NOT NULL,
+  owner_id     INT REFERENCES users(id) ON DELETE CASCADE,
+  chauffeur_id INT REFERENCES users(id),
+  actif        BOOLEAN DEFAULT TRUE,
+  created_at   TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS trajets (
+  id                      SERIAL PRIMARY KEY,
+  citerne_id              INT REFERENCES citernes(id) ON DELETE CASCADE,
+  chauffeur_id            INT REFERENCES users(id),
+  station_destination_id  INT REFERENCES stations(id),
+  qty_depart              FLOAT NOT NULL,
+  qty_arrivee             FLOAT,
+  ecart                   FLOAT,
+  seuil_fraude            FLOAT DEFAULT 50,
+  statut                  VARCHAR(20) DEFAULT 'en_cours',
+  started_at              TIMESTAMP DEFAULT NOW(),
+  ended_at                TIMESTAMP,
+  alerte_arret_at         TIMESTAMP,
+  created_at              TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS gps_points (
+  id         SERIAL PRIMARY KEY,
+  trajet_id  INT REFERENCES trajets(id) ON DELETE CASCADE,
+  lat        FLOAT NOT NULL,
+  lng        FLOAT NOT NULL,
+  vitesse    FLOAT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_gps_points_trajet ON gps_points(trajet_id, created_at DESC);
 `
 
 async function migrate() {

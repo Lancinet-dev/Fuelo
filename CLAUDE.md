@@ -104,29 +104,6 @@ Comptes test :
 
 ## ⏳ FONCTIONNALITÉS À CODER (les grosses, demandées par le client)
 
-### 📸 Anti-fraude pompistes (HAUTE PRIORITÉ)
-- Le pompiste prend une PHOTO du compteur au DÉBUT de son service et une à la FIN
-- L'app compare le stock théorique (ventes enregistrées) vs stock réel (compteur)
-- Si écart > seuil → alerte fraude automatique
-- Photos stockées avec horodatage
-- ⚠️ BLOQUEUR : les photos NE PEUVENT PAS être stockées sur Render (filesystem éphémère).
-  → utiliser Cloudinary (gratuit jusqu'à 25 GB).
-- Décisions à confirmer : qui voit les alertes (owner seul ou + gérant ?)
-
-### 🚚 GPS citernes / logistique dépôt (HAUTE PRIORITÉ)
-- Problème réel : les chauffeurs volent jusqu'à 500L de carburant au dépôt
-- Chaque citerne a un code unique
-- Le chauffeur active le trajet depuis son téléphone
-- GPS temps réel sur carte
-- Détection arrêt suspect / écart d'itinéraire
-- Comparaison quantité départ dépôt vs arrivée station → alerte si écart > seuil
-- ⚠️ Architecture exigeante (écritures fréquentes), ne tiendra pas sur tier gratuit
-- Décision à confirmer : téléphone du chauffeur OU trackers GPS physiques ?
-
----
---- Rapports mensuels PDF auto par email (cron 1er du mois 8h) + bouton manuel
-- Splash screen à la connexion
---logo a importer comme image
 
 ## 📋 AUTRES TÂCHES (moins prioritaires)
 

@@ -23,6 +23,8 @@ const Stock          = lazy(() => import('../features/stock/Stock'))
 const Ventes         = lazy(() => import('../features/ventes/Ventes'))
 const Alertes        = lazy(() => import('../features/alertes/Alertes'))
 const ServicesPage   = lazy(() => import('../features/services/ServicesPage'))
+const TrajetsPage    = lazy(() => import('../features/trajets/TrajetsPage'))
+const ChauffeurPage  = lazy(() => import('../features/trajets/ChauffeurPage'))
 const Employes       = lazy(() => import('../features/employes/Employes'))
 const PompistePage   = lazy(() => import('../features/pompiste/PompistePage'))
 const Stations       = lazy(() => import('../features/stations/Stations'))
@@ -49,7 +51,8 @@ function PrivateRoute({ children, allowedRoles }) {
   if (!isAuthenticated) return <Navigate to="/login" replace />
 
   if (normalizedAllowedRoles && !normalizedAllowedRoles.includes(userRole)) {
-    if (userRole === 'pompiste') return <Navigate to="/pompiste" replace />
+    if (userRole === 'pompiste')  return <Navigate to="/pompiste"  replace />
+    if (userRole === 'chauffeur') return <Navigate to="/chauffeur" replace />
     return <Navigate to="/dashboard" replace />
   }
 
@@ -65,7 +68,8 @@ function PublicRoute({ children }) {
 
   if (!isAuthenticated) return children
 
-  if (userRole === 'pompiste') return <Navigate to="/pompiste" replace />
+  if (userRole === 'pompiste')  return <Navigate to="/pompiste"  replace />
+  if (userRole === 'chauffeur') return <Navigate to="/chauffeur" replace />
   return <Navigate to="/dashboard" replace />
 }
 
@@ -99,6 +103,13 @@ export default function Router() {
             </PrivateRoute>
           } />
 
+          {/* Page chauffeur — layout différent */}
+          <Route path="/chauffeur" element={
+            <PrivateRoute allowedRoles={['chauffeur']}>
+              <ChauffeurPage />
+            </PrivateRoute>
+          } />
+
           {/* Pages gérant + owner — avec sidebar */}
           <Route element={
             <PrivateRoute allowedRoles={['gerant', 'owner', 'superadmin']}>
@@ -110,6 +121,7 @@ export default function Router() {
             <Route path="/ventes"     element={<Ventes />} />
             <Route path="/alertes"    element={<Alertes />} />
             <Route path="/services"   element={<ServicesPage />} />
+            <Route path="/trajets"    element={<TrajetsPage />} />
             <Route path="/employes"   element={<Employes />} />
             <Route path="/stations"   element={<Stations />} />
             <Route path="/parametres" element={<Parametres />} />

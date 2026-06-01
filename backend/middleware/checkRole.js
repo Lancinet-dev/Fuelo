@@ -3,9 +3,10 @@
 // ================================================
 
 const ROLE_LEVELS = Object.freeze({
-  pompiste: 1,
-  gerant: 2,
-  owner: 4,
+  pompiste:  1,
+  chauffeur: 1,
+  gerant:    2,
+  owner:     4,
   superadmin: 5,
 })
 
