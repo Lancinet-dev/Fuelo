@@ -12,9 +12,10 @@ import { formatRelative } from '../../utils/format'
 import theme from '../../config/theme'
 
 const TYPE_CONFIG = {
-  STOCK_FAIBLE: { color: theme.colors.danger,  bg: theme.colors.dangerLight,  icon: '⚠️', label: 'Stock faible' },
-  ANOMALIE:     { color: theme.colors.warning,  bg: theme.colors.warningLight, icon: '🔍', label: 'Anomalie'     },
-  DEFAULT:      { color: theme.colors.info,     bg: theme.colors.infoLight,    icon: 'ℹ️', label: 'Information'  },
+  STOCK_FAIBLE: { color: theme.colors.danger,  bg: theme.colors.dangerLight,  icon: '⚠️', label: 'Stock faible'  },
+  FRAUDE:       { color: '#DC2626',            bg: 'rgba(220,38,38,0.10)',    icon: '🚨', label: 'Fraude'        },
+  ANOMALIE:     { color: theme.colors.warning,  bg: theme.colors.warningLight, icon: '🔍', label: 'Anomalie'      },
+  DEFAULT:      { color: theme.colors.info,     bg: theme.colors.infoLight,    icon: 'ℹ️', label: 'Information'   },
 }
 
 const ICONS = {

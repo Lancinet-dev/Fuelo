@@ -22,6 +22,7 @@ const Dashboard      = lazy(() => import('../features/dashboard/Dashboard'))
 const Stock          = lazy(() => import('../features/stock/Stock'))
 const Ventes         = lazy(() => import('../features/ventes/Ventes'))
 const Alertes        = lazy(() => import('../features/alertes/Alertes'))
+const ServicesPage   = lazy(() => import('../features/services/ServicesPage'))
 const Employes       = lazy(() => import('../features/employes/Employes'))
 const PompistePage   = lazy(() => import('../features/pompiste/PompistePage'))
 const Stations       = lazy(() => import('../features/stations/Stations'))
@@ -108,6 +109,7 @@ export default function Router() {
             <Route path="/stock"      element={<Stock />} />
             <Route path="/ventes"     element={<Ventes />} />
             <Route path="/alertes"    element={<Alertes />} />
+            <Route path="/services"   element={<ServicesPage />} />
             <Route path="/employes"   element={<Employes />} />
             <Route path="/stations"   element={<Stations />} />
             <Route path="/parametres" element={<Parametres />} />
