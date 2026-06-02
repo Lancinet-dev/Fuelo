@@ -3,12 +3,25 @@
 // ================================================
 
 const serviceService = require('../services/serviceService')
+const cloudinary     = require('../config/cloudinary')
 const logger         = require('../utils/logger')
+
+const uploadPhoto = (buffer, folder, publicId) => new Promise((resolve, reject) => {
+  const stream = cloudinary.uploader.upload_stream(
+    { folder, public_id: publicId, transformation: [{ width: 1200, quality: 'auto' }] },
+    (err, result) => { if (err) return reject(err); resolve(result.secure_url) }
+  )
+  stream.end(buffer)
+})
 
 const demarrerService = async (req, res) => {
   try {
-    const photoUrl = req.file?.path || null
-    const service  = await serviceService.demarrerService(req.user, req.body, photoUrl)
+    let photoUrl = null
+    if (req.file) {
+      const folder = `fuelo/services/station_${req.user?.station_id || 'unknown'}`
+      photoUrl = await uploadPhoto(req.file.buffer, folder, `debut_${Date.now()}_${req.user?.id}`)
+    }
+    const service = await serviceService.demarrerService(req.user, req.body, photoUrl)
     res.status(201).json({ message: 'Service démarré', service })
   } catch (err) {
     logger.error('demarrerService', err)
@@ -18,7 +31,11 @@ const demarrerService = async (req, res) => {
 
 const terminerService = async (req, res) => {
   try {
-    const photoUrl = req.file?.path || null
+    let photoUrl = null
+    if (req.file) {
+      const folder = `fuelo/services/station_${req.user?.station_id || 'unknown'}`
+      photoUrl = await uploadPhoto(req.file.buffer, folder, `fin_${Date.now()}_${req.user?.id}`)
+    }
     const result   = await serviceService.terminerService(
       req.user,
       parseInt(req.params.id),

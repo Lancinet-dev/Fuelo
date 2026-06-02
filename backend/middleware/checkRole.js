@@ -62,12 +62,12 @@ const checkExactRole = (rolesAutorises = []) => {
 
   return (req, res, next) => {
     const userRole = normalizeRole(req.user?.role)
-    if (!userRole) return res.status(401).json({ error: 'Non authentifiÃ©' })
+    if (!userRole) return res.status(401).json({ error: 'Non authentifié' })
 
     if (!normalizedRoles.includes(userRole)) {
       return res.status(403).json({
-        error: 'AccÃ¨s refusÃ©',
-        message: `RÃ´le requis : ${normalizedRoles.join(' ou ')}`,
+        error: 'Accès refusé',
+        message: `Rôle requis : ${normalizedRoles.join(' ou ')}`,
         votre_role: userRole,
       })
     }
