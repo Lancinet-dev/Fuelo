@@ -76,6 +76,7 @@ function SaveBtn({ loading, saved, label = 'Sauvegarder' }) {
 
 export default function Parametres() {
   const { user }    = useAuth()
+  const isOwner     = user?.role === 'owner'
   const { palette } = useTheme()
 
   const [station,        setStation]        = useState({ nom: '', adresse: '', ville: '', pays: '' })
@@ -283,8 +284,8 @@ export default function Parametres() {
         </form>
       </SectionCard>
 
-      {/* Citernes */}
-      <SectionCard icon={ICONS.truck} title="Gestion des citernes" desc="Citernes utilisées pour les trajets GPS — chaque citerne a un code unique" palette={palette}>
+      {/* Citernes — gérant uniquement */}
+      {!isOwner && <SectionCard icon={ICONS.truck} title="Gestion des citernes" desc="Citernes utilisées pour les trajets GPS — chaque citerne a un code unique" palette={palette}>
 
         {/* Liste existante */}
         {citernes.length > 0 && (
@@ -355,7 +356,7 @@ export default function Parametres() {
             </button>
           </form>
         </div>
-      </SectionCard>
+      </SectionCard>}
 
       {/* Mot de passe */}
       <SectionCard icon={ICONS.lock} title="Changer le mot de passe" desc="Utilisez un mot de passe fort d'au moins 8 caractères" palette={palette}>

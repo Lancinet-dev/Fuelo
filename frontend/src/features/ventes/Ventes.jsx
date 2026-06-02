@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react'
 import { useVentes }  from '../../hooks/useVentes'
 import { useTheme }   from '../../context/ThemeContext'
+import { useAuth }    from '../../context/AuthContext'
 import StatCard       from '../../ui/StatCard'
 import EmptyState     from '../../ui/EmptyState'
 import { SkeletonStatCard, SkeletonRow, SkeletonStyle } from '../../ui/Skeleton'
@@ -23,6 +24,8 @@ const ICONS = {
 }
 
 export default function Ventes() {
+  const { user }     = useAuth()
+  const isOwner      = user?.role === 'owner'
   const { palette }  = useTheme()
   const [filterType, setFilterType] = useState('')
   const [page,       setPage]       = useState(1)
@@ -53,18 +56,20 @@ export default function Ventes() {
           <h1 style={{ fontSize: theme.font.size['2xl'], fontWeight: theme.font.weight.black, color: palette.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 4 }}>Ventes</h1>
           <p style={{ fontSize: theme.font.size.md, color: palette.textSub, margin: 0 }}>Historique des ventes enregistrées par vos pompistes</p>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button onClick={handleExportExcel} disabled={exporting === 'excel' || ventes.length === 0}
-            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: palette.card, color: '#10B981', cursor: ventes.length === 0 ? 'not-allowed' : 'pointer', fontSize: theme.font.size.sm, fontFamily: theme.font.family, fontWeight: theme.font.weight.semi, boxShadow: theme.shadow.sm, opacity: ventes.length === 0 ? 0.5 : 1 }}>
-            {exporting === 'excel' ? <div style={{ width: 14, height: 14, border: '2px solid #10B981', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.excel} /></svg>}
-            Excel
-          </button>
-          <button onClick={handleExportPDF} disabled={exporting === 'pdf' || ventes.length === 0}
-            style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: palette.card, color: '#EF4444', cursor: ventes.length === 0 ? 'not-allowed' : 'pointer', fontSize: theme.font.size.sm, fontFamily: theme.font.family, fontWeight: theme.font.weight.semi, boxShadow: theme.shadow.sm, opacity: ventes.length === 0 ? 0.5 : 1 }}>
-            {exporting === 'pdf' ? <div style={{ width: 14, height: 14, border: '2px solid #EF4444', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.pdf} /></svg>}
-            PDF
-          </button>
-        </div>
+        {!isOwner && (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button onClick={handleExportExcel} disabled={exporting === 'excel' || ventes.length === 0}
+              style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: palette.card, color: '#10B981', cursor: ventes.length === 0 ? 'not-allowed' : 'pointer', fontSize: theme.font.size.sm, fontFamily: theme.font.family, fontWeight: theme.font.weight.semi, boxShadow: theme.shadow.sm, opacity: ventes.length === 0 ? 0.5 : 1 }}>
+              {exporting === 'excel' ? <div style={{ width: 14, height: 14, border: '2px solid #10B981', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.excel} /></svg>}
+              Excel
+            </button>
+            <button onClick={handleExportPDF} disabled={exporting === 'pdf' || ventes.length === 0}
+              style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: palette.card, color: '#EF4444', cursor: ventes.length === 0 ? 'not-allowed' : 'pointer', fontSize: theme.font.size.sm, fontFamily: theme.font.family, fontWeight: theme.font.weight.semi, boxShadow: theme.shadow.sm, opacity: ventes.length === 0 ? 0.5 : 1 }}>
+              {exporting === 'pdf' ? <div style={{ width: 14, height: 14, border: '2px solid #EF4444', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.pdf} /></svg>}
+              PDF
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Info banner */}

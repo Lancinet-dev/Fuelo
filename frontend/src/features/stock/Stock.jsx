@@ -6,12 +6,15 @@
 import { useState } from 'react'
 import { useStock }    from '../../hooks/useStock'
 import { useTheme }    from '../../context/ThemeContext'
+import { useAuth }     from '../../context/AuthContext'
 import StockGauge      from '../../ui/StockGauge'
 import { SkeletonStockGauge, SkeletonStyle } from '../../ui/Skeleton'
 import { formatLitres } from '../../utils/format'
 import theme from '../../config/theme'
 
 export default function Stock() {
+  const { user }    = useAuth()
+  const isOwner     = user?.role === 'owner'
   const { palette } = useTheme()
   const { essence, gasoil, loading, livraisonLoading, ajouterLivraison } = useStock()
 
@@ -37,7 +40,7 @@ export default function Stock() {
           Gestion du stock
         </h1>
         <p style={{ fontSize: theme.font.size.md, color: palette.textSub, margin: 0 }}>
-          Niveaux en temps réel — enregistrez vos livraisons ici
+          {isOwner ? 'Niveaux de stock en temps réel' : 'Niveaux en temps réel — enregistrez vos livraisons ici'}
         </p>
       </div>
 
@@ -56,8 +59,8 @@ export default function Stock() {
         </div>
       )}
 
-      {/* Formulaire livraison */}
-      <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.lg, padding: '26px 28px', maxWidth: 520, boxShadow: theme.shadow.sm }}>
+      {/* Formulaire livraison — gérant uniquement */}
+      {!isOwner && <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.lg, padding: '26px 28px', maxWidth: 520, boxShadow: theme.shadow.sm }}>
         <div style={{ fontSize: theme.font.size.lg, fontWeight: theme.font.weight.bold, color: palette.text, marginBottom: 4 }}>
           Enregistrer une livraison
         </div>
@@ -118,7 +121,7 @@ export default function Stock() {
             {livraisonLoading ? 'Enregistrement...' : 'Confirmer la livraison'}
           </button>
         </form>
-      </div>
+      </div>}
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
