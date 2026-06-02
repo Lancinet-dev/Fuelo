@@ -19,9 +19,6 @@ const ICONS = {
   save:    'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4',
   eye:     'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 100 6 3 3 0 000-6z',
   eyeOff:  'M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22',
-  truck:   'M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM18.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3z',
-  trash:   'M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6',
-  plus:    'M12 5v14M5 12h14',
 }
 
 function SectionCard({ icon, title, desc, children, palette }) {
@@ -76,7 +73,6 @@ function SaveBtn({ loading, saved, label = 'Sauvegarder' }) {
 
 export default function Parametres() {
   const { user }    = useAuth()
-  const isOwner     = user?.role === 'owner'
   const { palette } = useTheme()
 
   const [station,        setStation]        = useState({ nom: '', adresse: '', ville: '', pays: '' })
@@ -94,12 +90,6 @@ export default function Parametres() {
   const [showPwd,        setShowPwd]        = useState({ actuel: false, nouveau: false, confirm: false })
   const [pwdLoading,     setPwdLoading]     = useState(false)
   const [pwdErrors,      setPwdErrors]      = useState({})
-  const [citernes,       setCiternes]       = useState([])
-  const [chauffeurs,     setChauffeurs]     = useState([])
-  const [newCiterne,     setNewCiterne]     = useState({ code: '', capacite: '', chauffeur_id: '' })
-  const [citerneLoading, setCiterneLoading] = useState(false)
-  const [citerneErrors,  setCiterneErrors]  = useState({})
-
   useEffect(() => {
     api.get('/station')
       .then(res => {
@@ -109,12 +99,6 @@ export default function Parametres() {
         setSeuils({ seuil_essence: s.seuil_essence ?? 300, seuil_gasoil: s.seuil_gasoil ?? 300, seuil_fraude_citerne: s.seuil_fraude_citerne ?? 50 })
       })
       .catch(() => toast.error('Erreur chargement infos station'))
-
-    api.get('/citernes').then(r => setCiternes(r.data.citernes ?? [])).catch(() => {})
-    api.get('/employes').then(r => {
-      const chauf = (r.data.employes ?? []).filter(e => e.role === 'chauffeur' && e.actif !== false)
-      setChauffeurs(chauf)
-    }).catch(() => {})
   }, [])
 
   const savedFn = (fn) => { fn(true); setTimeout(() => fn(false), 3000) }
@@ -165,36 +149,7 @@ export default function Parametres() {
     finally { setSeuilLoading(false) }
   }
 
-  const handleAjouterCiterne = async (e) => {
-    e.preventDefault()
-    const errors = {}
-    if (!newCiterne.code.trim())    errors.code     = 'Obligatoire'
-    if (!newCiterne.capacite || parseFloat(newCiterne.capacite) <= 0) errors.capacite = 'Capacité invalide'
-    if (Object.keys(errors).length > 0) { setCiterneErrors(errors); return }
-    setCiterneLoading(true)
-    try {
-      const res = await api.post('/citernes', {
-        code:         newCiterne.code.trim().toUpperCase(),
-        capacite:     parseFloat(newCiterne.capacite),
-        chauffeur_id: newCiterne.chauffeur_id ? parseInt(newCiterne.chauffeur_id) : null,
-      })
-      setCiternes(prev => [res.data.citerne, ...prev])
-      setNewCiterne({ code: '', capacite: '', chauffeur_id: '' })
-      setCiterneErrors({})
-      toast.success('Citerne ajoutée')
-    } catch (err) { toast.error(err?.response?.data?.error ?? 'Erreur') }
-    finally { setCiterneLoading(false) }
-  }
-
-  const handleSupprimerCiterne = async (id) => {
-    try {
-      await api.delete(`/citernes/${id}`)
-      setCiternes(prev => prev.filter(c => c.id !== id))
-      toast.success('Citerne supprimée')
-    } catch (err) { toast.error(err?.response?.data?.error ?? 'Erreur') }
-  }
-
-  const handlePwdSave = async (e) => {
+const handlePwdSave = async (e) => {
     e.preventDefault()
     const errors = {}
     if (!pwd.actuel)                 errors.actuel  = 'Obligatoire'
@@ -283,80 +238,6 @@ export default function Parametres() {
           <SaveBtn loading={seuilLoading} saved={seuilSaved} label="Enregistrer les seuils" />
         </form>
       </SectionCard>
-
-      {/* Citernes — gérant uniquement */}
-      {!isOwner && <SectionCard icon={ICONS.truck} title="Gestion des citernes" desc="Citernes utilisées pour les trajets GPS — chaque citerne a un code unique" palette={palette}>
-
-        {/* Liste existante */}
-        {citernes.length > 0 && (
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
-              Citernes enregistrées
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {citernes.map(c => (
-                <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: palette.inputBg, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.md, gap: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: theme.radius.md, background: theme.colors.primaryLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16 }}>🚛</div>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: theme.font.size.base, fontWeight: theme.font.weight.bold, color: palette.text, fontFamily: theme.font.mono }}>{c.code}</div>
-                      <div style={{ fontSize: theme.font.size.xs, color: palette.textSub }}>
-                        {c.capacite.toLocaleString('fr-FR')} L · {c.chauffeur_nom ?? 'Aucun chauffeur assigné'}
-                      </div>
-                    </div>
-                  </div>
-                  <button onClick={() => handleSupprimerCiterne(c.id)}
-                    style={{ width: 32, height: 32, borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: palette.textMuted, transition: theme.transition.fast, flexShrink: 0 }}
-                    onMouseEnter={e => { e.currentTarget.style.background = theme.colors.dangerLight; e.currentTarget.style.borderColor = theme.colors.danger; e.currentTarget.style.color = theme.colors.danger }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = palette.cardBorder; e.currentTarget.style.color = palette.textMuted }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.trash} /></svg>
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {citernes.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '20px', color: palette.textMuted, fontSize: theme.font.size.sm, marginBottom: 16 }}>
-            Aucune citerne enregistrée
-          </div>
-        )}
-
-        {/* Formulaire ajout */}
-        <div style={{ borderTop: citernes.length > 0 ? `1px solid ${palette.cardBorder}` : 'none', paddingTop: citernes.length > 0 ? 20 : 0 }}>
-          <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>
-            Ajouter une citerne
-          </div>
-          <form onSubmit={handleAjouterCiterne}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              <Field label="Code citerne" value={newCiterne.code} onChange={v => setNewCiterne(p => ({ ...p, code: v }))} placeholder="ex: C001" error={citerneErrors.code} hint="Identifiant unique" {...fieldProps} />
-              <Field label="Capacité (litres)" type="number" value={newCiterne.capacite} onChange={v => setNewCiterne(p => ({ ...p, capacite: v }))} placeholder="ex: 15000" suffix="L" error={citerneErrors.capacite} {...fieldProps} />
-            </div>
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Chauffeur assigné</div>
-              <select value={newCiterne.chauffeur_id} onChange={e => setNewCiterne(p => ({ ...p, chauffeur_id: e.target.value }))}
-                style={{ width: '100%', height: 46, background: palette.inputBg, border: `1.5px solid ${palette.cardBorder}`, borderRadius: theme.radius.md, padding: '0 14px', fontSize: theme.font.size.base, color: newCiterne.chauffeur_id ? palette.text : palette.textMuted, fontFamily: theme.font.family, outline: 'none', appearance: 'none', cursor: 'pointer' }}>
-                <option value="">Aucun (assigner plus tard)</option>
-                {chauffeurs.map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
-              </select>
-              {chauffeurs.length === 0 && (
-                <div style={{ fontSize: theme.font.size.xs, color: palette.textMuted, marginTop: 4 }}>
-                  Créez d'abord un employé avec le rôle "chauffeur" dans la page Employés
-                </div>
-              )}
-            </div>
-            <button type="submit" disabled={citerneLoading}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: theme.radius.md, border: 'none', background: citerneLoading ? theme.colors.primaryDark : theme.colors.primary, color: '#fff', fontSize: theme.font.size.md, fontWeight: theme.font.weight.bold, cursor: citerneLoading ? 'not-allowed' : 'pointer', fontFamily: theme.font.family, boxShadow: theme.shadow.primary, transition: theme.transition.normal }}>
-              {citerneLoading
-                ? <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.plus} /></svg>
-              }
-              {citerneLoading ? 'Ajout...' : 'Ajouter la citerne'}
-            </button>
-          </form>
-        </div>
-      </SectionCard>}
 
       {/* Mot de passe */}
       <SectionCard icon={ICONS.lock} title="Changer le mot de passe" desc="Utilisez un mot de passe fort d'au moins 8 caractères" palette={palette}>
