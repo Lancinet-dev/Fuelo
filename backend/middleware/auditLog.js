@@ -12,11 +12,10 @@ const logger = require('../utils/logger')
 const auditLog = async (req, action, tableName, recordId = null, details = {}) => {
   try {
     await pool.query(
-      `INSERT INTO audit_logs (user_id, station_id, action, table_name, record_id, details, ip_address)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      `INSERT INTO audit_logs (user_id, action, table_name, record_id, details, ip)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
       [
-        req.user?.id       || null,
-        req.user?.station_id || null,
+        req.user?.id || null,
         action,
         tableName,
         recordId,
