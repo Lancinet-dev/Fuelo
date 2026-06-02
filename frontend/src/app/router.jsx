@@ -34,6 +34,7 @@ const ForgotPassword = lazy(() => import('../features/auth/ForgotPassword'))
 const ResetPassword  = lazy(() => import('../features/auth/ResetPassword'))
 const GoogleSuccess  = lazy(() => import('../features/auth/GoogleSuccess'))
 const Profile        = lazy(() => import('../features/profile/Profile'))
+const NotFound       = lazy(() => import('../features/auth/NotFound'))
 
 // ── Fallback loading ──────────────────────────────────
 const PageLoader = () => (
@@ -138,8 +139,8 @@ export default function Router() {
             <Route path="/profile"    element={<Profile />} />
           </Route>
 
-          {/* Route inconnue */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Route inconnue — page 404 */}
+          <Route path="*" element={<NotFound />} />
 
         </Routes>
       </Suspense>
