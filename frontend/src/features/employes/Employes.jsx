@@ -6,6 +6,7 @@
 import { useState } from 'react'
 import { useEmployes } from '../../hooks/useEmployes'
 import { useTheme }    from '../../context/ThemeContext'
+import { useAuth }     from '../../context/AuthContext'
 import EmptyState      from '../../ui/EmptyState'
 import { SkeletonRow, SkeletonStyle } from '../../ui/Skeleton'
 import { formatGNF }   from '../../utils/format'
@@ -57,6 +58,8 @@ function ConfirmModal({ employe, onConfirm, onCancel, palette }) {
 }
 
 export default function Employes() {
+  const { user }    = useAuth()
+  const isOwner     = user?.role === 'owner'
   const { palette } = useTheme()
   const { employes, loading, createLoading, creerEmploye, toggleEmploye, supprimerEmploye } = useEmployes()
 
@@ -145,11 +148,13 @@ const handleToggle = async (id) => {
             {employes.length} membre{employes.length > 1 ? 's' : ''} dans votre station
           </p>
         </div>
-        <button onClick={() => { resetForm(); setShowForm(v => !v) }}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: theme.radius.md, border: 'none', background: theme.colors.primary, color: '#fff', cursor: 'pointer', fontSize: theme.font.size.md, fontWeight: theme.font.weight.bold, fontFamily: theme.font.family, boxShadow: theme.shadow.primary, whiteSpace: 'nowrap' }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d={ICONS.plus} /></svg>
-          Ajouter un membre
-        </button>
+        {isOwner && (
+          <button onClick={() => { resetForm(); setShowForm(v => !v) }}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: theme.radius.md, border: 'none', background: theme.colors.primary, color: '#fff', cursor: 'pointer', fontSize: theme.font.size.md, fontWeight: theme.font.weight.bold, fontFamily: theme.font.family, boxShadow: theme.shadow.primary, whiteSpace: 'nowrap' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d={ICONS.plus} /></svg>
+            Ajouter un membre
+          </button>
+        )}
       </div>
 
       {/* Formulaire */}
@@ -237,7 +242,7 @@ const handleToggle = async (id) => {
             {Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} cols={6} />)}
           </>
         ) : employes.length === 0 ? (
-          <EmptyState type="employes" actionLabel="Ajouter un membre" onAction={() => setShowForm(true)} />
+          <EmptyState type="employes" actionLabel={isOwner ? 'Ajouter un membre' : undefined} onAction={isOwner ? () => setShowForm(true) : undefined} />
         ) : (
           employes.map((emp, i) => {
             const displayRole = normalizeRole(emp.role)
@@ -281,22 +286,24 @@ const handleToggle = async (id) => {
                   </div>
                   <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.semi, color: palette.text, fontFamily: theme.font.mono }}>{emp.nb_ventes_jour ?? 0}</div>
                   <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.bold, color: theme.colors.primary, fontFamily: theme.font.mono }}>{formatGNF(emp.total_ventes_jour ?? 0)}</div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    <button onClick={() => handleToggle(emp.id)} title={emp.actif ? 'Désactiver' : 'Activer'}
-                      style={{ width: 30, height: 30, borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: emp.actif ? theme.colors.warning : theme.colors.success, transition: theme.transition.fast, flexShrink: 0 }}
-                      onMouseEnter={e => e.currentTarget.style.background = palette.hover}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                        <path d={emp.actif ? 'M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636' : 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'} />
-                      </svg>
-                    </button>
-                    <button onClick={() => setToDelete(emp)} title="Supprimer"
-                      style={{ width: 30, height: 30, borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: theme.colors.danger, transition: theme.transition.fast, flexShrink: 0 }}
-                      onMouseEnter={e => e.currentTarget.style.background = theme.colors.dangerLight}
-                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.trash} /></svg>
-                    </button>
-                  </div>
+                  {isOwner && (
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button onClick={() => handleToggle(emp.id)} title={emp.actif ? 'Désactiver' : 'Activer'}
+                        style={{ width: 30, height: 30, borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: emp.actif ? theme.colors.warning : theme.colors.success, transition: theme.transition.fast, flexShrink: 0 }}
+                        onMouseEnter={e => e.currentTarget.style.background = palette.hover}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                          <path d={emp.actif ? 'M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636' : 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'} />
+                        </svg>
+                      </button>
+                      <button onClick={() => setToDelete(emp)} title="Supprimer"
+                        style={{ width: 30, height: 30, borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: theme.colors.danger, transition: theme.transition.fast, flexShrink: 0 }}
+                        onMouseEnter={e => e.currentTarget.style.background = theme.colors.dangerLight}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.trash} /></svg>
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Mobile card */}
@@ -312,18 +319,20 @@ const handleToggle = async (id) => {
                         <div style={{ fontSize: theme.font.size.xs, color: palette.textSub, marginTop: 2 }}>{emp.email}</div>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                      <button onClick={() => handleToggle(emp.id)}
-                        style={{ width: 32, height: 32, borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: emp.actif ? theme.colors.warning : theme.colors.success }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                          <path d={emp.actif ? 'M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636' : 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'} />
-                        </svg>
-                      </button>
-                      <button onClick={() => setToDelete(emp)}
-                        style={{ width: 32, height: 32, borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: theme.colors.danger }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.trash} /></svg>
-                      </button>
-                    </div>
+                    {isOwner && (
+                      <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                        <button onClick={() => handleToggle(emp.id)}
+                          style={{ width: 32, height: 32, borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: emp.actif ? theme.colors.warning : theme.colors.success }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                            <path d={emp.actif ? 'M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636' : 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'} />
+                          </svg>
+                        </button>
+                        <button onClick={() => setToDelete(emp)}
+                          style={{ width: 32, height: 32, borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: theme.colors.danger }}>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.trash} /></svg>
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                     <StatusBadge actif={emp.actif} />
