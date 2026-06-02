@@ -501,3 +501,97 @@ export const exportStockExcel = async (stocks, nomStation = 'Station') => {
 
   await downloadBuffer(wb, `Fuelo_Stock_${fileSlug(name)}_${stamp()}.xlsx`)
 }
+
+// ─── EXPORT TRAJETS LOGISTIQUE ────────────────────────
+export const exportTrajetsExcel = async (trajets = [], stats = {}) => {
+  const wb = new ExcelJS.Workbook()
+  wb.creator = 'Fuelo'; wb.created = new Date()
+
+  const termines   = trajets.filter(t => t.statut !== 'en_cours')
+  const nbFraudes  = trajets.filter(t => t.statut === 'alerte').length
+  const totalEcart = termines.reduce((s, t) => s + (parseFloat(t.ecart) || 0), 0)
+
+  const fmtStatut = (s) =>
+    s === 'en_cours' ? 'En cours' : s === 'alerte' ? 'Fraude détectée' : 'Arrivé'
+
+  // ── Feuille 1 : Résumé ─────────────────────────────
+  const ws1 = wb.addWorksheet('Résumé')
+  styleCols(ws1, [{ width: 30 }, { width: 20 }, { width: 16 }, { width: 20 }])
+
+  addTitleBand(ws1, 'FUELO — RAPPORT LOGISTIQUE TRANSPORT', 'A1:D1')
+  addMetaRow(ws1, `Généré le : ${fmtDateXL(new Date())}`, 'A2:D2')
+  ws1.addRow([]).height = 8
+
+  addSectionHeader(ws1, '▸  INDICATEURS CLÉS', 'A4:D4', XL.orange)
+  addColHeaders(ws1, ['INDICATEUR', 'VALEUR', '', ''], ['left', 'right', 'left', 'left'])
+
+  const kpis = [
+    ['Total trajets',          stats.total ?? trajets.length, '#,##0'],
+    ['Trajets terminés',       termines.length,               '#,##0'],
+    ['Trajets en cours',       stats.enCours ?? 0,            '#,##0'],
+    ['Alertes fraude',         nbFraudes,                     '#,##0'],
+    ['Écart total constaté',   totalEcart,                    '+#,##0.0;-#,##0.0;0.0'],
+  ]
+  kpis.forEach(([label, val, fmt], i) => {
+    const row = addDataRow(ws1, [label, val, 'L', ''], ['left', 'right', 'left', 'left'], i % 2 === 1, ['', fmt, '', ''])
+    if (label === 'Alertes fraude' && val > 0)
+      row.getCell(2).font = { name: 'Calibri', size: 10, bold: true, color: { argb: XL.red } }
+  })
+
+  // ── Feuille 2 : Tous les trajets ───────────────────
+  const ws2 = wb.addWorksheet('Trajets')
+  styleCols(ws2, [
+    { width: 8  },   // ID
+    { width: 24 },   // Chauffeur
+    { width: 14 },   // Citerne
+    { width: 16 },   // Chargement (L)
+    { width: 16 },   // Livraison (L)
+    { width: 14 },   // Écart (L)
+    { width: 18 },   // Statut
+    { width: 20 },   // Départ
+    { width: 20 },   // Arrivée
+  ])
+  ws2.views = [{ state: 'frozen', ySplit: 5 }]
+
+  addTitleBand(ws2, 'FUELO — DÉTAIL DES TRAJETS', 'A1:I1')
+  addMetaRow(ws2, `Généré le : ${fmtDateXL(new Date())}`, 'A2:I2')
+  addMetaRow(ws2, `${trajets.length} trajet(s) · ${nbFraudes} alerte(s) fraude`, 'A3:I3')
+  ws2.addRow([]).height = 8
+
+  const h2 = addColHeaders(ws2,
+    ['ID', 'CHAUFFEUR', 'CITERNE', 'CHARGEMENT (L)', 'LIVRAISON (L)', 'ÉCART (L)', 'STATUT', 'DÉPART', 'ARRIVÉE'],
+    ['center', 'left', 'center', 'right', 'right', 'right', 'center', 'center', 'center']
+  )
+  ws2.autoFilter = { from: { row: h2.number, column: 1 }, to: { row: h2.number, column: 9 } }
+
+  const dataRows = trajets.length
+    ? trajets
+    : [{ id: '-', chauffeur_nom: 'Aucun trajet', citerne_code: '-', qty_depart: 0, qty_arrivee: null, ecart: null, statut: '-', started_at: new Date(), ended_at: null }]
+
+  dataRows.forEach((t, i) => {
+    const ecart    = t.ecart != null ? parseFloat(t.ecart) : null
+    const isFraude = t.statut === 'alerte'
+    const row = addDataRow(ws2,
+      [
+        t.id ?? '-',
+        t.chauffeur_nom ?? '-',
+        t.citerne_code  ?? '-',
+        t.qty_depart    != null ? parseFloat(t.qty_depart) : '-',
+        t.qty_arrivee   != null ? parseFloat(t.qty_arrivee) : '—',
+        ecart           != null ? ecart : '—',
+        fmtStatut(t.statut),
+        fmtDateXL(t.started_at),
+        t.ended_at ? fmtDateXL(t.ended_at) : '—',
+      ],
+      ['center', 'left', 'center', 'right', 'right', 'right', 'center', 'center', 'center'],
+      i % 2 === 1,
+      ['', '', '', '#,##0.0', '#,##0.0', '+#,##0.0;-#,##0.0;0.0', '', '', '']
+    )
+    if (isFraude) {
+      row.getCell(7).font = { name: 'Calibri', size: 10, bold: true, color: { argb: XL.red } }
+      row.getCell(6).font = { name: 'Calibri', size: 10, bold: true, color: { argb: XL.red } }
+    }
+  })
+
+  await downloadBuffer(wb, `Fuelo_Trajets_${stamp()}.xlsx`)
+}

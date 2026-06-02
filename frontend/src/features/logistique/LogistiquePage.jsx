@@ -10,6 +10,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api            from '../../services/api'
 import toast          from 'react-hot-toast'
 import { formatRelative } from '../../utils/format'
+import { exportTrajetsExcel } from '../../utils/export'
 import theme from '../../config/theme'
 
 const ORANGE = '#F59E0B'
@@ -330,19 +331,11 @@ function TabRapports({ palette}) {
   const totalEcart = termines.reduce((s, t) => s + (parseFloat(t.ecart) || 0), 0)
   const nbFraudes  = trajets.filter(t => t.statut === 'alerte').length
 
-  const handleExportCSV = async () => {
+  const handleExportExcel = async () => {
     setExporting(true)
     try {
-      const token = localStorage.getItem('fuelo_token')
-      const base  = import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api'
-      const res   = await fetch(`${base}/trajets/export/csv`, { headers: { Authorization: `Bearer ${token}` } })
-      if (!res.ok) throw new Error('Erreur export')
-      const blob = await res.blob()
-      const url  = URL.createObjectURL(blob)
-      const a    = document.createElement('a')
-      a.href = url; a.download = 'trajets_fuelo.csv'; a.click()
-      URL.revokeObjectURL(url)
-      toast.success('Export CSV téléchargé')
+      await exportTrajetsExcel(trajets, stats)
+      toast.success('Export Excel téléchargé')
     } catch { toast.error('Erreur lors de l\'export') }
     finally { setExporting(false) }
   }
@@ -370,13 +363,13 @@ function TabRapports({ palette}) {
         <div style={{ fontSize: 12, color: palette.textSub, marginBottom: 14 }}>
           Téléchargez l'historique complet des trajets au format Excel/CSV.
         </div>
-        <button onClick={handleExportCSV} disabled={exporting}
+        <button onClick={handleExportExcel} disabled={exporting}
           style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 10, border: 'none', background: exporting ? theme.colors.primaryDark : theme.colors.primary, color: '#fff', fontSize: 13, fontWeight: 700, cursor: exporting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
           {exporting
             ? <div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-            : <span>📥</span>
+            : <span>📊</span>
           }
-          {exporting ? 'Export...' : 'Exporter en CSV (Excel)'}
+          {exporting ? 'Export...' : 'Exporter en Excel'}
         </button>
       </div>
 
