@@ -25,6 +25,19 @@ function getStrength(pwd) {
 const STRENGTH_COLOR = ['', '#EF4444', ORANGE, '#10B981']
 const STRENGTH_LABEL = ['', 'Faible', 'Moyen', 'Fort']
 
+const normalizeRole = (value = '') => {
+  const role = String(value).trim().toLowerCase()
+  return role === 'manager' ? 'gerant' : role
+}
+
+const getHomePathByRole = (role) => {
+  const normalizedRole = normalizeRole(role)
+  if (normalizedRole === 'pompiste') return '/pompiste'
+  if (normalizedRole === 'chauffeur') return '/chauffeur'
+  if (normalizedRole === 'logisticien') return '/logistique'
+  return '/dashboard'
+}
+
 const PREVIEW_CARDS = [
   { icon: '📊', label: 'Stock essence',  value: '1 847 L',  status: 'Normal',   color: '#10B981' },
   { icon: '💰', label: 'Ventes du jour', value: '6,4M GNF', status: '↑ 12%',   color: BLUE_SOFT },
@@ -68,8 +81,7 @@ export default function Login() {
       toast.success(`Bienvenue ${user.nom} ⛽`)
       // Déclenche le splash screen à la prochaine connexion
       sessionStorage.setItem('fuelo_just_logged_in', '1')
-      if (user.role === 'pompiste') navigate('/pompiste')
-      else                          navigate('/dashboard')
+      navigate(getHomePathByRole(user.role))
     } catch (err) {
       const msg = err?.response?.data?.error ?? 'Email ou mot de passe incorrect'
       toast.error(msg)

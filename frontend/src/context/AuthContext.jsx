@@ -165,6 +165,8 @@ export function AuthProvider({ children }) {
     isOwner: role === 'owner',
     isManager: role === 'owner' || role === 'gerant',
     isPompiste: role === 'pompiste',
+    isChauffeur: role === 'chauffeur',
+    isLogisticien: role === 'logisticien',
     isSuperAdmin: role === 'superadmin',
     login,
     register,

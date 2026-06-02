@@ -55,11 +55,33 @@ const checkRole = (rolesAutorises = []) => {
   }
 }
 
-const isPompiste    = checkRole(['pompiste'])
+const checkExactRole = (rolesAutorises = []) => {
+  const normalizedRoles = Array.isArray(rolesAutorises)
+    ? rolesAutorises.map(normalizeRole).filter(Boolean)
+    : []
+
+  return (req, res, next) => {
+    const userRole = normalizeRole(req.user?.role)
+    if (!userRole) return res.status(401).json({ error: 'Non authentifiÃ©' })
+
+    if (!normalizedRoles.includes(userRole)) {
+      return res.status(403).json({
+        error: 'AccÃ¨s refusÃ©',
+        message: `RÃ´le requis : ${normalizedRoles.join(' ou ')}`,
+        votre_role: userRole,
+      })
+    }
+
+    req.user.role = userRole
+    next()
+  }
+}
+
+const isPompiste    = checkExactRole(['pompiste'])
 const isManager     = checkRole(['gerant'])
 const isOwner       = checkRole(['owner'])
 const isAdmin       = checkRole(['superadmin'])
-const isChauffeur   = checkRole(['chauffeur'])
+const isChauffeur   = checkExactRole(['chauffeur'])
 
 // Accès transport : logisticien + owner UNIQUEMENT (gerant exclu)
 // Utilise une vérification exacte car le système de niveaux ferait passer gerant (2) >= logisticien (1)

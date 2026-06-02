@@ -2,7 +2,7 @@
 // FUELO — Interface logisticien
 // ================================================
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useAuth }    from '../../context/AuthContext'
 import { useTheme }   from '../../context/ThemeContext'
 import { useTrajets, useGpsPoints, useCiternes } from '../../hooks/useTrajets'
@@ -31,7 +31,7 @@ function MiniMap({ trajetId, isDark }) {
   const mapRef  = useRef(null)
   const leafRef = useRef(null)
   const { data } = useGpsPoints(trajetId)
-  const points   = data?.points ?? []
+  const points = useMemo(() => data?.points ?? [], [data?.points])
 
   useEffect(() => {
     if (!mapRef.current || points.length === 0) return
@@ -54,7 +54,7 @@ function MiniMap({ trajetId, isDark }) {
     }
     init()
     return () => { if (leafRef.current) { leafRef.current.remove(); leafRef.current = null } }
-  }, [points.length, trajetId])
+  }, [points, trajetId])
 
   if (points.length === 0) return (
     <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isDark ? 'rgba(255,255,255,0.03)' : '#F9FAFB', borderRadius: 12, border: `1px dashed ${isDark ? 'rgba(255,255,255,0.1)' : '#E5E7EB'}`, flexDirection: 'column', gap: 6 }}>
@@ -322,7 +322,7 @@ function TabAlertes({ palette }) {
 }
 
 // ── Onglet Rapports ───────────────────────────────
-function TabRapports({ palette, isDark }) {
+function TabRapports({ palette}) {
   const { trajets, loading, stats } = useTrajets({})
   const [exporting, setExporting]   = useState(false)
 

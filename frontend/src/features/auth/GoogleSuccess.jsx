@@ -10,6 +10,19 @@ import api         from '../../services/api'
 import toast       from 'react-hot-toast'
 import theme       from '../../config/theme'
 
+const normalizeRole = (value = '') => {
+  const role = String(value).trim().toLowerCase()
+  return role === 'manager' ? 'gerant' : role
+}
+
+const getHomePathByRole = (role) => {
+  const normalizedRole = normalizeRole(role)
+  if (normalizedRole === 'pompiste') return '/pompiste'
+  if (normalizedRole === 'chauffeur') return '/chauffeur'
+  if (normalizedRole === 'logisticien') return '/logistique'
+  return '/dashboard'
+}
+
 export default function GoogleSuccess() {
   const navigate       = useNavigate()
   const [params]       = useSearchParams()
@@ -40,8 +53,7 @@ export default function GoogleSuccess() {
     toast.success(`Bienvenue ${decodeURIComponent(nom)} ⛽`)
 
     // Rediriger selon rôle
-    if (role === 'pompiste') navigate('/pompiste')
-    else                     navigate('/dashboard')
+    navigate(getHomePathByRole(role))
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

@@ -4,6 +4,20 @@
 
 const { z } = require('zod')
 
+const normalizeRole = (value = '') => {
+  const role = String(value).trim().toLowerCase()
+  return role === 'manager' ? 'gerant' : role
+}
+
+const roleSchema = z.preprocess(
+  (value) => normalizeRole(value),
+  z.enum(['pompiste', 'chauffeur', 'logisticien', 'gerant', 'owner', 'superadmin'], {
+    errorMap: () => ({
+      message: 'Role invalide. Choisissez pompiste, gerant, chauffeur ou logisticien.',
+    }),
+  })
+)
+
 // ── Schémas ──────────────────────────────────────────
 
 const registerSchema = z.object({
@@ -33,7 +47,7 @@ const employeSchema = z.object({
   nom:      z.string().min(2, 'Nom minimum 2 caractères').max(100),
   email:    z.string().email('Email invalide'),
   password: z.string().min(6, 'Mot de passe minimum 6 caractères').max(100),
-  role:     z.enum(['pompiste', 'chauffeur', 'logisticien', 'gerant', 'manager', 'owner', 'superadmin']).optional(),
+  role:     roleSchema.optional().default('pompiste'),
 })
 
 const stationSchema = z.object({
@@ -64,7 +78,8 @@ const validate = (schema) => (req, res, next) => {
     req.body = schema.parse(req.body)
     next()
   } catch (err) {
-    const details = err.errors?.map(e => ({
+    const issues = err.issues ?? err.errors ?? []
+    const details = issues.map(e => ({
       champ:   e.path.join('.'),
       message: e.message,
     }))
