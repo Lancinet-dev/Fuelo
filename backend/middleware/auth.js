@@ -13,7 +13,11 @@ const verifyToken = (req, res, next) => {
     req.user = decoded
     next()
   } catch (err) {
-    res.status(403).json({ error: 'Token invalide ou expiré' })
+    // TokenExpiredError → 401 pour que le client puisse tenter un refresh
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Token expiré' })
+    }
+    res.status(403).json({ error: 'Token invalide' })
   }
 }
 

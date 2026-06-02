@@ -140,10 +140,16 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  const logout = useCallback(() => {
-    storage.clear()
-    setUser(null)
-    setStationId(null)
+  const logout = useCallback(async () => {
+    try {
+      await api.post('/auth/logout')
+    } catch {
+      // ignorer les erreurs réseau — on déconnecte quand même localement
+    } finally {
+      storage.clear()
+      setUser(null)
+      setStationId(null)
+    }
   }, [])
 
   const changerStation = useCallback(async (newStationId) => {

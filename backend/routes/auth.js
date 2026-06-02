@@ -8,7 +8,7 @@ const router      = express.Router()
 const passport    = require('../config/passport')
 const verifyToken = require('../middleware/auth')
 const { validate, registerSchema, loginSchema } = require('../utils/zodSchemas')
-const { register, login, me, changePassword }   = require('../controllers/authController')
+const { register, login, me, changePassword, refresh, logout } = require('../controllers/authController')
 const { forgotPassword, resetPassword }         = require('../controllers/forgotPasswordController')
 const { googleCallback }                        = require('../controllers/googleAuthController')
 const pool   = require('../config/database')
@@ -21,6 +21,10 @@ router.get('/me',               verifyToken,              me)
 router.post('/forgot-password', forgotPassword)
 router.post('/reset-password',  resetPassword)
 
+// ── Refresh token / Logout ────────────────────────────
+router.post('/refresh', refresh)
+router.post('/logout',  logout)
+
 // ── Changer mot de passe ──────────────────────────────
 router.put('/change-password', verifyToken, changePassword)
 
@@ -30,7 +34,6 @@ router.put('/profile', verifyToken, async (req, res) => {
     const { nom, telephone } = req.body
     if (!nom?.trim()) return res.status(400).json({ error: 'Nom obligatoire' })
 
-    // S'assurer que la colonne telephone existe
     await pool.query(
       `ALTER TABLE users ADD COLUMN IF NOT EXISTS telephone VARCHAR(20)`
     ).catch(() => {})

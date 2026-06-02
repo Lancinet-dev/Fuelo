@@ -5,6 +5,30 @@
 const pool   = require('../config/database')
 const bcrypt = require('bcryptjs')
 const jwt    = require('jsonwebtoken')
+const crypto = require('crypto')
+
+const REFRESH_EXPIRES_MS = 30 * 24 * 60 * 60 * 1000 // 30 jours
+
+const cookieOptions = () => ({
+  httpOnly: true,
+  secure:   process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  maxAge:   REFRESH_EXPIRES_MS,
+  path:     '/',
+})
+
+const signAccessToken = (payload) =>
+  jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '15m' })
+
+const newRefreshToken = () => crypto.randomBytes(40).toString('hex')
+
+const storeRefreshToken = async (userId, token) => {
+  const expiresAt = new Date(Date.now() + REFRESH_EXPIRES_MS)
+  await pool.query(
+    'UPDATE users SET refresh_token = $1, refresh_token_expires_at = $2 WHERE id = $3',
+    [token, expiresAt, userId]
+  )
+}
 
 // ── REGISTER ─────────────────────────────────────────
 const register = async (req, res) => {
@@ -42,13 +66,13 @@ const register = async (req, res) => {
       [station_id]
     )
 
-    const token = jwt.sign(
-      { id: user.rows[0].id, station_id, role: user.rows[0].role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRE }
-    )
+    const payload      = { id: user.rows[0].id, station_id, role: user.rows[0].role }
+    const accessToken  = signAccessToken(payload)
+    const refreshToken = newRefreshToken()
+    await storeRefreshToken(user.rows[0].id, refreshToken)
 
-    res.status(201).json({ token, user: user.rows[0], station_id })
+    res.cookie('fuelo_refresh', refreshToken, cookieOptions())
+    res.status(201).json({ token: accessToken, user: user.rows[0], station_id })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
@@ -84,14 +108,14 @@ const login = async (req, res) => {
 
     const station_id = station.rows[0]?.id || null
 
-    const token = jwt.sign(
-      { id: user.id, station_id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRE }
-    )
+    const payload      = { id: user.id, station_id, role: user.role }
+    const accessToken  = signAccessToken(payload)
+    const refreshToken = newRefreshToken()
+    await storeRefreshToken(user.id, refreshToken)
 
+    res.cookie('fuelo_refresh', refreshToken, cookieOptions())
     res.json({
-      token,
+      token: accessToken,
       user: {
         id:        user.id,
         nom:       user.nom,
@@ -107,7 +131,78 @@ const login = async (req, res) => {
   }
 }
 
-// ── ME — inclut telephone ─────────────────────────────
+// ── REFRESH TOKEN ─────────────────────────────────────
+const refresh = async (req, res) => {
+  try {
+    const token = req.cookies?.fuelo_refresh
+    if (!token) {
+      return res.status(401).json({ error: 'Refresh token manquant' })
+    }
+
+    const result = await pool.query(
+      `SELECT * FROM users
+       WHERE refresh_token = $1
+         AND refresh_token_expires_at > NOW()
+         AND actif = true`,
+      [token]
+    )
+
+    if (result.rows.length === 0) {
+      res.clearCookie('fuelo_refresh', cookieOptions())
+      return res.status(401).json({ error: 'Session expirée — veuillez vous reconnecter' })
+    }
+
+    const user = result.rows[0]
+
+    const stationResult = await pool.query(
+      `SELECT s.id FROM stations s
+       JOIN station_users su ON su.station_id = s.id
+       WHERE su.user_id = $1 LIMIT 1`,
+      [user.id]
+    )
+    const station_id = stationResult.rows[0]?.id || null
+
+    // Rotation : nouveau refresh token à chaque appel
+    const rotatedToken = newRefreshToken()
+    await storeRefreshToken(user.id, rotatedToken)
+
+    const accessToken = signAccessToken({ id: user.id, station_id, role: user.role })
+
+    res.cookie('fuelo_refresh', rotatedToken, cookieOptions())
+    res.json({
+      token: accessToken,
+      user: {
+        id:        user.id,
+        nom:       user.nom,
+        email:     user.email,
+        role:      user.role,
+        telephone: user.telephone ?? null,
+      },
+      station_id,
+    })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+}
+
+// ── LOGOUT ────────────────────────────────────────────
+const logout = async (req, res) => {
+  try {
+    const token = req.cookies?.fuelo_refresh
+    if (token) {
+      await pool.query(
+        'UPDATE users SET refresh_token = NULL, refresh_token_expires_at = NULL WHERE refresh_token = $1',
+        [token]
+      )
+    }
+    res.clearCookie('fuelo_refresh', cookieOptions())
+    res.json({ message: 'Déconnecté' })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+}
+
+// ── ME ────────────────────────────────────────────────
 const me = async (req, res) => {
   try {
     const result = await pool.query(
@@ -142,4 +237,4 @@ const changePassword = async (req, res) => {
   }
 }
 
-module.exports = { register, login, me, changePassword }
+module.exports = { register, login, me, changePassword, refresh, logout }

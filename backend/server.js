@@ -15,13 +15,14 @@ require('dotenv').config()
 const checkEnv = require('./utils/checkEnv')
 checkEnv()
 
-const express    = require('express')
-const http       = require('http')
-const { Server } = require('socket.io')
-const cors       = require('cors')
-const helmet     = require('helmet')
-const passport   = require('./config/passport')
-const logger     = require('./utils/logger')
+const express      = require('express')
+const http         = require('http')
+const { Server }   = require('socket.io')
+const cors         = require('cors')
+const helmet       = require('helmet')
+const cookieParser = require('cookie-parser')
+const passport     = require('./config/passport')
+const logger       = require('./utils/logger')
 
 const app    = express()
 const server = http.createServer(app)
@@ -70,6 +71,7 @@ app.use(cors({
 }))
 
 app.use(express.json({ limit: '10kb' }))
+app.use(cookieParser())
 
 // ── Passport ──────────────────────────────────────────
 app.use(passport.initialize())

@@ -6,10 +6,15 @@
 require('dotenv').config()
 const { Pool } = require('pg')
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
-})
+const pool = process.env.DATABASE_URL
+  ? new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } })
+  : new Pool({
+      host:     process.env.DB_HOST,
+      port:     process.env.DB_PORT,
+      database: process.env.DB_NAME,
+      user:     process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+    })
 
 const SQL = `
 -- Users
@@ -192,6 +197,10 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_subscriptions_owner ON subscriptions(owner_id);
+
+-- Refresh tokens (session persistante)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token VARCHAR(255);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token_expires_at TIMESTAMP;
 `
 
 async function migrate() {
