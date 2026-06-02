@@ -325,8 +325,14 @@ function TabAlertes({ palette }) {
 // ── Onglet Rapports ───────────────────────────────
 function TabRapports({ palette}) {
   const { trajets, loading, stats } = useTrajets({})
+  const { data: employesData } = useQuery({
+    queryKey: ['employes', 'chauffeurs-export'],
+    queryFn:  () => api.get('/employes').then(r => r.data),
+    staleTime: 60_000,
+  })
   const [exporting, setExporting]   = useState(false)
 
+  const chauffeurs = (employesData?.employes ?? []).filter(e => e.role === 'chauffeur')
   const termines = trajets.filter(t => t.statut !== 'en_cours')
   const totalEcart = termines.reduce((s, t) => s + (parseFloat(t.ecart) || 0), 0)
   const nbFraudes  = trajets.filter(t => t.statut === 'alerte').length
@@ -334,7 +340,7 @@ function TabRapports({ palette}) {
   const handleExportExcel = async () => {
     setExporting(true)
     try {
-      await exportTrajetsExcel(trajets, stats)
+      await exportTrajetsExcel(trajets, stats, { chauffeurs })
       toast.success('Export Excel téléchargé')
     } catch { toast.error('Erreur lors de l\'export') }
     finally { setExporting(false) }

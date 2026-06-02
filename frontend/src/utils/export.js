@@ -503,13 +503,84 @@ export const exportStockExcel = async (stocks, nomStation = 'Station') => {
 }
 
 // ─── EXPORT TRAJETS LOGISTIQUE ────────────────────────
-export const exportTrajetsExcel = async (trajets = [], stats = {}) => {
+export const exportTrajetsExcel = async (trajets = [], stats = {}, options = {}) => {
   const wb = new ExcelJS.Workbook()
   wb.creator = 'Fuelo'; wb.created = new Date()
+  wb.modified = new Date()
+  wb.subject = 'Rapport logistique transport'
+  wb.title = 'Fuelo - Rapport logistique'
+
+  const chauffeurs = options.chauffeurs ?? []
+  const chauffeurById = new Map(chauffeurs.map(c => [Number(c.id), c]))
+  const chauffeurByName = new Map(chauffeurs.map(c => [String(c.nom ?? '').trim().toLowerCase(), c]))
+  const getChauffeur = (trajet = {}) =>
+    chauffeurById.get(Number(trajet.chauffeur_id)) ??
+    chauffeurByName.get(String(trajet.chauffeur_nom ?? '').trim().toLowerCase()) ??
+    {}
 
   const termines   = trajets.filter(t => t.statut !== 'en_cours')
   const nbFraudes  = trajets.filter(t => t.statut === 'alerte').length
   const totalEcart = termines.reduce((s, t) => s + (parseFloat(t.ecart) || 0), 0)
+  const totalDepart = trajets.reduce((s, t) => s + toNum(t.qty_depart), 0)
+  const totalArrivee = termines.reduce((s, t) => s + toNum(t.qty_arrivee), 0)
+
+  const durationHours = (start, end) => {
+    if (!start || !end) return null
+    const a = new Date(start).getTime()
+    const b = new Date(end).getTime()
+    if (!Number.isFinite(a) || !Number.isFinite(b) || b < a) return null
+    return (b - a) / 36e5
+  }
+
+  const performanceMap = new Map()
+  trajets.forEach((t) => {
+    const chauffeur = getChauffeur(t)
+    const key = String(chauffeur.id ?? t.chauffeur_id ?? t.chauffeur_nom ?? 'inconnu')
+    const current = performanceMap.get(key) ?? {
+      id: chauffeur.id ?? t.chauffeur_id ?? '-',
+      nom: chauffeur.nom ?? t.chauffeur_nom ?? 'Chauffeur non renseigne',
+      email: chauffeur.email ?? '-',
+      actif: chauffeur.actif,
+      trajets: 0,
+      termines: 0,
+      enCours: 0,
+      fraudes: 0,
+      depart: 0,
+      arrivee: 0,
+      ecart: 0,
+      heures: 0,
+    }
+    const heures = durationHours(t.started_at, t.ended_at)
+    current.trajets += 1
+    current.termines += t.statut !== 'en_cours' ? 1 : 0
+    current.enCours += t.statut === 'en_cours' ? 1 : 0
+    current.fraudes += t.statut === 'alerte' ? 1 : 0
+    current.depart += toNum(t.qty_depart)
+    current.arrivee += t.statut !== 'en_cours' ? toNum(t.qty_arrivee) : 0
+    current.ecart += t.statut !== 'en_cours' ? (parseFloat(t.ecart) || 0) : 0
+    current.heures += heures ?? 0
+    performanceMap.set(key, current)
+  })
+  chauffeurs.forEach((c) => {
+    const key = String(c.id)
+    if (!performanceMap.has(key)) {
+      performanceMap.set(key, {
+        id: c.id,
+        nom: c.nom ?? '-',
+        email: c.email ?? '-',
+        actif: c.actif,
+        trajets: 0,
+        termines: 0,
+        enCours: 0,
+        fraudes: 0,
+        depart: 0,
+        arrivee: 0,
+        ecart: 0,
+        heures: 0,
+      })
+    }
+  })
+  const performances = Array.from(performanceMap.values()).sort((a, b) => b.trajets - a.trajets || Math.abs(b.ecart) - Math.abs(a.ecart))
 
   const fmtStatut = (s) =>
     s === 'en_cours' ? 'En cours' : s === 'alerte' ? 'Fraude détectée' : 'Arrivé'
@@ -593,5 +664,88 @@ export const exportTrajetsExcel = async (trajets = [], stats = {}) => {
     }
   })
 
-  await downloadBuffer(wb, `Fuelo_Trajets_${stamp()}.xlsx`)
+  // Feuille 3 : fichier chauffeurs complet
+  const ws3 = wb.addWorksheet('Chauffeurs')
+  styleCols(ws3, [
+    { width: 10 }, { width: 30 }, { width: 36 }, { width: 16 }, { width: 14 },
+    { width: 22 }, { width: 16 }, { width: 18 }, { width: 16 }, { width: 14 },
+  ])
+  ws3.views = [{ state: 'frozen', ySplit: 5 }]
+  ws3.properties.tabColor = { argb: XL.green }
+
+  addTitleBand(ws3, 'FUELO - FICHIER CHAUFFEURS', 'A1:J1', XL.green)
+  addMetaRow(ws3, `Genere le : ${fmtDateXL(new Date())}`, 'A2:J2')
+  addMetaRow(ws3, `${chauffeurs.length} chauffeur(s) enregistres`, 'A3:J3')
+  ws3.addRow([]).height = 8
+
+  const h3 = addColHeaders(ws3,
+    ['ID', 'NOM COMPLET', 'EMAIL', 'ROLE', 'STATUT', 'CREATION', 'VENTES/JOUR', 'REVENU/JOUR', 'TRAJETS', 'FRAUDES'],
+    ['center', 'left', 'left', 'center', 'center', 'center', 'right', 'right', 'right', 'right']
+  )
+  ws3.autoFilter = { from: { row: h3.number, column: 1 }, to: { row: h3.number, column: 10 } }
+
+  const chauffeurRows = chauffeurs.length
+    ? chauffeurs
+    : [{ id: '-', nom: 'Aucun chauffeur', email: '-', role: 'chauffeur', actif: false, created_at: null }]
+
+  chauffeurRows.forEach((c, i) => {
+    const perf = performances.find(p => String(p.id) === String(c.id)) ?? {}
+    const row = addDataRow(ws3,
+      [
+        c.id ?? '-',
+        c.nom ?? '-',
+        c.email ?? '-',
+        c.role ?? 'chauffeur',
+        c.actif === false ? 'Inactif' : 'Actif',
+        c.created_at ? fmtDateXL(c.created_at) : '-',
+        toNum(c.nb_ventes_jour),
+        toNum(c.total_ventes_jour),
+        perf.trajets ?? 0,
+        perf.fraudes ?? 0,
+      ],
+      ['center', 'left', 'left', 'center', 'center', 'center', 'right', 'right', 'right', 'right'],
+      i % 2 === 1,
+      ['', '', '', '', '', '', '#,##0', '#,##0', '#,##0', '#,##0']
+    )
+    row.getCell(5).font = { name: 'Calibri', size: 10, bold: true, color: { argb: c.actif === false ? XL.red : XL.green } }
+    if ((perf.fraudes ?? 0) > 0) row.getCell(10).font = { name: 'Calibri', size: 10, bold: true, color: { argb: XL.red } }
+  })
+
+  // Feuille 4 : performance par chauffeur
+  const ws4 = wb.addWorksheet('Performance')
+  styleCols(ws4, [
+    { width: 10 }, { width: 30 }, { width: 36 }, { width: 14 }, { width: 14 },
+    { width: 14 }, { width: 14 }, { width: 18 }, { width: 18 }, { width: 16 },
+    { width: 14 }, { width: 16 },
+  ])
+  ws4.views = [{ state: 'frozen', ySplit: 5 }]
+  ws4.properties.tabColor = { argb: XL.red }
+
+  addTitleBand(ws4, 'FUELO - PERFORMANCE CHAUFFEURS', 'A1:L1', XL.red)
+  addMetaRow(ws4, `Genere le : ${fmtDateXL(new Date())}`, 'A2:L2')
+  addMetaRow(ws4, 'Analyse par chauffeur : volumes, ecarts, alertes et duree', 'A3:L3')
+  ws4.addRow([]).height = 8
+
+  const h4 = addColHeaders(ws4,
+    ['ID', 'CHAUFFEUR', 'EMAIL', 'TRAJETS', 'TERMINES', 'EN COURS', 'FRAUDES', 'VOLUME CHARGE (L)', 'VOLUME LIVRE (L)', 'ECART (L)', 'DUREE (H)', 'TAUX FRAUDE'],
+    ['center', 'left', 'left', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right']
+  )
+  ws4.autoFilter = { from: { row: h4.number, column: 1 }, to: { row: h4.number, column: 12 } }
+
+  const perfRows = performances.length
+    ? performances
+    : [{ id: '-', nom: 'Aucune donnee', email: '-', trajets: 0, termines: 0, enCours: 0, fraudes: 0, depart: 0, arrivee: 0, ecart: 0, heures: 0 }]
+
+  perfRows.forEach((p, i) => {
+    const row = addDataRow(ws4,
+      [p.id, p.nom, p.email, p.trajets, p.termines, p.enCours, p.fraudes, p.depart, p.arrivee, p.ecart, p.heures, p.trajets ? p.fraudes / p.trajets : 0],
+      ['center', 'left', 'left', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right', 'right'],
+      i % 2 === 1,
+      ['', '', '', '#,##0', '#,##0', '#,##0', '#,##0', '#,##0.0', '#,##0.0', '+#,##0.0;-#,##0.0;0.0', '0.00', '0.0%']
+    )
+    if (p.fraudes > 0) row.getCell(7).font = { name: 'Calibri', size: 10, bold: true, color: { argb: XL.red } }
+    if (Math.abs(p.ecart) > 0) row.getCell(10).font = { name: 'Calibri', size: 10, bold: true, color: { argb: Math.abs(p.ecart) > 50 ? XL.red : XL.orange } }
+  })
+
+  await downloadBuffer(wb, `Fuelo_Logistique_${stamp()}.xlsx`)
 }
