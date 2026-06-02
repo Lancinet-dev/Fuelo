@@ -60,8 +60,23 @@ const isManager     = checkRole(['gerant'])
 const isOwner       = checkRole(['owner'])
 const isAdmin       = checkRole(['superadmin'])
 const isChauffeur   = checkRole(['chauffeur'])
-// Accès transport : logisticien + gérant + owner
-const isTransport   = checkRole(['logisticien', 'gerant', 'owner'])
+
+// Accès transport : logisticien + owner UNIQUEMENT (gerant exclu)
+// Utilise une vérification exacte car le système de niveaux ferait passer gerant (2) >= logisticien (1)
+const isTransport = (req, res, next) => {
+  const userRole = normalizeRole(req.user?.role)
+  if (!userRole) return res.status(401).json({ error: 'Non authentifié' })
+  const allowed = ['logisticien', 'owner', 'superadmin'].includes(userRole)
+  if (!allowed) {
+    return res.status(403).json({
+      error: 'Accès refusé',
+      message: 'Réservé aux logisticiens et propriétaires',
+      votre_role: userRole,
+    })
+  }
+  req.user.role = userRole
+  next()
+}
 
 module.exports = {
   checkRole,

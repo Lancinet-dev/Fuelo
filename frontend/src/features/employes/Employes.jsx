@@ -22,11 +22,13 @@ const normalizeRole = (value = '') => {
 }
 
 const ROLE_LABELS = {
-  pompiste:   '⛽ Pompiste',
-  gerant:     '👔 Gérant',
-  manager:    '👔 Gérant',
-  owner:      '👑 Propriétaire',
-  superadmin: '🛡️ Super Admin',
+  gerant:      '👔 Gérant',
+  manager:     '👔 Gérant',
+  chauffeur:   '🚛 Chauffeur',
+  logisticien: '📦 Logisticien',
+  pompiste:    '⛽ Pompiste',
+  owner:       '👑 Propriétaire',
+  superadmin:  '🛡️ Super Admin',
 }
 
 function StatusBadge({ actif }) {
@@ -197,8 +199,10 @@ const handleToggle = async (id) => {
               <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Rôle dans la station</div>
               <select value={role} onChange={e => setRole(normalizeRole(e.target.value))}
                 style={{ width: '100%', height: 46, background: palette.inputBg, border: `1.5px solid ${palette.cardBorder}`, borderRadius: theme.radius.md, padding: '0 14px', fontSize: theme.font.size.base, color: palette.text, fontFamily: theme.font.family, outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
-                <option value="pompiste">⛽ Pompiste — Enregistre les ventes uniquement</option>
-                <option value="gerant">👔 Gérant — Accès complet au dashboard</option>
+                <option value="gerant">👔 Gérant — Dashboard, ventes, stock, alertes, employés</option>
+                <option value="chauffeur">🚛 Chauffeur — Interface GPS trajets uniquement</option>
+                <option value="logisticien">📦 Logisticien — Citernes, trajets, alertes transport</option>
+                <option value="pompiste">⛽ Pompiste — Enregistrement des ventes uniquement</option>
               </select>
             </div>
 
@@ -238,6 +242,18 @@ const handleToggle = async (id) => {
           employes.map((emp, i) => {
             const displayRole = normalizeRole(emp.role)
             const isGerant    = displayRole === 'gerant'
+            const roleColor   = {
+              gerant:      theme.colors.info,
+              chauffeur:   theme.colors.warning,
+              logisticien: '#8B5CF6',
+              pompiste:    theme.colors.success,
+            }[displayRole] ?? theme.colors.success
+            const roleBg = {
+              gerant:      theme.colors.infoLight,
+              chauffeur:   theme.colors.warningLight,
+              logisticien: 'rgba(139,92,246,0.1)',
+              pompiste:    theme.colors.successLight,
+            }[displayRole] ?? theme.colors.successLight
             const initial     = emp.nom?.trim()?.charAt(0)?.toUpperCase() || '?'
 
             return (
@@ -259,7 +275,7 @@ const handleToggle = async (id) => {
                   </div>
                   <div style={{ fontSize: theme.font.size.sm, color: palette.textSub, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{emp.email}</div>
                   <div>
-                    <span style={{ fontSize: 11, fontWeight: theme.font.weight.semi, color: isGerant ? theme.colors.info : theme.colors.success, background: isGerant ? theme.colors.infoLight : theme.colors.successLight, padding: '2px 8px', borderRadius: theme.radius.full, whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: 11, fontWeight: theme.font.weight.semi, color: roleColor, background: roleBg, padding: '2px 8px', borderRadius: theme.radius.full, whiteSpace: 'nowrap' }}>
                       {ROLE_LABELS[displayRole] || displayRole}
                     </span>
                   </div>
