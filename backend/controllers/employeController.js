@@ -22,8 +22,8 @@ const creerEmploye = asyncHandler(async (req, res) => {
   const station_id = req.user.station_id
   const created_by = req.user.id
 
-  if (!['pompiste', 'gerant'].includes(role)) {
-    throw new AppError('Rôle invalide. Choisissez pompiste ou gerant.', 400)
+  if (!['pompiste', 'gerant', 'chauffeur', 'logisticien'].includes(role)) {
+    throw new AppError('Rôle invalide. Choisissez pompiste, gerant, chauffeur ou logisticien.', 400)
   }
 
   const existe = await pool.query(
@@ -71,7 +71,7 @@ const getEmployes = asyncHandler(async (req, res) => {
        AND DATE(v.created_at) = CURRENT_DATE
        AND v.deleted_at IS NULL
      WHERE su.station_id = $1
-       AND LOWER(u.role) IN ('pompiste', 'gerant', 'manager')
+       AND LOWER(u.role) IN ('pompiste', 'gerant', 'manager', 'chauffeur', 'logisticien')
        AND u.deleted_at IS NULL
      GROUP BY u.id
      ORDER BY u.created_at DESC`,
