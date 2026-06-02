@@ -19,7 +19,10 @@ function distanceM(lat1, lng1, lat2, lng2) {
 
 // ── Démarrer un trajet ───────────────────────────
 const demarrerTrajet = async (user, { citerne_id, qty_depart, station_destination_id }) => {
-  const { id: chauffeur_id } = user
+  const { id: chauffeur_id, station_id } = user
+  const destId = station_destination_id || station_id
+
+  if (!destId) throw new Error('Station de destination introuvable.')
 
   const existant = await pool.query(
     `SELECT id FROM trajets WHERE chauffeur_id = $1 AND statut = 'en_cours'`,
@@ -30,14 +33,14 @@ const demarrerTrajet = async (user, { citerne_id, qty_depart, station_destinatio
   // Récupérer le seuil de la station destination
   const stationResult = await pool.query(
     `SELECT seuil_fraude_citerne FROM stations WHERE id = $1`,
-    [station_destination_id]
+    [destId]
   )
   const seuil = stationResult.rows[0]?.seuil_fraude_citerne ?? 50
 
   const result = await pool.query(
     `INSERT INTO trajets (citerne_id, chauffeur_id, station_destination_id, qty_depart, seuil_fraude)
      VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [citerne_id, chauffeur_id, station_destination_id, qty_depart, seuil]
+    [citerne_id, chauffeur_id, destId, qty_depart, seuil]
   )
 
   logger.info(`Trajet démarré — Chauffeur ${chauffeur_id} — Citerne ${citerne_id}`)

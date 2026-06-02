@@ -39,7 +39,6 @@ export default function ChauffeurPage() {
   const [modal,         setModal]         = useState(null) // 'demarrer' | 'arriver'
   const [citerneId,     setCiterneId]     = useState('')
   const [qtyDepart,     setQtyDepart]     = useState('')
-  const [stationId,     setStationId]     = useState('')
   const [qtyArrivee,    setQtyArrivee]    = useState('')
   const [gpsStatus,     setGpsStatus]     = useState('inactif') // 'inactif' | 'actif' | 'erreur'
   const [lastPos,       setLastPos]       = useState(null)
@@ -86,8 +85,8 @@ export default function ChauffeurPage() {
   }, [trajetActif?.id])
 
   const handleDemarrer = async () => {
-    if (!citerneId || !qtyDepart || !stationId) return
-    await demarrer({ citerne_id: parseInt(citerneId), qty_depart: parseFloat(qtyDepart), station_destination_id: parseInt(stationId) })
+    if (!citerneId || !qtyDepart) return
+    await demarrer({ citerne_id: parseInt(citerneId), qty_depart: parseFloat(qtyDepart) })
     setModal(null)
   }
 
@@ -198,14 +197,10 @@ export default function ChauffeurPage() {
                 <div style={{ fontSize: 11, fontWeight: 600, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Quantité chargée (litres)</div>
                 <input type="number" min="0" step="1" placeholder="ex: 15000" value={qtyDepart} onChange={e => setQtyDepart(e.target.value)} style={{ ...inputSt, fontSize: 22, fontWeight: 700, textAlign: 'center', fontFamily: theme.font.mono }} />
               </div>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Station de destination</div>
-                <input type="number" min="1" placeholder="ID de la station" value={stationId} onChange={e => setStationId(e.target.value)} style={{ ...inputSt }} />
-              </div>
             </div>
 
-            <button onClick={handleDemarrer} disabled={demarrerLoading || !citerneId || !qtyDepart || !stationId}
-              style={{ width: '100%', height: 54, borderRadius: 14, border: 'none', cursor: 'pointer', background: !citerneId || !qtyDepart || !stationId ? (isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0') : `linear-gradient(135deg, ${theme.colors.success}, #059669)`, color: !citerneId || !qtyDepart || !stationId ? palette.textMuted : '#fff', fontSize: 15, fontWeight: 800, fontFamily: 'inherit' }}>
+            <button onClick={handleDemarrer} disabled={demarrerLoading || !citerneId || !qtyDepart}
+              style={{ width: '100%', height: 54, borderRadius: 14, border: 'none', cursor: 'pointer', background: !citerneId || !qtyDepart ? (isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0') : `linear-gradient(135deg, ${theme.colors.success}, #059669)`, color: !citerneId || !qtyDepart ? palette.textMuted : '#fff', fontSize: 15, fontWeight: 800, fontFamily: 'inherit' }}>
               {demarrerLoading ? 'Démarrage...' : 'Démarrer et activer le GPS'}
             </button>
             <button onClick={() => setModal(null)} style={{ width: '100%', marginTop: 10, padding: '10px 0', background: 'none', border: 'none', color: palette.textMuted, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Annuler</button>
