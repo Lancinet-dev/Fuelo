@@ -6,7 +6,8 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api   from '../../services/api'
 import toast from 'react-hot-toast'
-import { useTheme } from '../../context/ThemeContext'
+import { useTheme }            from '../../context/ThemeContext'
+import { usePlan, PLAN_COLORS } from '../../hooks/usePlan'
 import theme from '../../config/theme'
 
 const METHODS = [
@@ -17,100 +18,99 @@ const METHODS = [
 ]
 
 const FEATURES_LABELS = {
-  ventes:            '⛽ Ventes & caisse',
-  stock:             '📦 Gestion du stock',
-  alertes:           '🔔 Alertes stock',
-  services:          '📸 Anti-fraude pompistes',
-  trajets:           '🚚 GPS citernes',
-  citernes:          '🛢️ Gestion citernes',
-  logistique:        '📦 Interface logisticien',
+  ventes:     '⛽ Ventes & caisse',
+  stock:      '📦 Gestion du stock',
+  alertes:    '🔔 Alertes stock',
+  services:   '📸 Anti-fraude pompistes',
+  trajets:    '🚚 GPS citernes',
+  citernes:   '🛢️ Gestion citernes',
+  logistique: '📦 Interface logisticien',
 }
 
-const TOUT_FEATURES = ['ventes', 'stock', 'alertes', 'services', 'trajets', 'citernes', 'logistique']
+const TOUT = ['ventes', 'stock', 'alertes', 'services', 'trajets', 'citernes', 'logistique']
 
-function PlanCard({ plan, onChoisir, palette }) {
-  const isActuel   = plan.actuel
+// ── Carte plan ───────────────────────────────────
+function PlanCard({ plan, colors, onChoisir, palette }) {
+  const isActuel     = plan.actuel
   const isEnterprise = plan.key === 'enterprise'
-
-  const cardBorder = isActuel
-    ? `2px solid ${theme.colors.primary}`
-    : isEnterprise
-    ? `2px solid ${theme.colors.warning}`
-    : `1px solid ${palette.cardBorder}`
+  const planC        = PLAN_COLORS[plan.key] ?? PLAN_COLORS.starter
 
   return (
     <div style={{
-      background:   palette.card,
-      border:       cardBorder,
-      borderRadius: theme.radius.xl,
-      padding:      '24px 20px',
-      position:     'relative',
-      boxShadow:    isActuel ? theme.shadow.primary : theme.shadow.sm,
-      display:      'flex',
-      flexDirection:'column',
-      gap:          16,
+      background:    palette.card,
+      border:        `2px solid ${isActuel ? planC.border : isEnterprise ? '#F59E0B' : palette.cardBorder}`,
+      borderRadius:  theme.radius.xl,
+      padding:       '24px 20px',
+      position:      'relative',
+      boxShadow:     isActuel ? `0 0 0 4px ${planC.border}22` : theme.shadow.sm,
+      display:       'flex',
+      flexDirection: 'column',
+      gap:           14,
     }}>
-      {/* Badge actuel / populaire */}
-      {(isActuel || isEnterprise) && (
+      {/* Badges */}
+      {(isActuel || isEnterprise) && !isActuel && (
         <div style={{
           position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
-          background: isActuel ? theme.colors.primary : theme.colors.warning,
-          color: '#fff', fontSize: 10, fontWeight: 800,
-          padding: '3px 12px', borderRadius: 99, whiteSpace: 'nowrap',
-          letterSpacing: '0.08em', textTransform: 'uppercase',
+          background: '#F59E0B', color: '#0D1B2A',
+          fontSize: 10, fontWeight: 800, padding: '3px 12px',
+          borderRadius: 99, whiteSpace: 'nowrap', letterSpacing: '0.06em',
         }}>
-          {isActuel ? '✓ Votre plan actuel' : '⭐ Le plus complet'}
+          ⭐ LE PLUS COMPLET
         </div>
       )}
 
-      {/* Header */}
-      <div>
-        <div style={{ fontSize: 22, fontWeight: 900, color: palette.text, marginBottom: 4 }}>
-          {plan.label}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-          <span style={{ fontSize: 32, fontWeight: 900, color: theme.colors.primary }}>
-            ${plan.prix}
+      {/* Badge plan coloré */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <span style={{
+          fontSize: 11, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase',
+          padding: '3px 10px', borderRadius: 99,
+          background: planC.border + '22',
+          color: planC.text,
+          border: `1px solid ${planC.border}55`,
+        }}>
+          {planC.emoji} {plan.label}
+        </span>
+        {isActuel && (
+          <span style={{ fontSize: 11, fontWeight: 700, color: theme.colors.success, background: theme.colors.successLight, padding: '3px 10px', borderRadius: 99 }}>
+            ✓ Actuel
           </span>
-          <span style={{ fontSize: 13, color: palette.textSub }}>/mois</span>
-        </div>
+        )}
+      </div>
+
+      {/* Prix */}
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+        <span style={{ fontSize: 34, fontWeight: 900, color: planC.border ?? theme.colors.primary }}>${plan.prix}</span>
+        <span style={{ fontSize: 13, color: palette.textSub }}>/mois</span>
       </div>
 
       {/* Limites */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 8 }}>
         {[
-          { l: 'Stations', v: plan.max_stations },
-          { l: 'Employés/station', v: plan.max_employes },
+          { l: 'Stations',      v: plan.max_stations },
+          { l: 'Employés/stat', v: plan.max_employes },
         ].map(({ l, v }) => (
           <div key={l} style={{
-            background: theme.colors.primaryLight,
-            borderRadius: theme.radius.md,
-            padding: '6px 12px', textAlign: 'center',
+            flex: 1, background: planC.border + '15',
+            borderRadius: theme.radius.md, padding: '8px 10px', textAlign: 'center',
           }}>
-            <div style={{ fontSize: 16, fontWeight: 800, color: theme.colors.primary }}>{v}</div>
-            <div style={{ fontSize: 10, color: theme.colors.primary, opacity: 0.8 }}>{l}</div>
+            <div style={{ fontSize: 17, fontWeight: 900, color: planC.border }}>{v}</div>
+            <div style={{ fontSize: 10, color: palette.textMuted, marginTop: 1 }}>{l}</div>
           </div>
         ))}
       </div>
 
       {/* Features */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {TOUT_FEATURES.map(f => {
-          const inclus = plan.features.includes(f)
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+        {TOUT.map(f => {
+          const ok = plan.features.includes(f)
           return (
             <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{
-                fontSize: 14,
-                color: inclus ? theme.colors.success : palette.textMuted,
-                flexShrink: 0,
-              }}>
-                {inclus ? '✓' : '✗'}
+              <span style={{ fontSize: 13, color: ok ? theme.colors.success : palette.textMuted, flexShrink: 0, fontWeight: 700 }}>
+                {ok ? '✓' : '✗'}
               </span>
               <span style={{
-                fontSize: 13,
-                color: inclus ? palette.text : palette.textMuted,
-                textDecoration: inclus ? 'none' : 'line-through',
-                opacity: inclus ? 1 : 0.5,
+                fontSize: 12, color: ok ? palette.text : palette.textMuted,
+                textDecoration: ok ? 'none' : 'line-through', opacity: ok ? 1 : 0.45,
               }}>
                 {FEATURES_LABELS[f]}
               </span>
@@ -120,43 +120,33 @@ function PlanCard({ plan, onChoisir, palette }) {
       </div>
 
       {/* Bouton */}
-      <button
-        disabled={isActuel}
-        onClick={() => onChoisir(plan.key)}
+      <button disabled={isActuel} onClick={() => onChoisir(plan.key)}
         style={{
-          width: '100%', height: 46,
-          borderRadius: theme.radius.md,
-          border: 'none',
-          background: isActuel
-            ? (palette.hover)
-            : isEnterprise ? theme.colors.warning : theme.colors.primary,
+          width: '100%', height: 46, marginTop: 'auto',
+          borderRadius: theme.radius.md, border: 'none',
+          background: isActuel ? palette.hover : planC.border ?? theme.colors.primary,
           color: isActuel ? palette.textMuted : '#fff',
-          fontSize: 14, fontWeight: 700,
-          cursor: isActuel ? 'default' : 'pointer',
-          fontFamily: theme.font.family,
-          transition: theme.transition.normal,
-          boxShadow: isActuel ? 'none' : theme.shadow.primary,
-          marginTop: 'auto',
-        }}
-      >
-        {isActuel ? 'Plan actuel' : `Passer au ${plan.label}`}
+          fontSize: 14, fontWeight: 700, cursor: isActuel ? 'default' : 'pointer',
+          fontFamily: theme.font.family, transition: theme.transition.normal,
+          boxShadow: isActuel ? 'none' : `0 4px 14px ${planC.border ?? theme.colors.primary}44`,
+        }}>
+        {isActuel ? '✓ Plan actuel' : `Passer au ${plan.label} →`}
       </button>
     </div>
   )
 }
 
+// ── Modal paiement ───────────────────────────────
 function ModalPaiement({ planKey, planLabel, prix, onClose, onConfirm, loading, palette }) {
   const [method, setMethod] = useState('')
   const [phone,  setPhone]  = useState('')
-
   const canSubmit = method && phone.length >= 8
 
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 200,
-      background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 16,
+      background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
     }} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div style={{
         background: palette.card,
@@ -169,7 +159,7 @@ function ModalPaiement({ planKey, planLabel, prix, onClose, onConfirm, loading, 
         <div style={{ fontSize: 18, fontWeight: 800, color: palette.text, marginBottom: 4 }}>
           Souscrire au plan {planLabel}
         </div>
-        <div style={{ fontSize: 13, color: palette.textSub, marginBottom: 24 }}>
+        <div style={{ fontSize: 13, color: palette.textSub, marginBottom: 22 }}>
           ${prix}/mois · Paiement Mobile Money
         </div>
 
@@ -182,10 +172,9 @@ function ModalPaiement({ planKey, planLabel, prix, onClose, onConfirm, loading, 
             {METHODS.map(m => (
               <button key={m.key} onClick={() => setMethod(m.key)}
                 style={{
-                  padding: '10px 12px',
-                  borderRadius: theme.radius.md,
+                  padding: '10px 12px', borderRadius: theme.radius.md,
                   border: `2px solid ${method === m.key ? m.color : palette.cardBorder}`,
-                  background: method === m.key ? `${m.color}15` : palette.inputBg,
+                  background: method === m.key ? m.color + '18' : palette.inputBg,
                   cursor: 'pointer', fontFamily: theme.font.family,
                   display: 'flex', alignItems: 'center', gap: 8,
                   transition: theme.transition.fast,
@@ -200,41 +189,32 @@ function ModalPaiement({ planKey, planLabel, prix, onClose, onConfirm, loading, 
         </div>
 
         {/* Numéro */}
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 20 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
             Numéro de téléphone
           </div>
-          <input
-            type="tel"
-            placeholder="Ex: 620 00 00 00"
-            value={phone}
+          <input type="tel" placeholder="Ex: 620 00 00 00" value={phone}
             onChange={e => setPhone(e.target.value.replace(/\D/g, ''))}
             style={{
               width: '100%', height: 50,
-              background: palette.inputBg,
-              border: `1.5px solid ${palette.cardBorder}`,
-              borderRadius: theme.radius.md,
-              padding: '0 16px', fontSize: 18,
-              fontWeight: 700, fontFamily: theme.font.mono,
-              color: palette.text, outline: 'none',
-              letterSpacing: '0.1em',
+              background: palette.inputBg, border: `1.5px solid ${palette.cardBorder}`,
+              borderRadius: theme.radius.md, padding: '0 16px',
+              fontSize: 20, fontWeight: 700, fontFamily: theme.font.mono,
+              color: palette.text, outline: 'none', letterSpacing: '0.1em',
             }}
           />
           <div style={{ fontSize: 11, color: palette.textMuted, marginTop: 4 }}>
-            Le paiement sera envoyé à ce numéro. Vous recevrez une confirmation par SMS.
+            Vous recevrez une confirmation par SMS après validation.
           </div>
         </div>
 
-        {/* Info */}
+        {/* Avertissement */}
         <div style={{
-          background: 'rgba(245,158,11,0.08)',
-          border: '1px solid rgba(245,158,11,0.25)',
-          borderRadius: theme.radius.md,
-          padding: '10px 14px',
-          fontSize: 12, color: '#F59E0B',
-          marginBottom: 20, lineHeight: 1.5,
+          background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)',
+          borderRadius: theme.radius.md, padding: '10px 14px',
+          fontSize: 12, color: '#F59E0B', marginBottom: 20, lineHeight: 1.5,
         }}>
-          ⚠️ Votre demande sera traitée sous 24h. Votre plan sera activé après confirmation du paiement par notre équipe.
+          ⚠️ Votre demande sera traitée sous 24h. Plan activé après confirmation du paiement.
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -251,10 +231,8 @@ function ModalPaiement({ planKey, planLabel, prix, onClose, onConfirm, loading, 
               fontFamily: theme.font.family, fontSize: 14, fontWeight: 700,
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
             }}>
-            {loading
-              ? <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-              : '📲'}
-            {loading ? 'Envoi...' : 'Confirmer'}
+            {loading && <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />}
+            {loading ? 'Envoi...' : '📲 Confirmer'}
           </button>
         </div>
       </div>
@@ -262,10 +240,13 @@ function ModalPaiement({ planKey, planLabel, prix, onClose, onConfirm, loading, 
   )
 }
 
+// ── Page principale ──────────────────────────────
 export default function AbonnementsPage() {
-  const { palette }     = useTheme()
-  const queryClient     = useQueryClient()
-  const [modal, setModal] = useState(null) // { key, label, prix }
+  const { palette } = useTheme()
+  const queryClient = useQueryClient()
+  const [modal, setModal] = useState(null)
+
+  const { plan: planActuel, colors: planColors, statut: planStatut } = usePlan()
 
   const { data, isLoading } = useQuery({
     queryKey: ['abonnement'],
@@ -284,50 +265,58 @@ export default function AbonnementsPage() {
     onError: (err) => toast.error(err.response?.data?.error ?? 'Erreur lors de la souscription'),
   })
 
-  const handleConfirm = async (method, phone) => {
-    await souscrire({ plan: modal.key, payment_method: method, payment_phone: phone })
-  }
-
   const abonnement = data?.abonnement
   const plans      = data?.tous_les_plans ?? []
 
   return (
-    <div style={{ padding: '32px 28px', maxWidth: 900, margin: '0 auto' }} className="fuelo-abonnements">
+    <div style={{ padding: '32px 28px', maxWidth: 960, margin: '0 auto' }} className="fuelo-abonnements">
       {modal && (
         <ModalPaiement
           planKey={modal.key} planLabel={modal.label} prix={modal.prix}
-          onClose={() => setModal(null)} onConfirm={handleConfirm}
+          onClose={() => setModal(null)} onConfirm={(m, p) => souscrire({ plan: modal.key, payment_method: m, payment_phone: p })}
           loading={loadingSub} palette={palette}
         />
       )}
 
-      {/* Header */}
-      <div style={{ marginBottom: 32 }}>
-        <h1 style={{ fontSize: theme.font.size['2xl'], fontWeight: theme.font.weight.black, color: palette.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 4 }}>
-          Abonnement
-        </h1>
-        <p style={{ fontSize: theme.font.size.md, color: palette.textSub, margin: 0 }}>
-          Gérez votre plan et accédez à toutes les fonctionnalités Fuelo
-        </p>
+      {/* Header avec badge plan actuel */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 14, marginBottom: 28 }}>
+        <div>
+          <h1 style={{ fontSize: theme.font.size['2xl'], fontWeight: theme.font.weight.black, color: palette.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 10 }}>
+            Abonnement
+          </h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 14, color: palette.textSub }}>Plan actuel :</span>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              fontSize: 13, fontWeight: 800, letterSpacing: '0.04em',
+              padding: '5px 14px', borderRadius: 99,
+              background: planColors.border + '22',
+              color: planColors.text,
+              border: `1.5px solid ${planColors.border}66`,
+            }}>
+              {planColors.emoji} {planColors.label}
+            </span>
+            {planStatut === 'en_attente' && (
+              <span style={{ fontSize: 12, color: '#F59E0B', background: 'rgba(245,158,11,0.12)', padding: '4px 10px', borderRadius: 99, fontWeight: 600 }}>
+                ⏳ Paiement en attente
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Statut abonnement actuel */}
+      {/* Bannière en attente */}
       {abonnement?.statut === 'en_attente' && (
         <div style={{
-          background: 'rgba(245,158,11,0.1)',
-          border: '1px solid rgba(245,158,11,0.3)',
-          borderRadius: theme.radius.lg,
-          padding: '16px 20px',
-          marginBottom: 24,
+          background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)',
+          borderRadius: theme.radius.lg, padding: '16px 20px', marginBottom: 24,
           display: 'flex', alignItems: 'center', gap: 12,
         }}>
           <span style={{ fontSize: 24 }}>⏳</span>
           <div>
-            <div style={{ fontWeight: 700, color: '#F59E0B', marginBottom: 2 }}>
-              Paiement en attente de validation
-            </div>
+            <div style={{ fontWeight: 700, color: '#F59E0B', marginBottom: 2 }}>Paiement en attente de validation</div>
             <div style={{ fontSize: 13, color: palette.textSub }}>
-              Plan {abonnement.plan?.toUpperCase()} · {abonnement.payment_method?.replace('_', ' ')} · {abonnement.payment_phone} · Validation sous 24h
+              Plan {abonnement.plan?.toUpperCase()} · {abonnement.payment_method?.replace(/_/g, ' ')} · {abonnement.payment_phone} · Validation sous 24h
             </div>
           </div>
         </div>
@@ -336,14 +325,15 @@ export default function AbonnementsPage() {
       {/* Grille des plans */}
       {isLoading ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
-          {[1,2,3].map(i => <div key={i} style={{ height: 400, background: palette.card, borderRadius: theme.radius.xl, border: `1px solid ${palette.cardBorder}` }} />)}
+          {[1,2,3].map(i => <div key={i} style={{ height: 420, background: palette.card, borderRadius: theme.radius.xl, border: `1px solid ${palette.cardBorder}`, animation: 'pulse 1.5s ease-in-out infinite' }} />)}
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(270px, 1fr))', gap: 20 }}>
           {plans.map(plan => (
             <PlanCard
               key={plan.key}
               plan={plan}
+              colors={PLAN_COLORS[plan.key]}
               onChoisir={(key) => setModal({ key, label: plan.label, prix: plan.prix })}
               palette={palette}
             />
@@ -351,13 +341,14 @@ export default function AbonnementsPage() {
         </div>
       )}
 
-      {/* Note bas de page */}
+      {/* Footer */}
       <div style={{ marginTop: 28, fontSize: 12, color: palette.textMuted, textAlign: 'center', lineHeight: 1.6 }}>
-        Paiements acceptés : Orange Money, MTN MoMo, PayCard, Kulu · Facturation mensuelle · Pas d'engagement
+        💳 Orange Money · MTN MoMo · PayCard · Kulu — Facturation mensuelle · Sans engagement
       </div>
 
       <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes spin  { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:0.5 } }
         @media (max-width: 768px) { .fuelo-abonnements { padding: 20px 16px !important; } }
       `}</style>
     </div>

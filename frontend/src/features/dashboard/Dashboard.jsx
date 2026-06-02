@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useAuth }      from '../../context/AuthContext'
 import { useTheme }     from '../../context/ThemeContext'
+import { usePlan, PLAN_COLORS } from '../../hooks/usePlan'
 import { useDashboard } from '../../hooks/useDashboard'
 import { useVentes }    from '../../hooks/useVentes'
 import StatCard         from '../../ui/StatCard'
@@ -89,6 +90,7 @@ export default function Dashboard() {
 
   const { stocks, aujourdhui, cemois, graphique7j, alertesNonLues, loading, refetch } = useDashboard()
   const { recentes } = useVentes()
+  const { plan, colors: planColors, statut: planStatut, isOwner } = usePlan()
 
   const stockEssence = parseFloat(stocks.find(s => s.type === 'essence')?.quantite ?? 0)
   const stockGasoil  = parseFloat(stocks.find(s => s.type === 'gasoil')?.quantite  ?? 0)
@@ -102,6 +104,51 @@ export default function Dashboard() {
 
   return (
     <div style={{ padding: '32px 28px', maxWidth: 1200, margin: '0 auto' }} className="fuelo-dashboard">
+
+      {/* Bannière plan — owner uniquement, sauf Enterprise */}
+      {isOwner && plan !== 'enterprise' && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexWrap: 'wrap', gap: 12,
+          background: `linear-gradient(135deg, ${planColors.border}22, ${planColors.border}11)`,
+          border: `1px solid ${planColors.border}55`,
+          borderRadius: theme.radius.lg,
+          padding: '14px 20px',
+          marginBottom: 20,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: theme.radius.md,
+              background: planColors.border + '33',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 20, flexShrink: 0,
+            }}>{planColors.emoji}</div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: palette.text }}>
+                Plan {planColors.label}
+                {planStatut === 'en_attente' && (
+                  <span style={{ marginLeft: 8, fontSize: 11, color: '#F59E0B', background: 'rgba(245,158,11,0.12)', padding: '2px 8px', borderRadius: 99, fontWeight: 600 }}>
+                    ⏳ En attente
+                  </span>
+                )}
+              </div>
+              <div style={{ fontSize: 12, color: palette.textSub, marginTop: 1 }}>
+                Passez à {plan === 'starter' ? 'Pro ($150/mois)' : 'Enterprise ($300/mois)'} pour débloquer plus de fonctionnalités
+              </div>
+            </div>
+          </div>
+          <button onClick={() => navigate('/abonnements')} style={{
+            padding: '9px 18px', borderRadius: theme.radius.md,
+            border: 'none', cursor: 'pointer',
+            background: planColors.border, color: '#fff',
+            fontSize: 13, fontWeight: 700, fontFamily: theme.font.family,
+            boxShadow: `0 4px 14px ${planColors.border}44`,
+            whiteSpace: 'nowrap',
+          }}>
+            ⬆️ Upgrader
+          </button>
+        </div>
+      )}
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 14 }}>

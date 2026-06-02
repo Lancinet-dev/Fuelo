@@ -5,9 +5,10 @@
 
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
-import { useTheme } from '../context/ThemeContext'
-import FueloLogo from '../components/FueloLogo'
+import { useAuth }   from '../context/AuthContext'
+import { useTheme }  from '../context/ThemeContext'
+import FueloLogo     from '../components/FueloLogo'
+import { usePlan, PLAN_COLORS } from '../hooks/usePlan'
 
 
 const BLUE = '#2563EB'
@@ -45,6 +46,8 @@ const ALL_NAV = [
 ]
 
 function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logout, user, role, isDark, toggle }) {
+  const { plan, colors, statut } = usePlan()
+  const isOwner = role === 'owner'
 return (
   <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
 
@@ -92,6 +95,19 @@ return (
                   {alertesNb}
                 </span>
               )}
+              {item.path === '/abonnements' && isOwner && (
+                <span style={{
+                  marginLeft: 'auto',
+                  fontSize: 9, fontWeight: 800, letterSpacing: '0.05em',
+                  padding: '2px 6px', borderRadius: 99,
+                  background: colors.border + '33',
+                  color: colors.text,
+                  border: `1px solid ${colors.border}55`,
+                  textTransform: 'uppercase',
+                }}>
+                  {colors.emoji} {plan}
+                </span>
+              )}
             </button>
           )
         })}
@@ -106,8 +122,25 @@ return (
             <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {user?.nom || 'Gerant'}
             </div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', textTransform: 'capitalize' }}>
-              {getRoleLabel(role)}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', textTransform: 'capitalize' }}>
+                {getRoleLabel(role)}
+              </span>
+              {isOwner && (
+                <span style={{
+                  fontSize: 9, fontWeight: 800,
+                  padding: '1px 5px', borderRadius: 99,
+                  background: colors.border + '33',
+                  color: colors.text,
+                  border: `1px solid ${colors.border}55`,
+                  letterSpacing: '0.04em', textTransform: 'uppercase',
+                }}>
+                  {colors.emoji}
+                </span>
+              )}
+              {isOwner && statut === 'en_attente' && (
+                <span style={{ fontSize: 9, color: '#F59E0B' }}>⏳</span>
+              )}
             </div>
           </div>
         </div>
