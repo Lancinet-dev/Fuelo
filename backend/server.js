@@ -109,6 +109,17 @@ app.get('/', (req, res) => {
   res.json({ message: '⛽ Fuelo API V2.1 — En ligne', version: '2.1.0', status: 'OK' })
 })
 
+app.get('/debug-cloudinary', (req, res) => {
+  const cn  = process.env.CLOUDINARY_CLOUD_NAME
+  const key = process.env.CLOUDINARY_API_KEY
+  const sec = process.env.CLOUDINARY_API_SECRET
+  res.json({
+    cloud_name: cn  || '❌ MANQUANT',
+    api_key:    key || '❌ MANQUANT',
+    api_secret: sec ? `✅ défini (${sec.length} chars, finit par ...${sec.slice(-4)})` : '❌ MANQUANT',
+  })
+})
+
 // ── 404 ───────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({ status: 'fail', error: `Route ${req.originalUrl} introuvable` })

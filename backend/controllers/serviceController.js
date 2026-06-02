@@ -6,13 +6,18 @@ const serviceService = require('../services/serviceService')
 const cloudinary     = require('../config/cloudinary')
 const logger         = require('../utils/logger')
 
-const uploadPhoto = (buffer, folder, publicId) => new Promise((resolve, reject) => {
-  const stream = cloudinary.uploader.upload_stream(
-    { folder, public_id: publicId, transformation: [{ width: 1200, quality: 'auto' }] },
-    (err, result) => { if (err) return reject(err); resolve(result.secure_url) }
-  )
-  stream.end(buffer)
-})
+const uploadPhoto = async (buffer, folder, publicId) => {
+  const b64    = buffer.toString('base64')
+  const mime   = 'image/jpeg'
+  const dataUri = `data:${mime};base64,${b64}`
+  const result = await cloudinary.uploader.upload(dataUri, {
+    folder,
+    public_id: publicId,
+    resource_type: 'image',
+    overwrite: true,
+  })
+  return result.secure_url
+}
 
 const demarrerService = async (req, res) => {
   try {
