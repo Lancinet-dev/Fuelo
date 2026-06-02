@@ -174,6 +174,24 @@ CREATE TABLE IF NOT EXISTS gps_points (
 );
 
 CREATE INDEX IF NOT EXISTS idx_gps_points_trajet ON gps_points(trajet_id, created_at DESC);
+
+-- Abonnements (1 par owner)
+CREATE TABLE IF NOT EXISTS subscriptions (
+  id             SERIAL PRIMARY KEY,
+  owner_id       INT REFERENCES users(id) ON DELETE CASCADE UNIQUE,
+  plan           VARCHAR(20) DEFAULT 'starter' NOT NULL,
+  statut         VARCHAR(20) DEFAULT 'actif'   NOT NULL,
+  started_at     TIMESTAMP DEFAULT NOW(),
+  expires_at     TIMESTAMP,
+  payment_method VARCHAR(50),
+  payment_phone  VARCHAR(30),
+  montant        FLOAT DEFAULT 0,
+  notes          TEXT,
+  created_at     TIMESTAMP DEFAULT NOW(),
+  updated_at     TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_subscriptions_owner ON subscriptions(owner_id);
 `
 
 async function migrate() {

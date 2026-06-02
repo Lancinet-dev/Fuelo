@@ -34,7 +34,8 @@ const ForgotPassword = lazy(() => import('../features/auth/ForgotPassword'))
 const ResetPassword  = lazy(() => import('../features/auth/ResetPassword'))
 const GoogleSuccess  = lazy(() => import('../features/auth/GoogleSuccess'))
 const Profile        = lazy(() => import('../features/profile/Profile'))
-const NotFound       = lazy(() => import('../features/auth/NotFound'))
+const NotFound           = lazy(() => import('../features/auth/NotFound'))
+const AbonnementsPage    = lazy(() => import('../features/abonnements/AbonnementsPage'))
 
 // ── Fallback loading ──────────────────────────────────
 const PageLoader = () => (
@@ -135,8 +136,9 @@ export default function Router() {
             <Route path="/trajets"    element={<TrajetsPage />} />
             <Route path="/employes"   element={<Employes />} />
             <Route path="/stations"   element={<Stations />} />
-            <Route path="/parametres" element={<Parametres />} />
-            <Route path="/profile"    element={<Profile />} />
+            <Route path="/parametres"  element={<Parametres />} />
+            <Route path="/profile"     element={<Profile />} />
+            <Route path="/abonnements" element={<AbonnementsPage />} />
           </Route>
 
           {/* Route inconnue — page 404 */}

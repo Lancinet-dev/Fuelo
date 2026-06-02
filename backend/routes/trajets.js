@@ -6,6 +6,7 @@ const express     = require('express')
 const router      = express.Router()
 const verifyToken = require('../middleware/auth')
 const { checkRole, isTransport } = require('../middleware/checkRole')
+const { checkPlan } = require('../middleware/checkPlan')
 const {
   demarrerTrajet, ajouterPosition, arriverDestination,
   getTrajetActif, getTrajets, getGpsPoints, exportCSV,
@@ -13,8 +14,8 @@ const {
 
 const isChauffeur = checkRole(['chauffeur'])
 
-// Chauffeur
-router.post('/',               verifyToken, isChauffeur,  demarrerTrajet)
+// Chauffeur (plan ENTERPRISE requis)
+router.post('/',               verifyToken, isChauffeur,  checkPlan('trajets'), demarrerTrajet)
 router.post('/:id/position',   verifyToken, isChauffeur,  ajouterPosition)
 router.post('/:id/arriver',    verifyToken, isChauffeur,  arriverDestination)
 router.get('/actif',           verifyToken, isChauffeur,  getTrajetActif)

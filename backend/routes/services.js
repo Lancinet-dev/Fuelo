@@ -6,6 +6,7 @@ const express     = require('express')
 const router      = express.Router()
 const verifyToken = require('../middleware/auth')
 const { isPompiste, isManager } = require('../middleware/checkRole')
+const { checkPlan } = require('../middleware/checkPlan')
 const upload      = require('../middleware/upload')
 const {
   demarrerService,
@@ -14,9 +15,9 @@ const {
   getServices,
 } = require('../controllers/serviceController')
 
-// Pompiste — gestion de son propre service
-router.post('/',              verifyToken, isPompiste, upload.single('photo'), demarrerService)
-router.post('/:id/terminer',  verifyToken, isPompiste, upload.single('photo'), terminerService)
+// Pompiste — gestion de son propre service (plan PRO+ requis)
+router.post('/',              verifyToken, isPompiste, checkPlan('services'), upload.single('photo'), demarrerService)
+router.post('/:id/terminer',  verifyToken, isPompiste, checkPlan('services'), upload.single('photo'), terminerService)
 router.get('/actif',          verifyToken, isPompiste, getServiceActif)
 
 // Owner + gérant — consultation de tous les services

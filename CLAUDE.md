@@ -1,15 +1,13 @@
-# CLAUDE.md — Contexte du projet Fuelo
+# CLAUDE.md
 
-> Ce fichier est lu automatiquement par Claude Code à chaque session.
-> Il contient tout le contexte du projet pour ne jamais avoir à le réexpliquer.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ---
 
 ## 🎯 C'EST QUOI FUELO
 
 SaaS de gestion de stations-service pour l'Afrique de l'Ouest (Guinée d'abord).
-Permet aux propriétaires/gérants de gérer stock, ventes, alertes, employés et rapports
-depuis leur téléphone, en temps réel.
+Permet aux propriétaires/gérants de gérer stock, ventes, alertes, employés et rapports depuis leur téléphone, en temps réel.
 
 **Statut : EN PRODUCTION.**
 
@@ -24,24 +22,23 @@ depuis leur téléphone, en temps réel.
 **Backend** — Node.js + Express, architecture MVC + service layer
 - `routes/` → définition des endpoints
 - `controllers/` → reçoivent req/res, appellent les services
-- `services/` → logique métier (ex: venteService.js avec transactions ACID)
-- `middleware/` → auth (JWT), rateLimit, checkRole, errorHandler, upload (multer+Cloudinary)
+- `services/` → logique métier (transactions ACID, calculs)
+- `middleware/` → auth (JWT), rateLimit, checkRole, checkPlan, errorHandler, upload (multer memoryStorage)
 - `config/` → database.js (pool pg), passport.js (Google OAuth), cloudinary.js
 - `utils/` → logger (Winston), checkEnv, socketNotify (ventes/alertes/GPS), cronJobs
-- Base de données : PostgreSQL sur **Neon** (migré le 2026-06-01, ex-Render)
-- Temps réel : Socket.IO (rooms par station : `station_${id}`) — events : `nouvelle_vente`, `alerte_stock`, `gps_update`
-- Sécurité : JWT, bcrypt, helmet, CORS, rate limiting, validation Zod, RBAC
-- Stockage photos : Cloudinary (anti-fraude pompistes, dossier `fuelo/services/`)
+- Base de données : PostgreSQL sur **Neon** (migré 2026-06-01, ex-Render). Projet `fuelo-prod`, région EU Central.
+- Temps réel : Socket.IO — rooms par station `station_${id}` — events : `nouvelle_vente`, `alerte_stock`, `gps_update`
+- Sécurité : JWT, bcrypt, helmet, CORS, rate limiting, validation **Zod v4** (noter : `err.issues` pas `err.errors` en v4), RBAC
+- Stockage photos : Cloudinary v2 — upload via `cloudinary.uploader.upload()` avec base64 (PAS `upload_stream`, incompatible). Config : `signature_algorithm: 'sha256'`, `secure: true`.
 - Monitoring : Sentry
 
 **Frontend** — React + Vite + React Query
-- `features/` → auth, dashboard, ventes, stock, alertes, employes, parametres, profile, stations, **services**, **trajets**, **logistique**, pompiste
-- `ui/` → Sidebar, AppLayout, StatCard, SplashScreen, etc.
-- `hooks/` → useAuth, useAlertes, useNotifications, useSocket, useService, useServices, useTrajet, useTrajets, useCiternes
+- `features/` → auth (+ NotFound 404), dashboard, ventes, stock, alertes, employes, parametres, profile, stations, services, trajets, logistique, pompiste, abonnements
+- `ui/` → Sidebar, AppLayout, StatCard, SplashScreen, Skeleton, EmptyState, StockGauge
+- `hooks/` → useAuth, useAlertes, useNotifications, useSocket, useService, useServices, useTrajet, useTrajets, useCiternes, useEmployes, useParametres, useStock, useVentes
 - `context/` → AuthContext, ThemeContext (dark/light)
-- `components/` → FueloLogo
-- `config/` → theme.js
-- `services/` → api.js (axios)
+- `utils/` → export.js (PDF via jsPDF + ExcelJS pour Excel), format.js
+- Export Excel : **ExcelJS** (pas SheetJS/xlsx — pas de styling). Les fonctions `exportVentesExcel` et `exportStockExcel` sont async.
 - Carte GPS : Leaflet + OpenStreetMap (gratuit, pas de clé API)
 
 ---
@@ -50,100 +47,104 @@ depuis leur téléphone, en temps réel.
 
 - Couleur principale : bleu `#2563EB`
 - Accent : orange `#F59E0B`
-- Logo : goutte carburant bleue + éclair orange sur carré bleu nuit `#0D1B2A`
-- Wordmark : "fuel" (couleur thème) + "o" (orange)
-- Dark mode + Light mode via ThemeContext
-- Responsive mobile complet
-- Police : DM Sans
+- Dark mode + Light mode via ThemeContext → toujours utiliser `palette` (pas de couleurs hardcodées)
+- Styles inline React uniquement (pas de CSS séparé), avec objet `theme` importé de `config/theme.js`
+- Logo sur fond sombre : `<FueloLogo size={36} forceTextColor="#fff" />`
+- Police : DM Sans (web), Calibri dans les exports Excel
 
 ---
 
-## 👥 RÔLES UTILISATEURS
+## 👥 RÔLES ET PERMISSIONS
 
-- `owner` (propriétaire) → accès complet, voit tout
-- `gerant` (alias `manager`, normalisé en `gerant`) → gère sa station
-- `pompiste` → interface dédiée `/pompiste`, enregistre les ventes
-- `chauffeur` → interface dédiée `/chauffeur`, gère ses trajets GPS
-- `logisticien` → interface dédiée `/logistique`, gère citernes/trajets/alertes transport/exports (pas accès ventes/stocks/employés)
-- `superadmin` → (prévu, pas encore implémenté)
+| Rôle | Interface | Peut faire |
+|---|---|---|
+| `owner` | AppLayout (sidebar) | Voir tout, gérer employés (CRUD), paramètres station/prix/seuils, multi-stations |
+| `gerant` | AppLayout (sidebar) | Ventes, stock (livraisons), alertes, voir employés (lecture seule), paramètres |
+| `pompiste` | `/pompiste` dédié | Enregistrer ventes, démarrer/terminer son service (photo compteur) |
+| `chauffeur` | `/chauffeur` dédié | Démarrer/terminer trajets GPS |
+| `logisticien` | `/logistique` dédié | Citernes CRUD, trajets, alertes transport, export Excel |
+| `superadmin` | Prévu, pas codé | — |
 
-Comptes test :
-- Owner : main@gmail.com, sadio@gmail.com
+**Restrictions owner vs gérant :**
+- Owner : lecture seule sur ventes (pas d'export PDF/Excel), lecture seule sur stock (pas de livraison), gère les employés
+- Gérant : peut exporter PDF/Excel, enregistrer livraisons, mais ne peut PAS créer/supprimer/toggler des employés
+- Citernes : gérant exclus, logisticien uniquement (via `/logistique`)
+
+**Normalisation des rôles :** `manager` est toujours normalisé en `gerant` côté backend et frontend.
+
+**checkRole.js** utilise deux fonctions :
+- `checkRole(roles)` — vérifie par niveau (owner >= gerant >= pompiste/chauffeur/logisticien)
+- `checkExactRole(roles)` — vérifie le rôle exact (utilisé pour `isPompiste`, `isChauffeur`)
+
+Comptes test prod :
+- Owner : sadio@gmail.com
 - Gérant : thiernon@gmail.com
 - Pompiste : saliou@gmail.com (station 12)
 
 ---
 
-## ✅ FONCTIONNALITÉS DÉJÀ FAITES
+## ✅ FONCTIONNALITÉS LIVRÉES
 
 - Auth email/password + Google OAuth + reset password
-- Dashboard (stats temps réel, graphique 7 jours, ventes récentes)
-- Ventes (CRUD, pagination, filtres, export PDF + Excel)
-- Stock (niveaux, livraisons, seuils)
-- Alertes (liste, marquer lu, tout marquer lu) — types : STOCK_FAIBLE, FRAUDE, FRAUDE_CITERNE, ARRET_SUSPECT
-- Employés (CRUD, soft delete, rôles dont `chauffeur` et `logisticien`)
-- Multi-stations (switch station)
-- Paramètres (infos station, prix carburants, seuils stock + seuil fraude citerne, gestion citernes)
-- Profil
-- Interface pompiste dédiée (`/pompiste`)
-- Notifications temps réel Socket.IO (ventes, alertes stock, GPS)
+- Dashboard (stats temps réel, graphique 7 jours)
+- Ventes (CRUD, pagination, filtres, export PDF + Excel — gérant uniquement)
+- Stock (niveaux, livraisons — gérant uniquement)
+- Alertes (STOCK_FAIBLE, FRAUDE, FRAUDE_CITERNE, ARRET_SUSPECT)
+- Employés (CRUD owner uniquement, lecture gérant, soft delete)
+- Multi-stations, switch station
+- Paramètres (infos station, prix, seuils — sans citernes, réservé au logisticien)
+- Page 404 personnalisée (`/features/auth/NotFound.jsx`)
+- Interface pompiste dédiée (`/pompiste`) — photo compteur obligatoire, upload Cloudinary
 - PWA installable
-- **Anti-fraude pompistes** — photos compteur début/fin (Cloudinary), calcul écart théorique/réel, alerte si > 10L
-  - Backend : `services` table, `POST /api/services`, `POST /api/services/:id/terminer`
-  - Frontend : `/services` (owner/gérant) avec carte détail + photos, modal bottom-sheet pompiste
-- **GPS citernes** — suivi temps réel trajet chauffeur, détection arrêt suspect, comparaison quantités
-  - Backend : tables `citernes`, `trajets`, `gps_points` ; Haversine stop detection (300m/10min) ; alerte fraude citerne si écart > seuil
-  - Frontend : `/chauffeur` (interface mobile GPS watchPosition), `/trajets` (carte Leaflet + OpenStreetMap, historique)
-- **Rôle logisticien** — interface dédiée `/logistique` avec 4 onglets
-  - Backend : middleware `isTransport` (logisticien + gerant + owner), `GET /alertes/transport` (FRAUDE_CITERNE + ARRET_SUSPECT), `GET /trajets/export/csv`
-  - Frontend : Trajets (carte GPS inline), Citernes (CRUD), Alertes transport, Rapports (stats + export CSV Excel BOM UTF-8)
-  - RBAC : niveau 1 — bloqué sur ventes, stocks, employés, dashboard
+- **Anti-fraude pompistes** — photos compteur début/fin, écart théorique/réel, alerte si > 10L
+  - `POST /api/services`, `POST /api/services/:id/terminer`
+- **GPS citernes** — trajet chauffeur temps réel, arrêt suspect (300m/10min), fraude citerne
+  - Tables : `citernes`, `trajets`, `gps_points`
+  - `station_destination_id` auto depuis `user.station_id` si non fourni
+- **Rôle logisticien** — `/logistique` : Trajets, Citernes, Alertes transport, Rapports Excel
+  - `isTransport` middleware : logisticien + owner + superadmin
+  - Export trajets : **ExcelJS** avec styling pro (feuilles Résumé + Trajets)
 
 ---
 
-## 🔴 PROBLÈMES CRITIQUES À RÉGLER (PRIORITÉ ABSOLUE)
+## 🔴 PROBLÈMES CONNUS
 
-1. ~~**DB Render expire le 22 juin 2026**~~ ✅ **RÉGLÉ le 2026-06-01** — Migré vers Neon
-   (neon.tech, projet `fuelo-prod`, région EU Central). DATABASE_URL mis à jour sur Render.
-
-2. **Crons + Socket.IO cassés sur tier gratuit** — le backend Render gratuit s'endort après
-   15 min d'inactivité. Donc le cron des rapports mensuels et la vérif stock horaire ne
-   tournent pas de façon fiable. → nécessite plan payant (~7$/mois) pour fonctionner vraiment.
-
-3. ~~**Secrets à régénérer**~~ ✅ **RÉGLÉ le 2026-06-01** — JWT_SECRET régénéré (64 bytes hex,
-   mis à jour sur Render). Reste à faire : EMAIL_PASS et GOOGLE_CLIENT_SECRET.
+1. **Crons + Socket.IO peu fiables** — Render tier gratuit s'endort après 15 min. Cron rapports mensuels et vérif stock horaire non fiables → nécessite plan payant (~7$/mois).
+2. **EMAIL_PASS et GOOGLE_CLIENT_SECRET** à régénérer sur Render (JWT_SECRET déjà régénéré).
 
 ---
 
-## ⏳ FONCTIONNALITÉS À CODER (les grosses, demandées par le client)
+## ⏳ FONCTIONNALITÉS À CODER (priorité)
 
-### ✅ Anti-fraude pompistes → LIVRÉ (2026-06-01)
-### ✅ GPS citernes → LIVRÉ (2026-06-01)
-### ✅ Rôle logisticien → LIVRÉ (2026-06-01)
+### En cours
+- **Système d'abonnements** (3 plans : STARTER 50$/mois, PRO 150$/mois, ENTERPRISE 300$/mois)
+  - Table `subscriptions` (owner_id, plan, statut, expires_at, payment_method, payment_phone)
+  - Middleware `checkPlan` vérifiant le plan avant les features sensibles
+  - Page `/abonnements` : plan actuel, comparatif, modal paiement simulé (Orange Money, MTN, PayCard, Kulu)
 
-## 📋 AUTRES TÂCHES (moins prioritaires)
-
-- Refresh tokens (éviter déconnexion après 7j) — confort, pas urgent
-- Page 404 personnalisée Fuelo
-- Onboarding première connexion
-- Dashboard superadmin (voir tous les clients)
-- Paiements Mobile Money (Orange Money, MTN)
-- Domaine personnalisé (fuelo.africa)
-- SEO Google
-- Tests automatisés
-- Backup auto quotidien
+### Restant
+- Onboarding première connexion owner
+- Refresh tokens (éviter déconnexion après 7j)
+- Backup auto quotidien DB Neon
+- Dashboard superadmin (tous les clients + abonnements)
+- Migration Railway (remplacer Render, ~5$/mois)
+- Paiements Mobile Money réels (MTN MoMo API, agrégateur CinetPay/Bizao pour Orange Money)
+- Domaine personnalisé fuelo.africa
 
 ---
 
 ## 📝 CONVENTIONS DE CODE
 
-- Français pour les commentaires, messages utilisateur, et noms métier (vente, stock, alerte)
-- Formatage nombres : NE PAS utiliser toLocaleString dans les PDF/exports (cause des bugs `&&&`).
-  Utiliser une fonction numFmt manuelle : `n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')`
-- Soft delete : utiliser `deleted_at IS NULL` dans les requêtes
-- Routes spécifiques AVANT routes paramétrées (ex: `/toutes/lire` avant `/:id/lire`)
-- Styles inline React (pas de CSS séparé), avec objet `theme` et `palette` du ThemeContext
-- Logo : `<FueloLogo size={36} forceTextColor="#fff" />` sur fond sombre
+- Français pour les commentaires, messages utilisateur, noms métier
+- **NE PAS** utiliser `toLocaleString` dans les PDF/exports → bug `&&&`. Utiliser :
+  ```js
+  n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+  ```
+- Soft delete : toujours `deleted_at IS NULL` dans les requêtes
+- Routes spécifiques AVANT routes paramétrées (ex: `/actif` avant `/:id`)
+- Zod v4 : utiliser `err.issues ?? err.errors ?? []` dans le middleware `validate`
+- `multer` : utiliser `memoryStorage()` + upload manuel Cloudinary (pas `multer-storage-cloudinary`)
+- `.npmrc` dans `backend/` contient `legacy-peer-deps=true` (conflit cloudinary v2 / multer-storage-cloudinary)
 
 ---
 
@@ -151,28 +152,23 @@ Comptes test :
 
 ```bash
 # Backend (local)
-cd backend
-npm run dev          # démarre nodemon
+cd backend && npm run dev        # nodemon sur server.js
 
 # Frontend (local)
-cd frontend
-npm run dev          # démarre Vite (localhost:5173)
+cd frontend && npm run dev       # Vite sur localhost:5173
 
-# Migration DB (créer les tables)
-cd backend
-node migrate.js      # avec DATABASE_URL en variable d'env
+# Migration DB (idempotent — CREATE TABLE IF NOT EXISTS)
+cd backend && node migrate.js    # nécessite DATABASE_URL en env
 
-# Déploiement = git push (auto-deploy Render + Vercel)
-git add .
-git commit -m "..."
-git push
+# Déploiement
+git add . && git commit -m "..." && git push   # auto-deploy Render + Vercel
 ```
 
 ---
 
 ## ⚠️ RAPPELS IMPORTANTS
 
-- Toujours faire un commit git AVANT les grosses modifications
-- En local : variables DB séparées (DB_HOST, DB_PORT...). En prod : DATABASE_URL.
-- database.js et checkEnv.js supportent les deux modes.
-- Tester en mode "Ask" au début avant de donner trop d'autonomie.
+- En local : variables DB séparées (DB_HOST, DB_PORT...). En prod : `DATABASE_URL`. `database.js` + `checkEnv.js` supportent les deux.
+- `server.js` importe `reportsRoute` : le fichier `routes/reportsRoute.js` existe mais `services/reportService.js` n'existe plus. La route `/api/reports` a été **retirée** du serveur.
+- Toujours commiter avant les grosses modifications.
+- Le build Render échouait à cause de `require('./routes/reports')` (fichier inexistant) + conflit peer deps cloudinary. Les deux sont réglés.
