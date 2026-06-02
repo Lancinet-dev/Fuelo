@@ -8,13 +8,16 @@ import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import { useAlertes }       from '../hooks/useAlertes'
 import { useTheme }         from '../context/ThemeContext'
+import { useAuth }          from '../context/AuthContext'
 import { useNotifications } from '../hooks/useNotifications'
 import SplashScreen         from './SplashScreen'
+import OnboardingModal      from './OnboardingModal'
 
 const AppLayout = memo(function AppLayout() {
   const { nonLues } = useAlertes()
   const { palette }  = useTheme()
-  useNotifications() // Active les notifications temps réel en arrière-plan
+  const { user }     = useAuth()
+  useNotifications()
 
   const [showSplash, setShowSplash] = useState(() => {
     const fromLogin = sessionStorage.getItem('fuelo_just_logged_in')
@@ -22,9 +25,17 @@ const AppLayout = memo(function AppLayout() {
     return false
   })
 
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    if (!user || user.role !== 'owner') return false
+    return !localStorage.getItem(`fuelo_onboarding_${user.id}`)
+  })
+
   return (
     <>
       {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
+      {!showSplash && showOnboarding && (
+        <OnboardingModal user={user} onDone={() => setShowOnboarding(false)} />
+      )}}
 
       <div style={{
         display:    'flex',
