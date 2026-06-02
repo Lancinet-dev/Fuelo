@@ -5,7 +5,6 @@
 
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import * as XLSX from 'xlsx'
 
 // ── Helpers format ────────────────────────────────────
 const toNum = (v) => Number(v) || 0
@@ -228,127 +227,277 @@ export const exportVentesPDF = (ventes, nomStation = 'Station') => {
   doc.save(`Fuelo_Ventes_${fileSlug(name)}_${stamp()}.pdf`)
 }
 
-// ── EXPORT EXCEL ──────────────────────────────────────
-const setFmt    = (ws, addr, fmt) => { if (ws[addr]) ws[addr].z = fmt }
-const fmtCol    = (ws, col, r1, r2, fmt) => { for (let r = r1; r <= r2; r++) setFmt(ws, XLSX.utils.encode_cell({ r, c: col }), fmt) }
-const fmtDateXL = (v) => { try { return new Date(v).toLocaleString('fr-FR') } catch { return '-' } }
+// ── EXPORT EXCEL (ExcelJS — styling complet) ──────────
+import ExcelJS from 'exceljs'
 
-const sheetResume = (ventes, name) => {
-  const s = buildSummary(ventes)
-  const data = [
-    ['FUELO - RAPPORT DES VENTES'],
-    [`Station : ${name}`],
-    [`Genere le : ${fmtDateXL(new Date())}`],
-    [`Periode : ${periodLabel(ventes)}`],
-    [],
-    ['INDICATEUR', 'VALEUR'],
-    ['Transactions', s.total],
-    ['Litres totaux', s.litres],
-    ['Montant total (GNF)', s.montant],
-    ['Ticket moyen (GNF)', s.avgTicket],
-    ['Litres moyen / vente', s.avgLitres ?? 0],
-    [],
-    ['REPARTITION PAR CARBURANT'],
-    ['Type', 'Transactions', 'Litres', 'Montant (GNF)'],
-    ['Essence', s.byType.essence.count, s.byType.essence.litres, s.byType.essence.montant],
-    ['Gasoil',  s.byType.gasoil.count,  s.byType.gasoil.litres,  s.byType.gasoil.montant],
-  ]
-  const ws = XLSX.utils.aoa_to_sheet(data)
-  ws['!cols'] = [{ wch: 26 }, { wch: 20 }, { wch: 16 }, { wch: 20 }]
-  ws['!merges'] = ['A1:D1','A2:D2','A3:D3','A4:D4','A13:D13'].map(r => XLSX.utils.decode_range(r))
-  setFmt(ws, 'B7', '#,##0'); setFmt(ws, 'B8', '#,##0.0'); setFmt(ws, 'B9', '#,##0'); setFmt(ws, 'B10', '#,##0'); setFmt(ws, 'B11', '#,##0.0')
-  fmtCol(ws, 1, 14, 15, '#,##0'); fmtCol(ws, 2, 14, 15, '#,##0.0'); fmtCol(ws, 3, 14, 15, '#,##0')
-  return ws
+const XL = {
+  navy:    'FF0F172A',
+  navyMid: 'FF1E293B',
+  blue:    'FF2563EB',
+  orange:  'FFF59E0B',
+  green:   'FF10B981',
+  red:     'FFEF4444',
+  slate:   'FF64748B',
+  altRow:  'FFF8FAFC',
+  border:  'FFE2E8F0',
+  white:   'FFFFFFFF',
+  text:    'FF1E293B',
 }
 
-const sheetTransactions = (ventes, name) => {
-  const rows = [
-    ['FUELO - DETAIL DES TRANSACTIONS'],
-    [`Station : ${name}`],
-    [`Periode : ${periodLabel(ventes)}`],
-    [],
-    ['ID', 'Carburant', 'Employe', 'Litres', 'Montant (GNF)', 'Prix/L (GNF)', 'Date'],
-    ...ventes.map(v => [
-      v.id,
-      fuelLabel(v.type),
-      empLabel(v),
-      toNum(v.litres),
-      toNum(v.montant_gnf),
-      toNum(v.montant_gnf) / Math.max(toNum(v.litres), 1),
-      fmtDateXL(v.created_at),
-    ]),
-  ]
-  if (!ventes.length) rows.push(['-', '-', 'Aucune transaction', 0, 0, 0, '-'])
-  const ws = XLSX.utils.aoa_to_sheet(rows)
-  ws['!cols'] = [{ wch: 8 }, { wch: 14 }, { wch: 28 }, { wch: 14 }, { wch: 18 }, { wch: 16 }, { wch: 24 }]
-  ws['!merges'] = ['A1:G1','A2:G2','A3:G3'].map(r => XLSX.utils.decode_range(r))
-  ws['!autofilter'] = { ref: `A5:G${rows.length}` }
-  fmtCol(ws, 3, 5, rows.length - 1, '#,##0.0')
-  fmtCol(ws, 4, 5, rows.length - 1, '#,##0')
-  fmtCol(ws, 5, 5, rows.length - 1, '#,##0')
-  return ws
+const border = (color = XL.border) => ({
+  top:    { style: 'thin', color: { argb: color } },
+  bottom: { style: 'thin', color: { argb: color } },
+  left:   { style: 'thin', color: { argb: color } },
+  right:  { style: 'thin', color: { argb: color } },
+})
+
+const fill = (argb) => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } })
+
+const styleRow = (row, { font = {}, fillColor, align = 'left', borders = true, height } = {}) => {
+  if (height) row.height = height
+  row.eachCell({ includeEmpty: true }, cell => {
+    cell.font      = { name: 'Calibri', size: 10, ...font }
+    cell.alignment = { vertical: 'middle', horizontal: align, wrapText: false }
+    if (fillColor) cell.fill = fill(fillColor)
+    if (borders)   cell.border = border()
+  })
 }
 
-const sheetEmployes = (ventes) => {
-  const s = buildSummary(ventes)
-  const rows = [
-    ['FUELO - PERFORMANCE PAR EMPLOYE'],
-    [`Genere le : ${fmtDateXL(new Date())}`],
-    [],
-    ['Employe', 'Transactions', 'Litres', 'Montant (GNF)', 'Ticket moyen (GNF)'],
-    ...s.byEmp.map(e => [e.emp, e.nb, e.litres, e.montant, e.avg]),
-  ]
-  if (!s.byEmp.length) rows.push(['Aucune donnee', 0, 0, 0, 0])
-  const ws = XLSX.utils.aoa_to_sheet(rows)
-  ws['!cols'] = [{ wch: 28 }, { wch: 14 }, { wch: 14 }, { wch: 18 }, { wch: 18 }]
-  ws['!merges'] = ['A1:E1','A2:E2'].map(r => XLSX.utils.decode_range(r))
-  ws['!autofilter'] = { ref: `A4:E${rows.length}` }
-  fmtCol(ws, 2, 4, rows.length - 1, '#,##0.0')
-  fmtCol(ws, 3, 4, rows.length - 1, '#,##0')
-  fmtCol(ws, 4, 4, rows.length - 1, '#,##0')
-  return ws
+const styleCols = (ws, defs) => { ws.columns = defs }
+
+const addTitleBand = (ws, text, merged, color = XL.navy) => {
+  const row = ws.addRow([text])
+  row.height = 34
+  const cell = row.getCell(1)
+  cell.font      = { name: 'Calibri', size: 14, bold: true, color: { argb: XL.white } }
+  cell.fill      = fill(color)
+  cell.alignment = { vertical: 'middle', horizontal: 'center' }
+  ws.mergeCells(merged)
+  return row
 }
 
-export const exportVentesExcel = (ventes, nomStation = 'Station') => {
+const addMetaRow = (ws, text, merged, color = XL.navyMid) => {
+  const row = ws.addRow([text])
+  row.height = 18
+  const cell = row.getCell(1)
+  cell.font      = { name: 'Calibri', size: 9, color: { argb: 'FFCBD5E1' } }
+  cell.fill      = fill(color)
+  cell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 }
+  ws.mergeCells(merged)
+  return row
+}
+
+const addSectionHeader = (ws, text, merged, color = XL.blue) => {
+  const row = ws.addRow([text])
+  row.height = 22
+  const cell = row.getCell(1)
+  cell.font      = { name: 'Calibri', size: 10, bold: true, color: { argb: XL.white } }
+  cell.fill      = fill(color)
+  cell.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 }
+  ws.mergeCells(merged)
+  return row
+}
+
+const addColHeaders = (ws, labels, aligns = []) => {
+  const row = ws.addRow(labels)
+  row.height = 26
+  row.eachCell({ includeEmpty: true }, (cell, col) => {
+    cell.font      = { name: 'Calibri', size: 10, bold: true, color: { argb: XL.white } }
+    cell.fill      = fill(XL.navyMid)
+    cell.alignment = { vertical: 'middle', horizontal: aligns[col - 1] ?? 'center' }
+    cell.border    = border(XL.blue)
+  })
+  return row
+}
+
+const addDataRow = (ws, values, aligns = [], isAlt = false, fmts = []) => {
+  const row = ws.addRow(values)
+  row.height = 18
+  row.eachCell({ includeEmpty: true }, (cell, col) => {
+    cell.font      = { name: 'Calibri', size: 10, color: { argb: XL.text } }
+    cell.fill      = fill(isAlt ? XL.altRow : XL.white)
+    cell.alignment = { vertical: 'middle', horizontal: aligns[col - 1] ?? 'left' }
+    cell.border    = border()
+    if (fmts[col - 1]) cell.numFmt = fmts[col - 1]
+  })
+  return row
+}
+
+const downloadBuffer = async (wb, filename) => {
+  const buf  = await wb.xlsx.writeBuffer()
+  const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement('a')
+  a.href = url; a.download = filename; a.click()
+  URL.revokeObjectURL(url)
+}
+
+const fmtDateXL = (v) => {
+  try {
+    const d = new Date(v)
+    const p = (n) => String(n).padStart(2, '0')
+    return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`
+  } catch { return '-' }
+}
+
+// ─── EXPORT VENTES ────────────────────────────────────
+export const exportVentesExcel = async (ventes, nomStation = 'Station') => {
   const name = cleanName(nomStation)
-  const wb   = XLSX.utils.book_new()
-  wb.Props   = { Title: `Rapport ventes - ${name}`, Author: 'Fuelo', CreatedDate: new Date() }
-  XLSX.utils.book_append_sheet(wb, sheetResume(ventes, name),       'Resume')
-  XLSX.utils.book_append_sheet(wb, sheetTransactions(ventes, name), 'Transactions')
-  XLSX.utils.book_append_sheet(wb, sheetEmployes(ventes),           'Par employe')
-  XLSX.writeFile(wb, `Fuelo_Ventes_${fileSlug(name)}_${stamp()}.xlsx`)
+  const s    = buildSummary(ventes)
+  const wb   = new ExcelJS.Workbook()
+  wb.creator = 'Fuelo'; wb.created = new Date()
+
+  // ── Feuille 1 : Résumé ─────────────────────────────
+  const ws1 = wb.addWorksheet('Résumé')
+  styleCols(ws1, [
+    { width: 32 }, { width: 22 }, { width: 16 }, { width: 22 },
+  ])
+
+  addTitleBand(ws1, 'FUELO — RAPPORT DES VENTES', 'A1:D1')
+  addMetaRow(ws1,  `Station : ${name}`,                'A2:D2')
+  addMetaRow(ws1,  `Généré le : ${fmtDateXL(new Date())}`, 'A3:D3')
+  addMetaRow(ws1,  `Période : ${periodLabel(ventes)}`, 'A4:D4')
+  ws1.addRow([]).height = 8
+
+  addSectionHeader(ws1, '▸  INDICATEURS CLÉS', 'A6:D6', XL.orange)
+  addColHeaders(ws1, ['INDICATEUR', 'VALEUR', '', ''], ['left','right','left','left'])
+
+  const kpis = [
+    ['Nombre de transactions',   s.total,              '#,##0',   ''],
+    ['Volume total vendu',       s.litres,             '#,##0.0', 'L'],
+    ['Chiffre d\'affaires (GNF)',s.montant,            '#,##0',   'GNF'],
+    ['Ticket moyen (GNF)',       s.avgTicket,          '#,##0',   'GNF'],
+    ['Volume moyen / vente',     s.litres / Math.max(s.total,1), '#,##0.0', 'L'],
+  ]
+  kpis.forEach(([label, val, fmt, unit], i) => {
+    const row = addDataRow(ws1, [label, val, unit, ''], ['left','right','left','left'], i % 2 === 1, ['','#,##0','',''])
+    row.getCell(2).numFmt = fmt
+  })
+
+  ws1.addRow([]).height = 10
+  addSectionHeader(ws1, '▸  RÉPARTITION PAR CARBURANT', 'A13:D13', XL.blue)
+  addColHeaders(ws1, ['TYPE', 'TRANSACTIONS', 'VOLUME (L)', 'MONTANT (GNF)'], ['left','right','right','right'])
+  ;[
+    ['⛽ Essence', s.byType.essence.count, s.byType.essence.litres, s.byType.essence.montant],
+    ['🛢 Gasoil',  s.byType.gasoil.count,  s.byType.gasoil.litres,  s.byType.gasoil.montant],
+  ].forEach(([t, nb, l, m], i) => {
+    addDataRow(ws1, [t, nb, l, m], ['left','right','right','right'], i % 2 === 1, ['','#,##0','#,##0.0','#,##0'])
+  })
+
+  // ── Feuille 2 : Transactions ────────────────────────
+  const ws2 = wb.addWorksheet('Transactions')
+  styleCols(ws2, [
+    { width: 9 }, { width: 14 }, { width: 30 }, { width: 14 }, { width: 20 }, { width: 17 }, { width: 22 },
+  ])
+  ws2.views = [{ state: 'frozen', ySplit: 5 }]
+
+  addTitleBand(ws2, 'FUELO — DÉTAIL DES TRANSACTIONS', 'A1:G1')
+  addMetaRow(ws2, `Station : ${name}`,                 'A2:G2')
+  addMetaRow(ws2, `Période : ${periodLabel(ventes)}`,  'A3:G3')
+  ws2.addRow([]).height = 8
+
+  const h2 = addColHeaders(ws2,
+    ['ID', 'CARBURANT', 'EMPLOYÉ', 'LITRES', 'MONTANT (GNF)', 'PRIX/L (GNF)', 'DATE'],
+    ['center','center','left','right','right','right','center']
+  )
+  ws2.autoFilter = { from: { row: h2.number, column: 1 }, to: { row: h2.number, column: 7 } }
+
+  const dataVentes = ventes.length
+    ? ventes
+    : [{ id: '-', type: '-', employe_nom: 'Aucune transaction', litres: 0, montant_gnf: 0, created_at: new Date() }]
+
+  dataVentes.forEach((v, i) => {
+    addDataRow(ws2,
+      [
+        v.id ?? '-',
+        fuelLabel(v.type),
+        empLabel(v),
+        toNum(v.litres),
+        toNum(v.montant_gnf),
+        toNum(v.montant_gnf) / Math.max(toNum(v.litres), 1),
+        fmtDateXL(v.created_at),
+      ],
+      ['center','center','left','right','right','right','center'],
+      i % 2 === 1,
+      ['','','','#,##0.0','#,##0','#,##0','']
+    )
+  })
+
+  // ── Feuille 3 : Par Employé ─────────────────────────
+  const ws3 = wb.addWorksheet('Par Employé')
+  styleCols(ws3, [
+    { width: 30 }, { width: 16 }, { width: 16 }, { width: 22 }, { width: 22 },
+  ])
+  ws3.views = [{ state: 'frozen', ySplit: 4 }]
+
+  addTitleBand(ws3, 'FUELO — PERFORMANCE PAR EMPLOYÉ', 'A1:E1')
+  addMetaRow(ws3, `Généré le : ${fmtDateXL(new Date())}`, 'A2:E2')
+  ws3.addRow([]).height = 8
+
+  const h3 = addColHeaders(ws3,
+    ['EMPLOYÉ', 'TRANSACTIONS', 'VOLUME (L)', 'MONTANT (GNF)', 'TICKET MOYEN (GNF)'],
+    ['left','right','right','right','right']
+  )
+  ws3.autoFilter = { from: { row: h3.number, column: 1 }, to: { row: h3.number, column: 5 } }
+
+  const empRows = s.byEmp.length ? s.byEmp : [{ emp: 'Aucune donnée', nb: 0, litres: 0, montant: 0, avg: 0 }]
+  empRows.forEach((e, i) => {
+    addDataRow(ws3,
+      [e.emp, e.nb, e.litres, e.montant, e.avg],
+      ['left','right','right','right','right'],
+      i % 2 === 1,
+      ['','#,##0','#,##0.0','#,##0','#,##0']
+    )
+  })
+
+  await downloadBuffer(wb, `Fuelo_Ventes_${fileSlug(name)}_${stamp()}.xlsx`)
 }
 
-export const exportStockExcel = (stocks, nomStation = 'Station') => {
+// ─── EXPORT STOCK ─────────────────────────────────────
+export const exportStockExcel = async (stocks, nomStation = 'Station') => {
   const name    = cleanName(nomStation)
-  const essence = toNum(stocks?.essence ?? stocks?.essence?.quantite)
-  const gasoil  = toNum(stocks?.gasoil  ?? stocks?.gasoil?.quantite)
+  const essence = toNum(stocks?.essence?.quantite ?? stocks?.essence ?? 0)
+  const gasoil  = toNum(stocks?.gasoil?.quantite  ?? stocks?.gasoil  ?? 0)
   const SEUIL   = 300
-  const rows2   = [
-    { type: 'Essence', q: essence, statut: essence <= SEUIL ? 'Critique' : 'Normal', seuil: SEUIL, marge: Math.max(essence - SEUIL, 0) },
-    { type: 'Gasoil',  q: gasoil,  statut: gasoil  <= SEUIL ? 'Critique' : 'Normal', seuil: SEUIL, marge: Math.max(gasoil  - SEUIL, 0) },
-  ]
-  const wsSum = XLSX.utils.aoa_to_sheet([
-    ['FUELO - RAPPORT DE STOCK'], [`Station : ${name}`], [`Genere le : ${fmtDateXL(new Date())}`], [],
-    ['INDICATEUR', 'VALEUR'],
-    ['Stock total (L)', essence + gasoil],
-    ['Stock essence (L)', essence],
-    ['Stock gasoil (L)', gasoil],
-  ])
-  wsSum['!cols'] = [{ wch: 22 }, { wch: 16 }]
-  wsSum['!merges'] = ['A1:B1','A2:B2','A3:B3'].map(r => XLSX.utils.decode_range(r))
-  fmtCol(wsSum, 1, 5, 7, '#,##0.0')
+  const wb      = new ExcelJS.Workbook()
+  wb.creator    = 'Fuelo'; wb.created = new Date()
 
-  const wsDet = XLSX.utils.aoa_to_sheet([
-    ['Type', 'Quantite (L)', 'Statut', 'Seuil alerte (L)', 'Marge (L)'],
-    ...rows2.map(r => [r.type, r.q, r.statut, r.seuil, r.marge]),
-  ])
-  wsDet['!cols'] = [{ wch: 16 }, { wch: 14 }, { wch: 12 }, { wch: 18 }, { wch: 14 }]
-  fmtCol(wsDet, 1, 1, 2, '#,##0.0'); fmtCol(wsDet, 3, 1, 2, '#,##0.0'); fmtCol(wsDet, 4, 1, 2, '#,##0.0')
+  const ws = wb.addWorksheet('Stock')
+  styleCols(ws, [{ width: 28 }, { width: 18 }, { width: 14 }, { width: 18 }, { width: 16 }])
 
-  const wb = XLSX.utils.book_new()
-  wb.Props = { Title: `Stock - ${name}`, Author: 'Fuelo', CreatedDate: new Date() }
-  XLSX.utils.book_append_sheet(wb, wsSum, 'Resume')
-  XLSX.utils.book_append_sheet(wb, wsDet, 'Stock')
-  XLSX.writeFile(wb, `Fuelo_Stock_${fileSlug(name)}_${stamp()}.xlsx`)
+  addTitleBand(ws, 'FUELO — RAPPORT DE STOCK', 'A1:E1')
+  addMetaRow(ws, `Station : ${name}`,                      'A2:E2')
+  addMetaRow(ws, `Généré le : ${fmtDateXL(new Date())}`,   'A3:E3')
+  ws.addRow([]).height = 8
+
+  addColHeaders(ws,
+    ['TYPE', 'QUANTITÉ (L)', 'STATUT', 'SEUIL ALERTE (L)', 'MARGE (L)'],
+    ['center','right','center','right','right']
+  )
+
+  ;[
+    { t: '⛽ Essence', q: essence },
+    { t: '🛢 Gasoil',  q: gasoil  },
+  ].forEach(({ t, q }, i) => {
+    const statut = q <= SEUIL ? '⚠️ Critique' : '✅ Normal'
+    const marge  = Math.max(q - SEUIL, 0)
+    const row = addDataRow(ws,
+      [t, q, statut, SEUIL, marge],
+      ['left','right','center','right','right'],
+      i % 2 === 1,
+      ['','#,##0.0','','#,##0.0','#,##0.0']
+    )
+    if (q <= SEUIL) row.getCell(3).font = { name: 'Calibri', size: 10, bold: true, color: { argb: XL.red } }
+  })
+
+  ws.addRow([]).height = 10
+  addSectionHeader(ws, '▸  TOTAL', 'A8:E8', XL.slate)
+  addDataRow(ws,
+    ['Stock total', essence + gasoil, '', '', ''],
+    ['left','right','','',''],
+    false,
+    ['','#,##0.0','','','']
+  )
+
+  await downloadBuffer(wb, `Fuelo_Stock_${fileSlug(name)}_${stamp()}.xlsx`)
 }

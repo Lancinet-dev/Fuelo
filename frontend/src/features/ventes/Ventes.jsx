@@ -42,7 +42,7 @@ export default function Ventes() {
   }, [])
 
   const handleExportPDF   = async () => { setExporting('pdf');   try { exportVentesPDF(ventes, nomStation)   } finally { setExporting('') } }
-  const handleExportExcel = async () => { setExporting('excel'); try { exportVentesExcel(ventes, nomStation) } finally { setExporting('') } }
+  const handleExportExcel = async () => { setExporting('excel'); try { await exportVentesExcel(ventes, nomStation) } finally { setExporting('') } }
 
   return (
     <div style={{ padding: '32px 28px', maxWidth: 1100, margin: '0 auto' }} className="fuelo-ventes">
