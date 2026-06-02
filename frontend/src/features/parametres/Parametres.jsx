@@ -19,7 +19,6 @@ const ICONS = {
   save:    'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4',
   eye:     'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 100 6 3 3 0 000-6z',
   eyeOff:  'M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22',
-  rapport: 'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8',
   truck:   'M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM18.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3z',
   trash:   'M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6',
   plus:    'M12 5v14M5 12h14',
@@ -94,7 +93,6 @@ export default function Parametres() {
   const [showPwd,        setShowPwd]        = useState({ actuel: false, nouveau: false, confirm: false })
   const [pwdLoading,     setPwdLoading]     = useState(false)
   const [pwdErrors,      setPwdErrors]      = useState({})
-  const [rapportLoading, setRapportLoading] = useState(false)
   const [citernes,       setCiternes]       = useState([])
   const [chauffeurs,     setChauffeurs]     = useState([])
   const [newCiterne,     setNewCiterne]     = useState({ code: '', capacite: '', chauffeur_id: '' })
@@ -215,30 +213,6 @@ export default function Parametres() {
       } else { toast.error(msg) }
     } finally { setPwdLoading(false) }
   }
-
-  const handleEnvoyerRapport = async (mois) => {
-    setRapportLoading(true)
-    try {
-      const now   = new Date()
-      const year  = mois === 'current'
-        ? now.getFullYear()
-        : (now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear())
-      const month = mois === 'current'
-        ? now.getMonth() + 1
-        : (now.getMonth() === 0 ? 12 : now.getMonth())
-      await api.post('/reports/envoyer', { year, month })
-      toast.success('Rapport envoyé par email ✅')
-    } catch (err) {
-      toast.error(err?.response?.data?.error ?? 'Erreur envoi rapport')
-    } finally {
-      setRapportLoading(false)
-    }
-  }
-
-  const moisLabels = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre']
-  const now         = new Date()
-  const moisCourant = moisLabels[now.getMonth()]
-  const moisPrec    = moisLabels[now.getMonth() === 0 ? 11 : now.getMonth() - 1]
 
   const setS = (k) => (v) => { setStation(f => ({ ...f, [k]: v })); setStationErrors(e => ({ ...e, [k]: '' })) }
   const setP = (k) => (v) => { setPrix(f => ({ ...f, [k]: v })); setPrixErrors(e => ({ ...e, [k]: '' })) }
@@ -380,40 +354,6 @@ export default function Parametres() {
               {citerneLoading ? 'Ajout...' : 'Ajouter la citerne'}
             </button>
           </form>
-        </div>
-      </SectionCard>
-
-      {/* Rapports mensuels */}
-      <SectionCard icon={ICONS.rapport} title="Rapports mensuels" desc="Envoyé automatiquement le 1er de chaque mois à 8h00" palette={palette}>
-        {/* Info automatique */}
-        <div style={{ background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.15)', borderRadius: 10, padding: '12px 16px', marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-          <span style={{ fontSize: 18, flexShrink: 0 }}>🤖</span>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: theme.colors.primary, marginBottom: 3 }}>Envoi automatique actif</div>
-            <div style={{ fontSize: 12, color: palette.textSub, lineHeight: 1.6 }}>
-              Chaque 1er du mois, un rapport PDF complet est envoyé automatiquement sur votre email avec les ventes, stocks et performance du mois écoulé.
-            </div>
-          </div>
-        </div>
-
-        {/* Envoi manuel */}
-        <div style={{ fontSize: 12, fontWeight: 600, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
-          Envoyer maintenant
-        </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button onClick={() => handleEnvoyerRapport('current')} disabled={rapportLoading}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 10, border: 'none', background: theme.colors.primary, color: '#fff', fontSize: 13, fontWeight: 600, cursor: rapportLoading ? 'not-allowed' : 'pointer', opacity: rapportLoading ? 0.7 : 1, fontFamily: theme.font.family, transition: 'all 0.2s' }}>
-            {rapportLoading
-              ? <div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-              : <span>📧</span>
-            }
-            Rapport {moisCourant}
-          </button>
-          <button onClick={() => handleEnvoyerRapport('prev')} disabled={rapportLoading}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 10, border: `1px solid ${palette.cardBorder}`, background: 'transparent', color: palette.text, fontSize: 13, fontWeight: 500, cursor: rapportLoading ? 'not-allowed' : 'pointer', opacity: rapportLoading ? 0.7 : 1, fontFamily: theme.font.family, transition: 'all 0.2s' }}>
-            <span>📄</span>
-            Rapport {moisPrec}
-          </button>
         </div>
       </SectionCard>
 
