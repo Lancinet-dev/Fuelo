@@ -26,6 +26,10 @@ const logger     = require('./utils/logger')
 const app    = express()
 const server = http.createServer(app)
 
+// Render est derrière un reverse proxy — nécessaire pour que express-rate-limit
+// utilise la vraie IP client (X-Forwarded-For) et non l'IP du proxy
+app.set('trust proxy', 1)
+
 // ── Origins autorisées ────────────────────────────────
 const allowedOrigins = [
   'http://localhost:5173',
