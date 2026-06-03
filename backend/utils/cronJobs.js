@@ -6,6 +6,7 @@
 const cron   = require('node-cron')
 const logger = require('./logger')
 const { envoyerTousLesRapports } = require('../services/reportService')
+const { lancerBackup }           = require('../services/backupService')
 
 const initCronJobs = () => {
 
@@ -56,6 +57,12 @@ const initCronJobs = () => {
     } catch (err) {
       logger.error('Cron stock check error:', err.message)
     }
+  }, { timezone: 'Africa/Conakry' })
+
+  // ── Backup quotidien DB — chaque nuit à 2h00 ────
+  cron.schedule('0 2 * * *', async () => {
+    logger.info('🕐 Cron: Backup quotidien DB...')
+    await lancerBackup()
   }, { timezone: 'Africa/Conakry' })
 
   logger.info('✅ Cron jobs initialisés')
