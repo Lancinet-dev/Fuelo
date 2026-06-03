@@ -4,6 +4,7 @@
 // ================================================
 
 import { useState, useEffect, useRef } from 'react'
+import { useParametres } from '../../hooks/useParametres'
 import { useAuth }  from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import api          from '../../services/api'
@@ -76,14 +77,13 @@ function SaveBtn({ loading, saved, label = 'Sauvegarder' }) {
 function LogoSection({ palette }) {
   const fileRef      = useRef()
   const queryClient  = useQueryClient()
-  const [logoUrl,    setLogoUrl]    = useState(null)
   const [preview,    setPreview]    = useState(null)
   const [uploading,  setUploading]  = useState(false)
   const [deleting,   setDeleting]   = useState(false)
 
-  useEffect(() => {
-    api.get('/station').then(r => setLogoUrl(r.data.station?.logo_url ?? null)).catch(() => {})
-  }, [])
+  // Source unique de vérité — même cache que la sidebar
+  const { parametres } = useParametres()
+  const logoUrl = parametres?.logo_url ?? null
 
   const handleFile = async (e) => {
     const file = e.target.files?.[0]
@@ -93,8 +93,7 @@ function LogoSection({ palette }) {
     try {
       const fd = new FormData()
       fd.append('logo', file)
-      const { data } = await api.post('/station/logo', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-      setLogoUrl(data.logo_url)
+      await api.post('/station/logo', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
       setPreview(null)
       toast.success('Logo mis à jour')
       queryClient.invalidateQueries({ queryKey: ['parametres'] })
@@ -111,7 +110,6 @@ function LogoSection({ palette }) {
     setDeleting(true)
     try {
       await api.delete('/station/logo')
-      setLogoUrl(null)
       toast.success('Logo supprimé')
       queryClient.invalidateQueries({ queryKey: ['parametres'] })
     } catch (err) {

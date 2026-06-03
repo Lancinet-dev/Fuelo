@@ -13,7 +13,7 @@ export function useParametres() {
   const { data, isLoading } = useQuery({
     queryKey:  ['parametres'],
     queryFn:   () => api.get('/station').then(r => r.data),
-    staleTime: 60_000,
+    staleTime: 0,
   })
 
   const { mutateAsync: sauvegarder, isPending: saveLoading } = useMutation({
