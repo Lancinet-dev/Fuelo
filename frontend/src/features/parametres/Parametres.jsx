@@ -3,12 +3,13 @@
 // Fichier : frontend/src/features/parametres/Parametres.jsx
 // ================================================
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth }  from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import api          from '../../services/api'
 import toast        from 'react-hot-toast'
 import theme        from '../../config/theme'
+import { useQueryClient } from '@tanstack/react-query'
 
 const ICONS = {
   station: 'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2zM9 22V12h6v10',
@@ -71,9 +72,127 @@ function SaveBtn({ loading, saved, label = 'Sauvegarder' }) {
   )
 }
 
+// ── Section logo station ──────────────────────────────
+function LogoSection({ palette }) {
+  const fileRef      = useRef()
+  const queryClient  = useQueryClient()
+  const [logoUrl,    setLogoUrl]    = useState(null)
+  const [preview,    setPreview]    = useState(null)
+  const [uploading,  setUploading]  = useState(false)
+  const [deleting,   setDeleting]   = useState(false)
+
+  useEffect(() => {
+    api.get('/station').then(r => setLogoUrl(r.data.station?.logo_url ?? null)).catch(() => {})
+  }, [])
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPreview(URL.createObjectURL(file))
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('logo', file)
+      const { data } = await api.post('/station/logo', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      setLogoUrl(data.logo_url)
+      setPreview(null)
+      toast.success('Logo mis à jour')
+      queryClient.invalidateQueries({ queryKey: ['parametres'] })
+    } catch (err) {
+      toast.error(err?.response?.data?.error ?? 'Erreur upload')
+      setPreview(null)
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    try {
+      await api.delete('/station/logo')
+      setLogoUrl(null)
+      toast.success('Logo supprimé')
+      queryClient.invalidateQueries({ queryKey: ['parametres'] })
+    } catch (err) {
+      toast.error(err?.response?.data?.error ?? 'Erreur')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const displayUrl = preview ?? logoUrl
+
+  return (
+    <SectionCard
+      icon="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+      title="Logo de la station"
+      desc="Apparaît dans la sidebar, les exports PDF et Excel"
+      palette={palette}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+        {/* Aperçu */}
+        <div style={{
+          width: 80, height: 80, borderRadius: 14, overflow: 'hidden',
+          border: `1.5px solid ${palette.cardBorder}`,
+          background: palette.hover,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          {displayUrl ? (
+            <img src={displayUrl} alt="logo station" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={palette.textMuted} strokeWidth="1.5" strokeLinecap="round">
+              <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            style={{
+              padding: '9px 18px', borderRadius: theme.radius.md, border: 'none',
+              background: uploading ? palette.hover : theme.colors.primary,
+              color: uploading ? palette.textMuted : '#fff',
+              fontSize: 13, fontWeight: 600, cursor: uploading ? 'not-allowed' : 'pointer',
+              fontFamily: theme.font.family, display: 'flex', alignItems: 'center', gap: 8,
+              transition: theme.transition.fast,
+            }}>
+            {uploading
+              ? <div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            }
+            {uploading ? 'Upload...' : logoUrl ? 'Changer le logo' : 'Uploader un logo'}
+          </button>
+          {logoUrl && (
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              style={{
+                padding: '7px 18px', borderRadius: theme.radius.md,
+                border: `1px solid rgba(239,68,68,0.3)`,
+                background: 'transparent', color: theme.colors.danger,
+                fontSize: 13, fontWeight: 600, cursor: deleting ? 'not-allowed' : 'pointer',
+                fontFamily: theme.font.family, transition: theme.transition.fast,
+              }}>
+              {deleting ? 'Suppression...' : 'Supprimer le logo'}
+            </button>
+          )}
+          <div style={{ fontSize: 11, color: palette.textMuted }}>JPG, PNG · Max 5 Mo · Carré recommandé</div>
+        </div>
+      </div>
+    </SectionCard>
+  )
+}
+
 export default function Parametres() {
   const { user }    = useAuth()
   const { palette } = useTheme()
+  const isOwner     = user?.role === 'owner'
 
   const [station,        setStation]        = useState({ nom: '', adresse: '', ville: '', pays: '' })
   const [prix,           setPrix]           = useState({ prix_essence: 10000, prix_gasoil: 9000 })
@@ -184,6 +303,9 @@ const handlePwdSave = async (e) => {
         <h1 style={{ fontSize: theme.font.size['2xl'], fontWeight: theme.font.weight.black, color: palette.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 4 }}>Paramètres</h1>
         <p style={{ fontSize: theme.font.size.md, color: palette.textSub, margin: 0 }}>Gérez votre station et votre compte</p>
       </div>
+
+      {/* Logo station — owner uniquement */}
+      {isOwner && <LogoSection palette={palette} />}
 
       {/* Infos station */}
       <SectionCard icon={ICONS.station} title="Informations de la station" desc="Ces informations apparaissent sur vos rapports PDF" palette={palette}>

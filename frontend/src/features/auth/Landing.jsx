@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import FueloLogo from '../../components/FueloLogo'
+import WhatsAppButton from '../../ui/WhatsAppButton'
 const C = {
   bg:       '#050B18',
   bg2:      '#070F1E',
@@ -644,6 +645,7 @@ export default function Landing() {
           .landing-grid-4 { grid-template-columns: 1fr !important; }
         }
       `}</style>
+      <WhatsAppButton />
     </div>
   )
 }

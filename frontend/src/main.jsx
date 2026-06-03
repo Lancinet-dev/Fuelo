@@ -23,7 +23,6 @@ import { Toaster }       from 'react-hot-toast'
 import { AuthProvider }  from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import Router            from './app/router'
-import WhatsAppButton    from './ui/WhatsAppButton'
 
 // ── React Query ───────────────────────────────────────
 const queryClient = new QueryClient({
@@ -79,7 +78,6 @@ createRoot(document.getElementById('root')).render(
       <ThemeProvider>
         <AuthProvider>
           <Router />
-          <WhatsAppButton />
           <Toaster
             position="top-right"
             toastOptions={{

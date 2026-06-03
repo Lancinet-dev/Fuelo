@@ -201,6 +201,9 @@ CREATE INDEX IF NOT EXISTS idx_subscriptions_owner ON subscriptions(owner_id);
 -- Refresh tokens (session persistante)
 ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token VARCHAR(255);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token_expires_at TIMESTAMP;
+
+-- Logo station
+ALTER TABLE stations ADD COLUMN IF NOT EXISTS logo_url VARCHAR(500);
 `
 
 async function migrate() {

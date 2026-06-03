@@ -31,6 +31,7 @@ export default function Ventes() {
   const [page,       setPage]       = useState(1)
   const [exporting,  setExporting]  = useState('')
   const [nomStation, setNomStation] = useState('Ma Station')
+  const [logoUrl,    setLogoUrl]    = useState(null)
 
   const { ventes, meta, aujourdhui, loading } = useVentes({ page, limit: 20, type: filterType })
 
@@ -38,14 +39,15 @@ export default function Ventes() {
     let cancelled = false
     api.get('/station').then(res => {
       if (cancelled) return
-      const name = res.data?.station?.nom?.trim()
-      if (name) setNomStation(name)
+      const s = res.data?.station
+      if (s?.nom?.trim()) setNomStation(s.nom.trim())
+      if (s?.logo_url)    setLogoUrl(s.logo_url)
     }).catch(() => {})
     return () => { cancelled = true }
   }, [])
 
-  const handleExportPDF   = async () => { setExporting('pdf');   try { exportVentesPDF(ventes, nomStation)   } finally { setExporting('') } }
-  const handleExportExcel = async () => { setExporting('excel'); try { await exportVentesExcel(ventes, nomStation) } finally { setExporting('') } }
+  const handleExportPDF   = async () => { setExporting('pdf');   try { await exportVentesPDF(ventes, nomStation, logoUrl)   } finally { setExporting('') } }
+  const handleExportExcel = async () => { setExporting('excel'); try { await exportVentesExcel(ventes, nomStation, logoUrl) } finally { setExporting('') } }
 
   return (
     <div style={{ padding: '32px 28px', maxWidth: 1100, margin: '0 auto' }} className="fuelo-ventes">

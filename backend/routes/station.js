@@ -4,8 +4,11 @@
 
 const express     = require('express')
 const router      = express.Router()
+const multer      = require('multer')
+const cloudinary  = require('../config/cloudinary')
 const verifyToken = require('../middleware/auth')
 const { isPompiste, isManager, isOwner } = require('../middleware/checkRole')
+const pool        = require('../config/database')
 const {
   getStation,
   getMesStations,
@@ -15,9 +18,42 @@ const {
   getConsolide
 } = require('../controllers/stationController')
 
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } })
+
 // Station actuelle — accessible par tous les rôles (pompiste lit les prix)
 router.get('/',  verifyToken, isPompiste, getStation)
 router.put('/',  verifyToken, isManager,  updateStation)
+
+// Logo station — owner uniquement
+router.post('/logo', verifyToken, isOwner, upload.single('logo'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'Fichier manquant' })
+
+    const b64    = req.file.buffer.toString('base64')
+    const dataURI = `data:${req.file.mimetype};base64,${b64}`
+    const result = await cloudinary.uploader.upload(dataURI, {
+      folder:             'fuelo/logos',
+      transformation:     [{ width: 400, height: 400, crop: 'limit' }],
+      signature_algorithm:'sha256',
+    })
+
+    const station_id = req.user.station_id
+    await pool.query('UPDATE stations SET logo_url = $1 WHERE id = $2', [result.secure_url, station_id])
+
+    res.json({ logo_url: result.secure_url })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+router.delete('/logo', verifyToken, isOwner, async (req, res) => {
+  try {
+    await pool.query('UPDATE stations SET logo_url = NULL WHERE id = $1', [req.user.station_id])
+    res.json({ message: 'Logo supprimé' })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
 
 // Multi-stations — propriétaire uniquement
 router.get('/mes-stations', verifyToken, isOwner, getMesStations)

@@ -282,14 +282,18 @@ export default function PompistePage() {
       {/* Header */}
       <div style={{ background: '#0A1628', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 20px rgba(0,0,0,0.2)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 32, height: 32, background: ORANGE, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(245,158,11,0.4)' }}>
-            <svg width="16" height="16" viewBox="0 0 48 48">
-              <path d="M24 4C24 4 10 20 10 30C10 39.5 16.5 45 24 45C31.5 45 38 39.5 38 30C38 20 24 4 24 4Z" fill="#0F172A" />
-              <ellipse cx="18" cy="36" rx="4" ry="6" fill={ORANGE} opacity="0.6" />
-            </svg>
-          </div>
-          <span style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>
-            fuel<span style={{ color: ORANGE }}>o</span>
+          {parametres?.logo_url ? (
+            <img src={parametres.logo_url} alt="logo" style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }} />
+          ) : (
+            <div style={{ width: 32, height: 32, background: ORANGE, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 14px rgba(245,158,11,0.4)' }}>
+              <svg width="16" height="16" viewBox="0 0 48 48">
+                <path d="M24 4C24 4 10 20 10 30C10 39.5 16.5 45 24 45C31.5 45 38 39.5 38 30C38 20 24 4 24 4Z" fill="#0F172A" />
+                <ellipse cx="18" cy="36" rx="4" ry="6" fill={ORANGE} opacity="0.6" />
+              </svg>
+            </div>
+          )}
+          <span style={{ fontSize: 15, fontWeight: 800, color: '#fff' }}>
+            {parametres?.nom ? parametres.nom : <span>fuel<span style={{ color: ORANGE }}>o</span></span>}
           </span>
         </div>
 
@@ -313,7 +317,12 @@ export default function PompistePage() {
             {isDark ? 'Jour' : 'Nuit'}
           </button>
 
-          <button onClick={logout} style={{ fontSize: 12, color: 'rgba(239,68,68,0.8)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '4px 0' }}>
+          <button
+            onClick={logout}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'rgba(239,68,68,0.85)', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', padding: '5px 11px', transition: 'all 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.18)'; e.currentTarget.style.color = '#EF4444' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.color = 'rgba(239,68,68,0.85)' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
             Déconnexion
           </button>
         </div>

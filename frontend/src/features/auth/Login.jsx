@@ -9,6 +9,7 @@ import { useAuth } from '../../context/AuthContext'
 import theme from '../../config/theme'
 import toast from 'react-hot-toast'
 import FueloLogo from '../../components/FueloLogo'
+import WhatsAppButton from '../../ui/WhatsAppButton'
 
 const BLUE        = '#2563EB'
 const BLUE_SOFT   = '#60A5FA'
@@ -294,6 +295,7 @@ export default function Login() {
           [style*="padding: 44px"] { display: none !important; }
         }
       `}</style>
+      <WhatsAppButton />
     </div>
   )
 }

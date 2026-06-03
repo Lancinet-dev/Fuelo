@@ -93,17 +93,42 @@ const C = {
   white:  [255, 255, 255],
 }
 
-const drawHeader = (doc, name, ventes) => {
+const urlToBase64 = async (url) => {
+  try {
+    const resp = await fetch(url)
+    const blob = await resp.blob()
+    return await new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result)
+      reader.readAsDataURL(blob)
+    })
+  } catch { return null }
+}
+
+const drawHeader = (doc, name, ventes, logoBase64 = null) => {
   const W = doc.internal.pageSize.getWidth()
   doc.setFillColor(...C.navy); doc.rect(0, 0, W, 34, 'F')
   doc.setFillColor(...C.orange); doc.rect(0, 0, 5, 34, 'F')
-  doc.setTextColor(...C.white)
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(22)
-  doc.text('FUELO', 14, 14)
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(9)
-  doc.setTextColor(200, 210, 225)
-  doc.text('Rapport des ventes', 14, 21)
-  doc.text(`Periode : ${periodLabel(ventes)}`, 14, 27)
+
+  if (logoBase64) {
+    try { doc.addImage(logoBase64, 'JPEG', 9, 5, 24, 24) } catch {}
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10)
+    doc.setTextColor(...C.white)
+    doc.text(name, 37, 16)
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8)
+    doc.setTextColor(200, 210, 225)
+    doc.text('Rapport des ventes', 37, 23)
+    doc.text(`Periode : ${periodLabel(ventes)}`, 37, 29)
+  } else {
+    doc.setTextColor(...C.white)
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(22)
+    doc.text('FUELO', 14, 14)
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9)
+    doc.setTextColor(200, 210, 225)
+    doc.text('Rapport des ventes', 14, 21)
+    doc.text(`Periode : ${periodLabel(ventes)}`, 14, 27)
+  }
+
   doc.setTextColor(...C.white); doc.setFont('helvetica', 'bold'); doc.setFontSize(9)
   doc.text(`Station : ${name}`, W - 14, 14, { align: 'right' })
   doc.setFont('helvetica', 'normal'); doc.setTextColor(200, 210, 225)
@@ -149,13 +174,14 @@ const typeCard = (doc, x, y, w, data, accent) => {
 }
 
 // ── EXPORT PDF ────────────────────────────────────────
-export const exportVentesPDF = (ventes, nomStation = 'Station') => {
-  const name = cleanName(nomStation)
-  const s    = buildSummary(ventes)
-  const doc  = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
-  const W    = doc.internal.pageSize.getWidth()  // 297mm
+export const exportVentesPDF = async (ventes, nomStation = 'Station', logoUrl = null) => {
+  const name       = cleanName(nomStation)
+  const s          = buildSummary(ventes)
+  const doc        = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+  const W          = doc.internal.pageSize.getWidth()
+  const logoBase64 = logoUrl ? await urlToBase64(logoUrl) : null
 
-  drawHeader(doc, name, ventes)
+  drawHeader(doc, name, ventes, logoBase64)
 
   // 4 metric cards — largeur fixe et proportionnelle
   const gap   = 4
@@ -218,7 +244,7 @@ export const exportVentesPDF = (ventes, nomStation = 'Station') => {
       6: { cellWidth: 38 },
     },
     didDrawPage: (data) => {
-      if (data.pageNumber > 1) drawHeader(doc, name, ventes)
+      if (data.pageNumber > 1) drawHeader(doc, name, ventes, logoBase64)
       drawFooter(doc)
     },
   })
@@ -341,11 +367,23 @@ const fmtDateXL = (v) => {
 }
 
 // ─── EXPORT VENTES ────────────────────────────────────
-export const exportVentesExcel = async (ventes, nomStation = 'Station') => {
+export const exportVentesExcel = async (ventes, nomStation = 'Station', logoUrl = null) => {
   const name = cleanName(nomStation)
   const s    = buildSummary(ventes)
   const wb   = new ExcelJS.Workbook()
   wb.creator = 'Fuelo'; wb.created = new Date()
+
+  if (logoUrl) {
+    try {
+      const b64 = await urlToBase64(logoUrl)
+      if (b64) {
+        const ext    = b64.startsWith('data:image/png') ? 'png' : 'jpeg'
+        const imgId  = wb.addImage({ base64: b64.split(',')[1], extension: ext })
+        wb._images  = wb._images ?? []
+        wb._logoId  = imgId
+      }
+    } catch {}
+  }
 
   // ── Feuille 1 : Résumé ─────────────────────────────
   const ws1 = wb.addWorksheet('Résumé')
@@ -353,7 +391,7 @@ export const exportVentesExcel = async (ventes, nomStation = 'Station') => {
     { width: 32 }, { width: 22 }, { width: 16 }, { width: 22 },
   ])
 
-  addTitleBand(ws1, 'FUELO — RAPPORT DES VENTES', 'A1:D1')
+  addTitleBand(ws1, `${name} — RAPPORT DES VENTES`, 'A1:D1')
   addMetaRow(ws1,  `Station : ${name}`,                'A2:D2')
   addMetaRow(ws1,  `Généré le : ${fmtDateXL(new Date())}`, 'A3:D3')
   addMetaRow(ws1,  `Période : ${periodLabel(ventes)}`, 'A4:D4')
@@ -509,6 +547,16 @@ export const exportTrajetsExcel = async (trajets = [], stats = {}, options = {})
   wb.modified = new Date()
   wb.subject = 'Rapport logistique transport'
   wb.title = 'Fuelo - Rapport logistique'
+
+  if (options.logoUrl) {
+    try {
+      const b64 = await urlToBase64(options.logoUrl)
+      if (b64) {
+        const ext = b64.startsWith('data:image/png') ? 'png' : 'jpeg'
+        wb._logoId = wb.addImage({ base64: b64.split(',')[1], extension: ext })
+      }
+    } catch {}
+  }
 
   const chauffeurs = options.chauffeurs ?? []
   const chauffeurById = new Map(chauffeurs.map(c => [Number(c.id), c]))

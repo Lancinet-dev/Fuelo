@@ -3,10 +3,11 @@
 // ================================================
 
 import { useState, useEffect, useRef } from 'react'
-import { useAuth }    from '../../context/AuthContext'
-import { useTheme }   from '../../context/ThemeContext'
-import { useTrajet }  from '../../hooks/useTrajet'
-import { useCiternes } from '../../hooks/useTrajets'
+import { useAuth }        from '../../context/AuthContext'
+import { useTheme }       from '../../context/ThemeContext'
+import { useTrajet }      from '../../hooks/useTrajet'
+import { useCiternes }    from '../../hooks/useTrajets'
+import { useParametres }  from '../../hooks/useParametres'
 import theme from '../../config/theme'
 
 const ORANGE = '#F59E0B'
@@ -30,10 +31,11 @@ function useElapsed(startedAt) {
 }
 
 export default function ChauffeurPage() {
-  const { user, logout }         = useAuth()
+  const { user, logout }            = useAuth()
   const { isDark, toggle, palette } = useTheme()
   const { trajetActif, loading, demarrer, demarrerLoading, envoyerPosition, arriver, arriverLoading } = useTrajet()
-  const { data: citernesData }   = useCiternes()
+  const { data: citernesData }      = useCiternes()
+  const { parametres }              = useParametres()
   const citernes = citernesData?.citernes ?? []
 
   const [modal,         setModal]         = useState(null) // 'demarrer' | 'arriver'
@@ -106,16 +108,28 @@ export default function ChauffeurPage() {
       {/* Header */}
       <div style={{ background: '#0A1628', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 20px rgba(0,0,0,0.25)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 32, height: 32, background: ORANGE, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A1628" strokeWidth="2.5" strokeLinecap="round"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM18.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/></svg>
-          </div>
-          <span style={{ fontSize: 16, fontWeight: 800, color: '#fff' }}>
-            fuel<span style={{ color: ORANGE }}>o</span> <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', fontWeight: 400 }}>Chauffeur</span>
+          {parametres?.logo_url ? (
+            <img src={parametres.logo_url} alt="logo" style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }} />
+          ) : (
+            <div style={{ width: 32, height: 32, background: ORANGE, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A1628" strokeWidth="2.5" strokeLinecap="round"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM18.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/></svg>
+            </div>
+          )}
+          <span style={{ fontSize: 15, fontWeight: 800, color: '#fff' }}>
+            {parametres?.nom ?? <span>fuel<span style={{ color: ORANGE }}>o</span></span>}
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', fontWeight: 400, marginLeft: 6 }}>Chauffeur</span>
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>{user?.nom}</span>
-          <button onClick={logout} style={{ fontSize: 11, color: 'rgba(239,68,68,0.7)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Quitter</button>
+          <button
+            onClick={logout}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'rgba(239,68,68,0.85)', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', padding: '5px 11px', transition: 'all 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.18)'; e.currentTarget.style.color = '#EF4444' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.color = 'rgba(239,68,68,0.85)' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+            Déconnexion
+          </button>
         </div>
       </div>
 

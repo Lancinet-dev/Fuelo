@@ -6,6 +6,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useAuth }    from '../../context/AuthContext'
 import { useTheme }   from '../../context/ThemeContext'
 import { useTrajets, useGpsPoints, useCiternes } from '../../hooks/useTrajets'
+import { useParametres } from '../../hooks/useParametres'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api            from '../../services/api'
 import toast          from 'react-hot-toast'
@@ -340,7 +341,8 @@ function TabRapports({ palette}) {
   const handleExportExcel = async () => {
     setExporting(true)
     try {
-      await exportTrajetsExcel(trajets, stats, { chauffeurs })
+      const logoUrl = await api.get('/station').then(r => r.data.station?.logo_url ?? null).catch(() => null)
+      await exportTrajetsExcel(trajets, stats, { chauffeurs, logoUrl })
       toast.success('Export Excel téléchargé')
     } catch { toast.error('Erreur lors de l\'export') }
     finally { setExporting(false) }
@@ -425,6 +427,7 @@ function TabRapports({ palette}) {
 export default function LogistiquePage() {
   const { user, logout }            = useAuth()
   const { isDark, toggle, palette } = useTheme()
+  const { parametres }              = useParametres()
   const [onglet, setOnglet]         = useState('trajets')
 
   const { data: alertesData } = useQuery({
@@ -442,12 +445,18 @@ export default function LogistiquePage() {
       {/* Header */}
       <div style={{ background: '#0A1628', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 20px rgba(0,0,0,0.25)', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 32, height: 32, background: ORANGE, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: 16 }}>🚛</span>
-          </div>
+          {parametres?.logo_url ? (
+            <img src={parametres.logo_url} alt="logo" style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }} />
+          ) : (
+            <div style={{ width: 32, height: 32, background: ORANGE, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: 16 }}>🚛</span>
+            </div>
+          )}
           <div>
-            <span style={{ fontSize: 15, fontWeight: 800, color: '#fff' }}>fuel<span style={{ color: ORANGE }}>o</span></span>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginLeft: 6 }}>Logistique</span>
+            <span style={{ fontSize: 15, fontWeight: 800, color: '#fff' }}>
+              {parametres?.nom ?? <span>fuel<span style={{ color: ORANGE }}>o</span></span>}
+            </span>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginLeft: 6 }}>Logistique</span>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -457,7 +466,14 @@ export default function LogistiquePage() {
             </svg>
           </button>
           <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>{user?.nom}</span>
-          <button onClick={logout} style={{ fontSize: 11, color: 'rgba(239,68,68,0.7)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Quitter</button>
+          <button
+            onClick={logout}
+            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'rgba(239,68,68,0.85)', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', padding: '5px 11px', transition: 'all 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.18)'; e.currentTarget.style.color = '#EF4444' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.color = 'rgba(239,68,68,0.85)' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+            Déconnexion
+          </button>
         </div>
       </div>
 
