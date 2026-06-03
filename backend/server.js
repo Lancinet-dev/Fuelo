@@ -77,7 +77,15 @@ app.use(cookieParser())
 app.use(passport.initialize())
 
 // ── Database ──────────────────────────────────────────
-require('./config/database')
+const pool = require('./config/database')
+
+// Migrations idempotentes — colonnes ajoutées progressivement
+pool.query(`
+  ALTER TABLE stations ADD COLUMN IF NOT EXISTS logo_url VARCHAR(500);
+  ALTER TABLE stations ADD COLUMN IF NOT EXISTS seuil_fraude_citerne FLOAT DEFAULT 50;
+  ALTER TABLE users    ADD COLUMN IF NOT EXISTS refresh_token VARCHAR(255);
+  ALTER TABLE users    ADD COLUMN IF NOT EXISTS refresh_token_expires_at TIMESTAMP;
+`).catch(err => logger.error('Migration startup error:', err.message))
 
 // ── Rate limiting ─────────────────────────────────────
 const { limiterGeneral, limiterAuth } = require('./middleware/rateLimit')
