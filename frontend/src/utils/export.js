@@ -349,17 +349,6 @@ const addDataRow = (ws, values, aligns = [], isAlt = false, fmts = []) => {
   return row
 }
 
-// Place le logo en overlay dans la bande titre (coin droit)
-const addLogoToSheet = (ws, wb, lastCol) => {
-  if (wb._logoId == null) return
-  try {
-    ws.addImage(wb._logoId, {
-      tl: { col: lastCol - 0.55, row: 0.12 },
-      ext: { width: 44, height: 28 },
-    })
-  } catch {}
-}
-
 const downloadBuffer = async (wb, filename) => {
   const buf  = await wb.xlsx.writeBuffer()
   const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
@@ -384,18 +373,6 @@ export const exportVentesExcel = async (ventes, nomStation = 'Station', logoUrl 
   const wb   = new ExcelJS.Workbook()
   wb.creator = 'Fuelo'; wb.created = new Date()
 
-  if (logoUrl) {
-    try {
-      const b64 = await urlToBase64(logoUrl)
-      if (b64) {
-        const ext    = b64.startsWith('data:image/png') ? 'png' : 'jpeg'
-        const imgId  = wb.addImage({ base64: b64.split(',')[1], extension: ext })
-        wb._images  = wb._images ?? []
-        wb._logoId  = imgId
-      }
-    } catch {}
-  }
-
   // ── Feuille 1 : Résumé ─────────────────────────────
   const ws1 = wb.addWorksheet('Résumé')
   styleCols(ws1, [
@@ -403,7 +380,6 @@ export const exportVentesExcel = async (ventes, nomStation = 'Station', logoUrl 
   ])
 
   addTitleBand(ws1, `${name} — RAPPORT DES VENTES`, 'A1:D1')
-  addLogoToSheet(ws1, wb, 3)
   addMetaRow(ws1,  `Station : ${name}`,                'A2:D2')
   addMetaRow(ws1,  `Généré le : ${fmtDateXL(new Date())}`, 'A3:D3')
   addMetaRow(ws1,  `Période : ${periodLabel(ventes)}`, 'A4:D4')
@@ -442,7 +418,6 @@ export const exportVentesExcel = async (ventes, nomStation = 'Station', logoUrl 
   ws2.views = [{ state: 'frozen', ySplit: 5 }]
 
   addTitleBand(ws2, 'FUELO — DÉTAIL DES TRANSACTIONS', 'A1:G1')
-  addLogoToSheet(ws2, wb, 6)
   addMetaRow(ws2, `Station : ${name}`,                 'A2:G2')
   addMetaRow(ws2, `Période : ${periodLabel(ventes)}`,  'A3:G3')
   ws2.addRow([]).height = 8
@@ -482,7 +457,6 @@ export const exportVentesExcel = async (ventes, nomStation = 'Station', logoUrl 
   ws3.views = [{ state: 'frozen', ySplit: 4 }]
 
   addTitleBand(ws3, 'FUELO — PERFORMANCE PAR EMPLOYÉ', 'A1:E1')
-  addLogoToSheet(ws3, wb, 4)
   addMetaRow(ws3, `Généré le : ${fmtDateXL(new Date())}`, 'A2:E2')
   ws3.addRow([]).height = 8
 
@@ -514,21 +488,10 @@ export const exportStockExcel = async (stocks, nomStation = 'Station', logoUrl =
   const wb      = new ExcelJS.Workbook()
   wb.creator    = 'Fuelo'; wb.created = new Date()
 
-  if (logoUrl) {
-    try {
-      const b64 = await urlToBase64(logoUrl)
-      if (b64) {
-        const ext = b64.startsWith('data:image/png') ? 'png' : 'jpeg'
-        wb._logoId = wb.addImage({ base64: b64.split(',')[1], extension: ext })
-      }
-    } catch {}
-  }
-
   const ws = wb.addWorksheet('Stock')
   styleCols(ws, [{ width: 28 }, { width: 18 }, { width: 14 }, { width: 18 }, { width: 16 }])
 
   addTitleBand(ws, 'FUELO — RAPPORT DE STOCK', 'A1:E1')
-  addLogoToSheet(ws, wb, 4)
   addMetaRow(ws, `Station : ${name}`,                      'A2:E2')
   addMetaRow(ws, `Généré le : ${fmtDateXL(new Date())}`,   'A3:E3')
   ws.addRow([]).height = 8
@@ -572,16 +535,6 @@ export const exportTrajetsExcel = async (trajets = [], stats = {}, options = {})
   wb.modified = new Date()
   wb.subject = 'Rapport logistique transport'
   wb.title = 'Fuelo - Rapport logistique'
-
-  if (options.logoUrl) {
-    try {
-      const b64 = await urlToBase64(options.logoUrl)
-      if (b64) {
-        const ext = b64.startsWith('data:image/png') ? 'png' : 'jpeg'
-        wb._logoId = wb.addImage({ base64: b64.split(',')[1], extension: ext })
-      }
-    } catch {}
-  }
 
   const chauffeurs = options.chauffeurs ?? []
   const chauffeurById = new Map(chauffeurs.map(c => [Number(c.id), c]))
