@@ -110,3 +110,17 @@
 {"timestamp":"2026-06-03 05:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 300L)"}
 {"timestamp":"2026-06-03 05:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 1300L)"}
 {"timestamp":"2026-06-03 05:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-03 07:00:00","level":"info","message":"🕐 Cron: Vérification stocks..."}
+{"timestamp":"2026-06-03 07:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-03 07:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-03 07:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-03 07:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-03 07:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-03 07:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-03 07:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-03 07:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-03 07:00:00","level":"info","message":"Alerte créée: Stock essence faible: 68.0L (seuil: 300L)"}
+{"timestamp":"2026-06-03 07:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-03 07:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-03 07:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 1300L)"}
+{"timestamp":"2026-06-03 07:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}

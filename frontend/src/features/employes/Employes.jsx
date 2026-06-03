@@ -1,7 +1,8 @@
 // ================================================
 // FUELO V2.2 — Employés (vue RBAC par rôle)
-// Owner   → voit gérants + logisticiens, crée les deux
-// Gérant  → voit ses pompistes, crée pompiste
+// Owner       → voit gérants + logisticiens, crée les deux
+// Gérant      → voit ses pompistes, crée pompiste
+// Logisticien → voit ses chauffeurs, crée chauffeur
 // ================================================
 
 import { useState } from 'react'
@@ -40,6 +41,16 @@ const ROLE_CONFIG = {
       { value: 'pompiste', label: '⛽ Pompiste', desc: 'Enregistrement des ventes et gestion de service' },
     ],
     showVentes: true,
+  },
+  logisticien: {
+    title:       'Mes Chauffeurs',
+    subtitle:    (n) => `${n} chauffeur${n > 1 ? 's' : ''} sous votre gestion`,
+    btnLabel:    'Ajouter un chauffeur',
+    formTitle:   'Nouveau chauffeur',
+    rolesDispos: [
+      { value: 'chauffeur', label: '🚛 Chauffeur', desc: 'Transport de citernes et trajets GPS' },
+    ],
+    showVentes: false,
   },
 }
 
@@ -92,10 +103,11 @@ function ConfirmModal({ employe, onConfirm, onCancel, palette }) {
 export default function Employes() {
   const { user }    = useAuth()
   const userRole    = normalizeRole(user?.role)
-  const isOwner     = userRole === 'owner'
-  const isGerant    = userRole === 'gerant'
-  const canManage   = isOwner || isGerant
-  const config      = ROLE_CONFIG[userRole] ?? ROLE_CONFIG.gerant
+  const isOwner       = userRole === 'owner'
+  const isGerant      = userRole === 'gerant'
+  const isLogisticien = userRole === 'logisticien'
+  const canManage     = isOwner || isGerant || isLogisticien
+  const config        = ROLE_CONFIG[userRole] ?? ROLE_CONFIG.gerant
 
   const { palette } = useTheme()
   const { employes, loading, createLoading, creerEmploye, toggleEmploye, supprimerEmploye } = useEmployes()

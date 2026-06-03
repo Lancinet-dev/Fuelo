@@ -56,25 +56,32 @@ Permet aux propriétaires/gérants de gérer stock, ventes, alertes, employés e
 
 ## 👥 RÔLES ET PERMISSIONS
 
-| Rôle | Interface | Peut faire |
-|---|---|---|
-| `owner` | AppLayout (sidebar) | Voir tout, gérer employés (CRUD), paramètres station/prix/seuils, multi-stations |
-| `gerant` | AppLayout (sidebar) | Ventes, stock (livraisons), alertes, voir employés (lecture seule), paramètres |
-| `pompiste` | `/pompiste` dédié | Enregistrer ventes, démarrer/terminer son service (photo compteur) |
-| `chauffeur` | `/chauffeur` dédié | Démarrer/terminer trajets GPS |
-| `logisticien` | `/logistique` dédié | Citernes CRUD, trajets, alertes transport, export Excel |
-| `superadmin` | Prévu, pas codé | — |
+| Rôle | Interface | Peut faire | Crée |
+|---|---|---|---|
+| `owner` | AppLayout (sidebar) | Voir tout, paramètres station/prix/seuils, multi-stations | gérant, logisticien |
+| `gerant` | AppLayout (sidebar) | Ventes (export PDF/Excel), stock (livraisons), alertes, services | pompiste |
+| `logisticien` | `/logistique` dédié | Citernes CRUD, trajets GPS, alertes transport, export Excel | chauffeur |
+| `pompiste` | `/pompiste` dédié | Enregistrer ventes, démarrer/terminer son service (photo compteur) | — |
+| `chauffeur` | `/chauffeur` dédié | Démarrer/terminer trajets GPS | — |
+| `superadmin` | Prévu, pas codé | — | tous |
 
-**Restrictions owner vs gérant :**
-- Owner : lecture seule sur ventes (pas d'export PDF/Excel), lecture seule sur stock (pas de livraison), gère les employés
-- Gérant : peut exporter PDF/Excel, enregistrer livraisons, mais ne peut PAS créer/supprimer/toggler des employés
-- Citernes : gérant exclus, logisticien uniquement (via `/logistique`)
+**Hiérarchie stricte (CREATION_RULES dans employeController.js) :**
+- Owner → crée gérant + logisticien uniquement (pas de pompiste/chauffeur direct)
+- Gérant → crée pompiste uniquement, voit seulement SES pompistes (`created_by`)
+- Logisticien → crée chauffeur uniquement, voit seulement SES chauffeurs (`created_by`)
+- Toggle/suppression : chaque rôle ne peut agir que sur ses propres créations
+
+**Restrictions owner :**
+- Lecture seule sur ventes (pas d'export PDF/Excel)
+- Lecture seule sur stock (pas de livraison)
+- Ne peut pas gérer les pompistes/chauffeurs directement
 
 **Normalisation des rôles :** `manager` est toujours normalisé en `gerant` côté backend et frontend.
 
 **checkRole.js** utilise deux fonctions :
 - `checkRole(roles)` — vérifie par niveau (owner >= gerant >= pompiste/chauffeur/logisticien)
 - `checkExactRole(roles)` — vérifie le rôle exact (utilisé pour `isPompiste`, `isChauffeur`)
+- `canManageEmployes` — owner + gérant + logisticien (chacun dans son périmètre)
 
 Comptes test prod :
 - Owner : sadio@gmail.com
@@ -85,15 +92,20 @@ Comptes test prod :
 
 ## ✅ FONCTIONNALITÉS LIVRÉES
 
-- Auth email/password + Google OAuth + reset password
+- Auth email/password + Google OAuth + reset password + **refresh tokens** (access 15min, refresh 30j cookie HttpOnly)
 - Dashboard (stats temps réel, graphique 7 jours)
 - Ventes (CRUD, pagination, filtres, export PDF + Excel — gérant uniquement)
 - Stock (niveaux, livraisons — gérant uniquement)
 - Alertes (STOCK_FAIBLE, FRAUDE, FRAUDE_CITERNE, ARRET_SUSPECT)
-- Employés (CRUD owner uniquement, lecture gérant, soft delete)
+- **Employés — hiérarchie stricte RBAC** : owner→gérant/logisticien, gérant→pompiste, logisticien→chauffeur
+  - Chaque rôle ne voit et ne gère que ses propres créations (`created_by`)
+  - Soft delete, toggle actif/inactif dans le même périmètre
 - Multi-stations, switch station
 - Paramètres (infos station, prix, seuils — sans citernes, réservé au logisticien)
+- **Logo station uploadable** (owner uniquement, Cloudinary) — visible sidebar + exports + pages employés
+  - Colonne `logo_url` sur table `stations` (migration idempotente dans `migrate.js`)
 - Page 404 personnalisée (`/features/auth/NotFound.jsx`)
+- **Onboarding** première connexion owner
 - Interface pompiste dédiée (`/pompiste`) — photo compteur obligatoire, upload Cloudinary
 - PWA installable
 - **Anti-fraude pompistes** — photos compteur début/fin, écart théorique/réel, alerte si > 10L
@@ -104,6 +116,10 @@ Comptes test prod :
 - **Rôle logisticien** — `/logistique` : Trajets, Citernes, Alertes transport, Rapports Excel
   - `isTransport` middleware : logisticien + owner + superadmin
   - Export trajets : **ExcelJS** avec styling pro (feuilles Résumé + Trajets)
+- **Page abonnements** refaite (style Notion/Linear, 3 colonnes) — 3 plans : STARTER 50$, PRO 150$, ENTERPRISE 300$
+  - Table `subscriptions`, middleware `checkPlan`, modal paiement simulé (Orange Money, MTN, PayCard, Kulu)
+- WhatsApp retiré des pages internes (landing + login uniquement)
+- Bouton déconnexion visible pour tous les rôles
 
 ---
 
@@ -116,15 +132,7 @@ Comptes test prod :
 
 ## ⏳ FONCTIONNALITÉS À CODER (priorité)
 
-### En cours
-- **Système d'abonnements** (3 plans : STARTER 50$/mois, PRO 150$/mois, ENTERPRISE 300$/mois)
-  - Table `subscriptions` (owner_id, plan, statut, expires_at, payment_method, payment_phone)
-  - Middleware `checkPlan` vérifiant le plan avant les features sensibles
-  - Page `/abonnements` : plan actuel, comparatif, modal paiement simulé (Orange Money, MTN, PayCard, Kulu)
-
 ### Restant
-- Onboarding première connexion owner
-- Refresh tokens (éviter déconnexion après 7j)
 - Backup auto quotidien DB Neon
 - Dashboard superadmin (tous les clients + abonnements)
 - Migration Railway (remplacer Render, ~5$/mois)
