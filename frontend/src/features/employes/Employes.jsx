@@ -1,6 +1,7 @@
 // ================================================
-// FUELO V2 — Employés responsive mobile
-// Fichier : frontend/src/features/employes/Employes.jsx
+// FUELO V2.2 — Employés (vue RBAC par rôle)
+// Owner   → voit gérants + logisticiens, crée les deux
+// Gérant  → voit ses pompistes, crée pompiste
 // ================================================
 
 import { useState } from 'react'
@@ -12,30 +13,61 @@ import { SkeletonRow, SkeletonStyle } from '../../ui/Skeleton'
 import { formatGNF }   from '../../utils/format'
 import theme from '../../config/theme'
 
-const ICONS = {
-  plus:  'M12 5v14M5 12h14',
-  trash: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16',
-}
-
 const normalizeRole = (value = '') => {
   const role = String(value).trim().toLowerCase()
   return role === 'manager' ? 'gerant' : role
 }
 
+// ── Config par rôle créateur ──────────────────────────
+const ROLE_CONFIG = {
+  owner: {
+    title:       'Gérants & Logisticiens',
+    subtitle:    (n) => `${n} membre${n > 1 ? 's' : ''} dans votre équipe de gestion`,
+    btnLabel:    'Ajouter un membre',
+    formTitle:   'Nouveau membre',
+    rolesDispos: [
+      { value: 'gerant',      label: '👔 Gérant',      desc: 'Dashboard, ventes, stock, alertes, services, pompistes' },
+      { value: 'logisticien', label: '📦 Logisticien', desc: 'Citernes, trajets GPS, alertes transport, chauffeurs' },
+    ],
+    showVentes: false,
+  },
+  gerant: {
+    title:       'Mes Pompistes',
+    subtitle:    (n) => `${n} pompiste${n > 1 ? 's' : ''} sous votre gestion`,
+    btnLabel:    'Ajouter un pompiste',
+    formTitle:   'Nouveau pompiste',
+    rolesDispos: [
+      { value: 'pompiste', label: '⛽ Pompiste', desc: 'Enregistrement des ventes et gestion de service' },
+    ],
+    showVentes: true,
+  },
+}
+
+const ROLE_COLORS = {
+  gerant:      { color: theme.colors.info,    bg: theme.colors.infoLight },
+  logisticien: { color: '#8B5CF6',            bg: 'rgba(139,92,246,0.1)' },
+  pompiste:    { color: theme.colors.success, bg: theme.colors.successLight },
+  chauffeur:   { color: theme.colors.warning, bg: theme.colors.warningLight },
+}
+
 const ROLE_LABELS = {
   gerant:      '👔 Gérant',
-  manager:     '👔 Gérant',
-  chauffeur:   '🚛 Chauffeur',
   logisticien: '📦 Logisticien',
   pompiste:    '⛽ Pompiste',
+  chauffeur:   '🚛 Chauffeur',
   owner:       '👑 Propriétaire',
-  superadmin:  '🛡️ Super Admin',
 }
 
 function StatusBadge({ actif }) {
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, padding: '3px 10px', borderRadius: theme.radius.full, background: actif ? theme.colors.successLight : theme.colors.dangerLight, color: actif ? theme.colors.success : theme.colors.danger }}>
-      <span style={{ width: 6, height: 6, borderRadius: '50%', background: actif ? theme.colors.success : theme.colors.danger }} />
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      fontSize: 10, fontWeight: 700, padding: '2px 9px',
+      borderRadius: theme.radius.full,
+      background: actif ? theme.colors.successLight : theme.colors.dangerLight,
+      color: actif ? theme.colors.success : theme.colors.danger,
+    }}>
+      <span style={{ width: 5, height: 5, borderRadius: '50%', background: actif ? theme.colors.success : theme.colors.danger }} />
       {actif ? 'Actif' : 'Désactivé'}
     </span>
   )
@@ -46,11 +78,11 @@ function ConfirmModal({ employe, onConfirm, onCancel, palette }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', padding: 16 }}>
       <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.xl, padding: '28px 24px', maxWidth: 400, width: '100%', boxShadow: theme.shadow.lg }}>
         <div style={{ fontSize: 32, marginBottom: 16, textAlign: 'center' }}>⚠️</div>
-        <div style={{ fontSize: theme.font.size.lg, fontWeight: theme.font.weight.bold, color: palette.text, marginBottom: 8, textAlign: 'center' }}>Supprimer {employe.nom} ?</div>
-        <div style={{ fontSize: theme.font.size.md, color: palette.textSub, marginBottom: 24, textAlign: 'center', lineHeight: 1.6 }}>Cette action est irréversible.</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: palette.text, marginBottom: 8, textAlign: 'center' }}>Supprimer {employe.nom} ?</div>
+        <div style={{ fontSize: 13, color: palette.textSub, marginBottom: 24, textAlign: 'center', lineHeight: 1.6 }}>Cette action est irréversible.</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <button onClick={onCancel} style={{ padding: '11px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', color: palette.textSub, cursor: 'pointer', fontFamily: theme.font.family, fontSize: theme.font.size.md }}>Annuler</button>
-          <button onClick={onConfirm} style={{ padding: '11px', borderRadius: theme.radius.md, border: 'none', background: theme.colors.danger, color: '#fff', cursor: 'pointer', fontFamily: theme.font.family, fontSize: theme.font.size.md, fontWeight: theme.font.weight.bold }}>Supprimer</button>
+          <button onClick={onCancel} style={{ padding: '11px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', color: palette.textSub, cursor: 'pointer', fontFamily: theme.font.family, fontSize: 13 }}>Annuler</button>
+          <button onClick={onConfirm} style={{ padding: '11px', borderRadius: theme.radius.md, border: 'none', background: theme.colors.danger, color: '#fff', cursor: 'pointer', fontFamily: theme.font.family, fontSize: 13, fontWeight: 700 }}>Supprimer</button>
         </div>
       </div>
     </div>
@@ -59,7 +91,12 @@ function ConfirmModal({ employe, onConfirm, onCancel, palette }) {
 
 export default function Employes() {
   const { user }    = useAuth()
-  const isOwner     = user?.role === 'owner'
+  const userRole    = normalizeRole(user?.role)
+  const isOwner     = userRole === 'owner'
+  const isGerant    = userRole === 'gerant'
+  const canManage   = isOwner || isGerant
+  const config      = ROLE_CONFIG[userRole] ?? ROLE_CONFIG.gerant
+
   const { palette } = useTheme()
   const { employes, loading, createLoading, creerEmploye, toggleEmploye, supprimerEmploye } = useEmployes()
 
@@ -70,9 +107,13 @@ export default function Employes() {
   const [nom,      setNom]      = useState('')
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
-  const [role,     setRole]     = useState('pompiste')
+  const [role,     setRole]     = useState(config.rolesDispos[0]?.value ?? 'pompiste')
 
-  const resetForm = () => { setNom(''); setEmail(''); setPassword(''); setRole('pompiste'); setShowPwd(false); setErrors({}) }
+  const resetForm = () => {
+    setNom(''); setEmail(''); setPassword('')
+    setRole(config.rolesDispos[0]?.value ?? 'pompiste')
+    setShowPwd(false); setErrors({})
+  }
 
   const validate = () => {
     const e = {}
@@ -83,106 +124,96 @@ export default function Employes() {
     return Object.keys(e).length === 0
   }
 
- const handleSubmit = async (ev) => {
-  ev.preventDefault()
-
-  if (!validate()) return
-
-  try {
-    await creerEmploye({
-      nom: nom.trim(),
-      email: email.trim().toLowerCase(),
-      password,
-      role: normalizeRole(role),
-    })
-
-    resetForm()
-    setShowForm(false)
-  } catch (error) {
-    console.error('Erreur création employé :', error)
+  const handleSubmit = async (ev) => {
+    ev.preventDefault()
+    if (!validate()) return
+    try {
+      await creerEmploye({ nom: nom.trim(), email: email.trim().toLowerCase(), password, role })
+      resetForm()
+      setShowForm(false)
+    } catch (_) {}
   }
-}
-const handleDelete = async () => {
-  if (!toDelete) return
 
-  try {
-    await supprimerEmploye(toDelete.id)
-    setToDelete(null)
-  } catch (error) {
-    console.error('Erreur suppression employé :', error)
+  const handleDelete = async () => {
+    if (!toDelete) return
+    try { await supprimerEmploye(toDelete.id); setToDelete(null) } catch (_) {}
   }
-}
 
-const handleToggle = async (id) => {
-  try {
-    await toggleEmploye(id)
-  } catch (error) {
-    console.error('Erreur toggle employé :', error)
+  const handleToggle = async (id) => {
+    try { await toggleEmploye(id) } catch (_) {}
   }
-}
 
   const inputStyle = (hasError) => ({
     width: '100%', height: 46,
-    background:   palette.inputBg,
-    border:       `1.5px solid ${hasError ? theme.colors.danger : palette.cardBorder}`,
-    borderRadius: theme.radius.md,
-    padding:      '0 14px',
-    fontSize:     theme.font.size.base,
-    color:        palette.text,
-    fontFamily:   theme.font.family,
-    outline:      'none',
-    transition:   theme.transition.fast,
-    boxSizing:    'border-box',
+    background: palette.inputBg,
+    border: `1.5px solid ${hasError ? theme.colors.danger : palette.cardBorder}`,
+    borderRadius: theme.radius.md, padding: '0 14px',
+    fontSize: theme.font.size.base, color: palette.text,
+    fontFamily: theme.font.family, outline: 'none',
+    transition: theme.transition.fast, boxSizing: 'border-box',
   })
 
+  // Colonnes dynamiques selon le rôle
+  const cols = config.showVentes
+    ? '1fr 160px 90px 90px 110px 80px'
+    : '1fr 180px 110px 100px 90px'
+  const headers = config.showVentes
+    ? ['Membre', 'Email', 'Rôle', 'Ventes', 'Revenu', 'Actions']
+    : ['Membre', 'Email', 'Rôle', 'Depuis', 'Actions']
+
   return (
-    <div style={{ padding: '32px 28px', maxWidth: 1000, margin: '0 auto' }} className="fuelo-employes">
+    <div style={{ padding: '32px 28px', maxWidth: 1060, margin: '0 auto' }} className="fuelo-employes">
 
       {toDelete && <ConfirmModal employe={toDelete} onConfirm={handleDelete} onCancel={() => setToDelete(null)} palette={palette} />}
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 14 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 14 }}>
         <div>
-          <h1 style={{ fontSize: theme.font.size['2xl'], fontWeight: theme.font.weight.black, color: palette.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 4 }}>Employés</h1>
-          <p style={{ fontSize: theme.font.size.md, color: palette.textSub, margin: 0 }}>
-            {employes.length} membre{employes.length > 1 ? 's' : ''} dans votre station
+          <h1 style={{ fontSize: 24, fontWeight: 900, color: palette.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 5 }}>
+            {config.title}
+          </h1>
+          <p style={{ fontSize: 13, color: palette.textSub, margin: 0 }}>
+            {config.subtitle(employes.length)}
           </p>
         </div>
-        {isOwner && (
+        {canManage && (
           <button onClick={() => { resetForm(); setShowForm(v => !v) }}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: theme.radius.md, border: 'none', background: theme.colors.primary, color: '#fff', cursor: 'pointer', fontSize: theme.font.size.md, fontWeight: theme.font.weight.bold, fontFamily: theme.font.family, boxShadow: theme.shadow.primary, whiteSpace: 'nowrap' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d={ICONS.plus} /></svg>
-            Ajouter un membre
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: theme.radius.md, border: 'none', background: theme.colors.primary, color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: theme.font.family, boxShadow: theme.shadow.primary, whiteSpace: 'nowrap' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+            {config.btnLabel}
           </button>
         )}
       </div>
 
-      {/* Formulaire */}
+      {/* Formulaire de création */}
       {showForm && (
-        <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.lg, padding: '24px 20px', marginBottom: 24, boxShadow: theme.shadow.sm }}>
-          <div style={{ fontSize: theme.font.size.base, fontWeight: theme.font.weight.bold, color: palette.text, marginBottom: 20 }}>Nouveau membre</div>
+        <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.lg, padding: '24px 22px', marginBottom: 24, boxShadow: theme.shadow.sm }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: palette.text, marginBottom: 20 }}>{config.formTitle}</div>
           <form onSubmit={handleSubmit}>
             <div className="fuelo-grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 16 }}>
+              {/* Nom */}
               <div>
-                <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Nom complet</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Nom complet</div>
                 <input type="text" placeholder="Mamadou Diallo" value={nom}
                   onChange={e => { setNom(e.target.value); setErrors(er => ({ ...er, nom: '' })) }}
                   onFocus={e => { e.target.style.borderColor = theme.colors.primary }}
                   onBlur={e  => { e.target.style.borderColor = errors.nom ? theme.colors.danger : palette.cardBorder }}
                   style={inputStyle(errors.nom)} />
-                {errors.nom && <div style={{ fontSize: theme.font.size.xs, color: theme.colors.danger, marginTop: 4 }}>{errors.nom}</div>}
+                {errors.nom && <div style={{ fontSize: 10, color: theme.colors.danger, marginTop: 4 }}>{errors.nom}</div>}
               </div>
+              {/* Email */}
               <div>
-                <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Email</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Email</div>
                 <input type="email" placeholder="membre@mastation.com" value={email}
                   onChange={e => { setEmail(e.target.value); setErrors(er => ({ ...er, email: '' })) }}
                   onFocus={e => { e.target.style.borderColor = theme.colors.primary }}
                   onBlur={e  => { e.target.style.borderColor = errors.email ? theme.colors.danger : palette.cardBorder }}
                   style={inputStyle(errors.email)} />
-                {errors.email && <div style={{ fontSize: theme.font.size.xs, color: theme.colors.danger, marginTop: 4 }}>{errors.email}</div>}
+                {errors.email && <div style={{ fontSize: 10, color: theme.colors.danger, marginTop: 4 }}>{errors.email}</div>}
               </div>
+              {/* Mot de passe */}
               <div>
-                <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Mot de passe</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Mot de passe</div>
                 <div style={{ position: 'relative' }}>
                   <input type={showPwd ? 'text' : 'password'} placeholder="Minimum 6 caractères" value={password}
                     onChange={e => { setPassword(e.target.value); setErrors(er => ({ ...er, password: '' })) }}
@@ -196,29 +227,42 @@ const handleToggle = async (id) => {
                     </svg>
                   </button>
                 </div>
-                {errors.password && <div style={{ fontSize: theme.font.size.xs, color: theme.colors.danger, marginTop: 4 }}>{errors.password}</div>}
+                {errors.password && <div style={{ fontSize: 10, color: theme.colors.danger, marginTop: 4 }}>{errors.password}</div>}
               </div>
             </div>
 
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Rôle dans la station</div>
-              <select value={role} onChange={e => setRole(normalizeRole(e.target.value))}
-                style={{ width: '100%', height: 46, background: palette.inputBg, border: `1.5px solid ${palette.cardBorder}`, borderRadius: theme.radius.md, padding: '0 14px', fontSize: theme.font.size.base, color: palette.text, fontFamily: theme.font.family, outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}>
-                <option value="gerant">👔 Gérant — Dashboard, ventes, stock, alertes, employés</option>
-                <option value="chauffeur">🚛 Chauffeur — Interface GPS trajets uniquement</option>
-                <option value="logisticien">📦 Logisticien — Citernes, trajets, alertes transport</option>
-                <option value="pompiste">⛽ Pompiste — Enregistrement des ventes uniquement</option>
-              </select>
-            </div>
+            {/* Sélection du rôle */}
+            {config.rolesDispos.length > 1 && (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Rôle</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
+                  {config.rolesDispos.map(r => {
+                    const rc = ROLE_COLORS[r.value]
+                    const sel = role === r.value
+                    return (
+                      <button key={r.value} type="button" onClick={() => setRole(r.value)} style={{
+                        padding: '12px 16px', borderRadius: theme.radius.md, textAlign: 'left', cursor: 'pointer', fontFamily: theme.font.family,
+                        border: `1.5px solid ${sel ? rc?.color ?? theme.colors.primary : palette.cardBorder}`,
+                        background: sel ? (rc?.bg ?? theme.colors.primaryLight) : palette.inputBg,
+                        transition: 'all 0.15s',
+                      }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: sel ? (rc?.color ?? theme.colors.primary) : palette.text, marginBottom: 3 }}>{r.label}</div>
+                        <div style={{ fontSize: 11, color: palette.textMuted, lineHeight: 1.4 }}>{r.desc}</div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <button type="submit" disabled={createLoading}
-                style={{ padding: '11px 24px', borderRadius: theme.radius.md, border: 'none', background: theme.colors.primary, color: '#fff', fontSize: theme.font.size.md, fontWeight: theme.font.weight.bold, cursor: createLoading ? 'not-allowed' : 'pointer', fontFamily: theme.font.family, display: 'flex', alignItems: 'center', gap: 8, boxShadow: theme.shadow.primary }}>
+                style={{ padding: '11px 24px', borderRadius: theme.radius.md, border: 'none', background: theme.colors.primary, color: '#fff', fontSize: 13, fontWeight: 700, cursor: createLoading ? 'not-allowed' : 'pointer', fontFamily: theme.font.family, display: 'flex', alignItems: 'center', gap: 8, boxShadow: theme.shadow.primary }}>
                 {createLoading && <div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />}
                 {createLoading ? 'Création...' : 'Créer le compte'}
               </button>
               <button type="button" onClick={() => { resetForm(); setShowForm(false) }}
-                style={{ padding: '11px 20px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', color: palette.textSub, fontSize: theme.font.size.md, cursor: 'pointer', fontFamily: theme.font.family }}>
+                style={{ padding: '11px 20px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', color: palette.textSub, fontSize: 13, cursor: 'pointer', fontFamily: theme.font.family }}>
                 Annuler
               </button>
             </div>
@@ -226,67 +270,77 @@ const handleToggle = async (id) => {
         </div>
       )}
 
-      {/* Tableau desktop */}
+      {/* Tableau */}
       <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.lg, overflow: 'hidden', boxShadow: theme.shadow.sm }}>
 
-        {/* Header tableau — desktop seulement */}
-        <div className="fuelo-table-header" style={{ display: 'grid', gridTemplateColumns: '1fr 150px 90px 90px 110px 80px', padding: '10px 20px', background: palette.hover, borderBottom: `1px solid ${palette.cardBorder}`, gap: 8 }}>
-          {['Membre', 'Email', 'Rôle', 'Ventes', 'Revenu', 'Actions'].map(h => (
-            <div key={h} style={{ fontSize: 10, fontWeight: theme.font.weight.bold, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
+        {/* En-tête tableau — desktop */}
+        <div className="fuelo-table-header" style={{ display: 'grid', gridTemplateColumns: cols, padding: '10px 20px', background: palette.hover, borderBottom: `1px solid ${palette.cardBorder}`, gap: 8 }}>
+          {headers.map(h => (
+            <div key={h} style={{ fontSize: 10, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
           ))}
         </div>
 
         {loading ? (
           <>
             <SkeletonStyle />
-            {Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} cols={6} />)}
+            {Array.from({ length: 3 }).map((_, i) => <SkeletonRow key={i} cols={headers.length} />)}
           </>
         ) : employes.length === 0 ? (
-          <EmptyState type="employes" actionLabel={isOwner ? 'Ajouter un membre' : undefined} onAction={isOwner ? () => setShowForm(true) : undefined} />
+          <EmptyState
+            type="employes"
+            actionLabel={canManage ? config.btnLabel : undefined}
+            onAction={canManage ? () => setShowForm(true) : undefined}
+          />
         ) : (
           employes.map((emp, i) => {
             const displayRole = normalizeRole(emp.role)
-            const isGerant    = displayRole === 'gerant'
-            const roleColor   = {
-              gerant:      theme.colors.info,
-              chauffeur:   theme.colors.warning,
-              logisticien: '#8B5CF6',
-              pompiste:    theme.colors.success,
-            }[displayRole] ?? theme.colors.success
-            const roleBg = {
-              gerant:      theme.colors.infoLight,
-              chauffeur:   theme.colors.warningLight,
-              logisticien: 'rgba(139,92,246,0.1)',
-              pompiste:    theme.colors.successLight,
-            }[displayRole] ?? theme.colors.successLight
+            const rc          = ROLE_COLORS[displayRole] ?? { color: theme.colors.success, bg: theme.colors.successLight }
             const initial     = emp.nom?.trim()?.charAt(0)?.toUpperCase() || '?'
+            const createdDate = emp.created_at
+              ? new Date(emp.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+              : '—'
 
             return (
               <div key={emp.id}>
                 {/* Desktop row */}
                 <div className="fuelo-table-row"
-                  style={{ display: 'grid', gridTemplateColumns: '1fr 150px 90px 90px 110px 80px', padding: '14px 20px', borderBottom: i < employes.length - 1 ? `1px solid ${palette.cardBorder}` : 'none', transition: theme.transition.fast, gap: 8, alignItems: 'center' }}
+                  style={{ display: 'grid', gridTemplateColumns: cols, padding: '14px 20px', borderBottom: i < employes.length - 1 ? `1px solid ${palette.cardBorder}` : 'none', transition: theme.transition.fast, gap: 8, alignItems: 'center' }}
                   onMouseEnter={e => e.currentTarget.style.background = palette.hover}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+
+                  {/* Nom + statut */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                    <div style={{ width: 34, height: 34, borderRadius: '50%', background: theme.colors.primaryLight, border: `1px solid ${theme.colors.primary}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: theme.font.weight.bold, color: theme.colors.primary, flexShrink: 0 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: '50%', background: theme.colors.primaryLight, border: `1px solid ${theme.colors.primary}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: theme.colors.primary, flexShrink: 0 }}>
                       {initial}
                     </div>
                     <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: theme.font.size.md, fontWeight: theme.font.weight.semi, color: palette.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{emp.nom}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: palette.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{emp.nom}</div>
                       <StatusBadge actif={emp.actif} />
                     </div>
                   </div>
-                  <div style={{ fontSize: theme.font.size.sm, color: palette.textSub, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{emp.email}</div>
+
+                  {/* Email */}
+                  <div style={{ fontSize: 12, color: palette.textSub, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{emp.email}</div>
+
+                  {/* Rôle */}
                   <div>
-                    <span style={{ fontSize: 11, fontWeight: theme.font.weight.semi, color: roleColor, background: roleBg, padding: '2px 8px', borderRadius: theme.radius.full, whiteSpace: 'nowrap' }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: rc.color, background: rc.bg, padding: '2px 9px', borderRadius: theme.radius.full, whiteSpace: 'nowrap' }}>
                       {ROLE_LABELS[displayRole] || displayRole}
                     </span>
                   </div>
-                  <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.semi, color: palette.text, fontFamily: theme.font.mono }}>{emp.nb_ventes_jour ?? 0}</div>
-                  <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.bold, color: theme.colors.primary, fontFamily: theme.font.mono }}>{formatGNF(emp.total_ventes_jour ?? 0)}</div>
-                  {isOwner && (
+
+                  {/* Ventes (gérant) ou Date (owner) */}
+                  {config.showVentes ? (
+                    <>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: palette.text, fontFamily: theme.font.mono }}>{emp.nb_ventes_jour ?? 0}</div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: theme.colors.primary, fontFamily: theme.font.mono }}>{formatGNF(emp.total_ventes_jour ?? 0)}</div>
+                    </>
+                  ) : (
+                    <div style={{ fontSize: 11, color: palette.textMuted }}>{createdDate}</div>
+                  )}
+
+                  {/* Actions */}
+                  {canManage && (
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button onClick={() => handleToggle(emp.id)} title={emp.actif ? 'Désactiver' : 'Activer'}
                         style={{ width: 30, height: 30, borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: emp.actif ? theme.colors.warning : theme.colors.success, transition: theme.transition.fast, flexShrink: 0 }}
@@ -300,7 +354,7 @@ const handleToggle = async (id) => {
                         style={{ width: 30, height: 30, borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: theme.colors.danger, transition: theme.transition.fast, flexShrink: 0 }}
                         onMouseEnter={e => e.currentTarget.style.background = theme.colors.dangerLight}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.trash} /></svg>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
                     </div>
                   )}
@@ -315,11 +369,11 @@ const handleToggle = async (id) => {
                         {initial}
                       </div>
                       <div>
-                        <div style={{ fontSize: theme.font.size.base, fontWeight: theme.font.weight.bold, color: palette.text }}>{emp.nom}</div>
-                        <div style={{ fontSize: theme.font.size.xs, color: palette.textSub, marginTop: 2 }}>{emp.email}</div>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: palette.text }}>{emp.nom}</div>
+                        <div style={{ fontSize: 11, color: palette.textSub, marginTop: 1 }}>{emp.email}</div>
                       </div>
                     </div>
-                    {isOwner && (
+                    {canManage && (
                       <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                         <button onClick={() => handleToggle(emp.id)}
                           style={{ width: 32, height: 32, borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: emp.actif ? theme.colors.warning : theme.colors.success }}>
@@ -329,18 +383,25 @@ const handleToggle = async (id) => {
                         </button>
                         <button onClick={() => setToDelete(emp)}
                           style={{ width: 32, height: 32, borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: theme.colors.danger }}>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.trash} /></svg>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
                         </button>
                       </div>
                     )}
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                     <StatusBadge actif={emp.actif} />
-                    <span style={{ fontSize: 11, fontWeight: theme.font.weight.semi, color: isGerant ? theme.colors.info : theme.colors.success, background: isGerant ? theme.colors.infoLight : theme.colors.successLight, padding: '2px 8px', borderRadius: theme.radius.full }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: rc.color, background: rc.bg, padding: '2px 8px', borderRadius: theme.radius.full }}>
                       {ROLE_LABELS[displayRole] || displayRole}
                     </span>
-                    <span style={{ fontSize: theme.font.size.xs, color: palette.textMuted }}>{emp.nb_ventes_jour ?? 0} ventes</span>
-                    <span style={{ fontSize: theme.font.size.sm, fontWeight: 700, color: theme.colors.primary, fontFamily: theme.font.mono }}>{formatGNF(emp.total_ventes_jour ?? 0)}</span>
+                    {config.showVentes && (
+                      <>
+                        <span style={{ fontSize: 11, color: palette.textMuted }}>{emp.nb_ventes_jour ?? 0} vente{(emp.nb_ventes_jour ?? 0) > 1 ? 's' : ''}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: theme.colors.primary, fontFamily: theme.font.mono }}>{formatGNF(emp.total_ventes_jour ?? 0)}</span>
+                      </>
+                    )}
+                    {!config.showVentes && (
+                      <span style={{ fontSize: 11, color: palette.textMuted }}>Depuis {createdDate}</span>
+                    )}
                   </div>
                 </div>
               </div>

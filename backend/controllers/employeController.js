@@ -1,5 +1,9 @@
 // ================================================
-// FUELO V2.1 — Employé Controller
+// FUELO V2.2 — Employé Controller (hiérarchie RBAC)
+// Hiérarchie création :
+//   owner       → gerant, logisticien
+//   gerant      → pompiste
+//   logisticien → chauffeur
 // ================================================
 
 const pool              = require('../config/database')
@@ -13,17 +17,31 @@ const normalizeRole = (value = '') => {
   return role === 'manager' ? 'gerant' : role
 }
 
+// Rôles que chaque créateur peut créer
+const CREATION_RULES = {
+  owner:       ['gerant', 'logisticien'],
+  gerant:      ['pompiste'],
+  logisticien: ['chauffeur'],
+  superadmin:  ['gerant', 'logisticien', 'pompiste', 'chauffeur'],
+}
+
 // ── Créer un employé ─────────────────────────────────
 const creerEmploye = asyncHandler(async (req, res) => {
-  const nom        = req.body.nom?.trim()
-  const email      = req.body.email?.trim().toLowerCase()
-  const password   = req.body.password || ''
-  const role       = normalizeRole(req.body.role || 'pompiste')
-  const station_id = req.user.station_id
-  const created_by = req.user.id
+  const nom          = req.body.nom?.trim()
+  const email        = req.body.email?.trim().toLowerCase()
+  const password     = req.body.password || ''
+  const role         = normalizeRole(req.body.role || 'pompiste')
+  const station_id   = req.user.station_id
+  const created_by   = req.user.id
+  const creatorRole  = normalizeRole(req.user.role)
 
-  if (!['pompiste', 'gerant', 'chauffeur', 'logisticien'].includes(role)) {
-    throw new AppError('Rôle invalide. Choisissez pompiste, gerant, chauffeur ou logisticien.', 400)
+  const allowedRoles = CREATION_RULES[creatorRole] ?? []
+  if (!allowedRoles.includes(role)) {
+    const labels = { owner: 'propriétaire', gerant: 'gérant', logisticien: 'logisticien' }
+    throw new AppError(
+      `En tant que ${labels[creatorRole] ?? creatorRole}, vous pouvez uniquement créer : ${allowedRoles.join(', ')}`,
+      403
+    )
   }
 
   const existe = await pool.query(
@@ -48,14 +66,36 @@ const creerEmploye = asyncHandler(async (req, res) => {
   )
 
   await auditLog(req, 'CREATE', 'users', employe.id, { nom, email, role })
-  logger.info(`Employé créé — Station ${station_id} — ${nom} (${role})`)
+  logger.info(`Employé créé — Station ${station_id} — ${nom} (${role}) par ${creatorRole} #${created_by}`)
 
   res.status(201).json({ message: 'Employé créé avec succès', employe })
 })
 
-// ── Liste des employés — N'affiche PAS les owners ────
+// ── Liste des employés selon le rôle du demandeur ───
 const getEmployes = asyncHandler(async (req, res) => {
-  const station_id = req.user.station_id
+  const station_id  = req.user.station_id
+  const creatorRole = normalizeRole(req.user.role)
+
+  let roleFilter
+  let extraFilter = ''
+  const params = [station_id]
+
+  if (creatorRole === 'owner' || creatorRole === 'superadmin') {
+    // L'owner voit tous les gérants + logisticiens de sa station
+    roleFilter = `LOWER(u.role) IN ('gerant', 'logisticien')`
+  } else if (creatorRole === 'gerant') {
+    // Le gérant voit seulement ses pompistes (ceux qu'il a créés)
+    roleFilter = `LOWER(u.role) = 'pompiste'`
+    params.push(req.user.id)
+    extraFilter = `AND u.created_by = $${params.length}`
+  } else if (creatorRole === 'logisticien') {
+    // Le logisticien voit seulement ses chauffeurs (ceux qu'il a créés)
+    roleFilter = `LOWER(u.role) = 'chauffeur'`
+    params.push(req.user.id)
+    extraFilter = `AND u.created_by = $${params.length}`
+  } else {
+    return res.json({ employes: [] })
+  }
 
   const result = await pool.query(
     `SELECT
@@ -71,11 +111,12 @@ const getEmployes = asyncHandler(async (req, res) => {
        AND DATE(v.created_at) = CURRENT_DATE
        AND v.deleted_at IS NULL
      WHERE su.station_id = $1
-       AND LOWER(u.role) IN ('pompiste', 'gerant', 'manager', 'chauffeur', 'logisticien')
+       AND ${roleFilter}
+       ${extraFilter}
        AND u.deleted_at IS NULL
      GROUP BY u.id
      ORDER BY u.created_at DESC`,
-    [station_id]
+    params
   )
 
   res.json({
@@ -85,73 +126,94 @@ const getEmployes = asyncHandler(async (req, res) => {
 
 // ── Activer / Désactiver ─────────────────────────────
 const toggleEmploye = asyncHandler(async (req, res) => {
-  const station_id = req.user.station_id
-  const { id }     = req.params
+  const station_id  = req.user.station_id
+  const creatorRole = normalizeRole(req.user.role)
+  const { id }      = req.params
 
-  // Bloquer toggle de soi-même
   if (parseInt(id) === req.user.id) {
     throw new AppError('Vous ne pouvez pas désactiver votre propre compte', 400)
   }
 
   const check = await pool.query(
-    `SELECT u.id, u.actif, u.nom, u.role FROM users u
+    `SELECT u.id, u.actif, u.nom, u.role, u.created_by FROM users u
      JOIN station_users su ON su.user_id = u.id
      WHERE su.station_id = $1 AND u.id = $2 AND u.deleted_at IS NULL`,
     [station_id, id]
   )
-
   if (check.rows.length === 0) throw new AppError('Employé non trouvé', 404)
 
-  // Bloquer toggle d'un owner
-  if (['owner', 'superadmin'].includes(check.rows[0].role)) {
+  const target     = check.rows[0]
+  const targetRole = normalizeRole(target.role)
+
+  if (['owner', 'superadmin'].includes(targetRole)) {
     throw new AppError('Impossible de modifier un propriétaire', 403)
   }
 
-  const newStatus = !check.rows[0].actif
+  // Vérifier que le gérant/logisticien ne gère que ses propres employés
+  if (creatorRole === 'gerant') {
+    if (targetRole !== 'pompiste' || parseInt(target.created_by) !== req.user.id) {
+      throw new AppError('Vous pouvez uniquement gérer vos propres pompistes', 403)
+    }
+  } else if (creatorRole === 'logisticien') {
+    if (targetRole !== 'chauffeur' || parseInt(target.created_by) !== req.user.id) {
+      throw new AppError('Vous pouvez uniquement gérer vos propres chauffeurs', 403)
+    }
+  }
+  // L'owner peut toggler tout gérant/logisticien de sa station
+
+  const newStatus = !target.actif
   await pool.query('UPDATE users SET actif = $1 WHERE id = $2', [newStatus, id])
 
-  await auditLog(req, newStatus ? 'ACTIVATE' : 'DEACTIVATE', 'users', parseInt(id), {
-    nom: check.rows[0].nom,
-  })
-
+  await auditLog(req, newStatus ? 'ACTIVATE' : 'DEACTIVATE', 'users', parseInt(id), { nom: target.nom })
   res.json({ message: newStatus ? 'Employé activé' : 'Employé désactivé', actif: newStatus })
 })
 
 // ── Supprimer un employé (soft delete) ───────────────
 const supprimerEmploye = asyncHandler(async (req, res) => {
-  const station_id = req.user.station_id
-  const { id }     = req.params
+  const station_id  = req.user.station_id
+  const creatorRole = normalizeRole(req.user.role)
+  const { id }      = req.params
 
-  // Bloquer suppression de soi-même
   if (parseInt(id) === req.user.id) {
     throw new AppError('Vous ne pouvez pas supprimer votre propre compte', 400)
   }
 
   const check = await pool.query(
-    `SELECT u.id, u.nom, u.role FROM users u
+    `SELECT u.id, u.nom, u.role, u.created_by FROM users u
      JOIN station_users su ON su.user_id = u.id
      WHERE su.station_id = $1 AND u.id = $2 AND u.deleted_at IS NULL`,
     [station_id, id]
   )
-
   if (check.rows.length === 0) throw new AppError('Employé non trouvé', 404)
 
-  // Bloquer suppression d'un owner
-  if (['owner', 'superadmin'].includes(check.rows[0].role)) {
+  const target     = check.rows[0]
+  const targetRole = normalizeRole(target.role)
+
+  if (['owner', 'superadmin'].includes(targetRole)) {
     throw new AppError('Impossible de supprimer un propriétaire', 403)
+  }
+
+  if (creatorRole === 'gerant') {
+    if (targetRole !== 'pompiste' || parseInt(target.created_by) !== req.user.id) {
+      throw new AppError('Vous pouvez uniquement supprimer vos propres pompistes', 403)
+    }
+  } else if (creatorRole === 'logisticien') {
+    if (targetRole !== 'chauffeur' || parseInt(target.created_by) !== req.user.id) {
+      throw new AppError('Vous pouvez uniquement supprimer vos propres chauffeurs', 403)
+    }
   }
 
   await pool.query(
     'UPDATE users SET deleted_at = NOW(), actif = false WHERE id = $1', [id]
   )
 
-  await auditLog(req, 'DELETE', 'users', parseInt(id), { nom: check.rows[0].nom })
-  logger.info(`Employé supprimé (soft) — ${check.rows[0].nom}`)
+  await auditLog(req, 'DELETE', 'users', parseInt(id), { nom: target.nom })
+  logger.info(`Employé supprimé (soft) — ${target.nom} par ${creatorRole} #${req.user.id}`)
 
   res.json({ message: 'Employé supprimé avec succès' })
 })
 
-// ── Ventes d'un employé ──────────────────────────────
+// ── Ventes d'un employé (owner + gérant) ────────────
 const getVentesEmploye = asyncHandler(async (req, res) => {
   const station_id = req.user.station_id
   const { id }     = req.params

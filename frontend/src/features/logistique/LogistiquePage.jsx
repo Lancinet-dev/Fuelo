@@ -16,10 +16,11 @@ import theme from '../../config/theme'
 
 const ORANGE = '#F59E0B'
 const TABS   = [
-  { key: 'trajets',  label: 'Trajets',  icon: '🗺️' },
-  { key: 'citernes', label: 'Citernes', icon: '🚛' },
-  { key: 'alertes',  label: 'Alertes',  icon: '🚨' },
-  { key: 'rapports', label: 'Rapports', icon: '📊' },
+  { key: 'trajets',   label: 'Trajets',    icon: '🗺️' },
+  { key: 'citernes',  label: 'Citernes',   icon: '🚛' },
+  { key: 'chauffeurs',label: 'Chauffeurs', icon: '👤' },
+  { key: 'alertes',   label: 'Alertes',    icon: '🚨' },
+  { key: 'rapports',  label: 'Rapports',   icon: '📊' },
 ]
 
 const STATUT_CFG = {
@@ -323,6 +324,212 @@ function TabAlertes({ palette }) {
   )
 }
 
+// ── Onglet Chauffeurs ─────────────────────────────
+function TabChauffeurs({ palette, isDark }) {
+  const [chauffeurs, setChauffeurs] = useState([])
+  const [loading,    setLoading]    = useState(true)
+  const [showForm,   setShowForm]   = useState(false)
+  const [toDelete,   setToDelete]   = useState(null)
+  const [creating,   setCreating]   = useState(false)
+  const [showPwd,    setShowPwd]    = useState(false)
+  const [form,       setForm]       = useState({ nom: '', email: '', password: '' })
+  const [errors,     setErrors]     = useState({})
+
+  const loadChauffeurs = async () => {
+    try {
+      setLoading(true)
+      const r = await api.get('/employes')
+      setChauffeurs(r.data.employes ?? [])
+    } catch { toast.error('Erreur chargement chauffeurs') }
+    finally { setLoading(false) }
+  }
+
+  useEffect(() => { loadChauffeurs() }, [])
+
+  const validate = () => {
+    const e = {}
+    if (!form.nom.trim())               e.nom      = 'Obligatoire'
+    if (!form.email.includes('@'))       e.email    = 'Email invalide'
+    if (form.password.length < 6)        e.password = 'Minimum 6 caractères'
+    setErrors(e)
+    return Object.keys(e).length === 0
+  }
+
+  const handleCreate = async (ev) => {
+    ev.preventDefault()
+    if (!validate()) return
+    try {
+      setCreating(true)
+      await api.post('/employes', { ...form, role: 'chauffeur' })
+      toast.success(`Chauffeur ${form.nom} créé`)
+      setForm({ nom: '', email: '', password: '' })
+      setShowForm(false)
+      loadChauffeurs()
+    } catch (err) {
+      toast.error(err.response?.data?.error ?? 'Erreur lors de la création')
+    } finally { setCreating(false) }
+  }
+
+  const handleToggle = async (id, nomChauffeur) => {
+    try {
+      const r = await api.put(`/employes/${id}/toggle`)
+      toast.success(r.data.message)
+      loadChauffeurs()
+    } catch (err) { toast.error(err.response?.data?.error ?? 'Erreur') }
+  }
+
+  const handleDelete = async (id) => {
+    try {
+      await api.delete(`/employes/${id}`)
+      toast.success('Chauffeur supprimé')
+      setToDelete(null)
+      loadChauffeurs()
+    } catch (err) { toast.error(err.response?.data?.error ?? 'Erreur') }
+  }
+
+  const inputSt = (err) => ({
+    width: '100%', height: 46, boxSizing: 'border-box',
+    background: isDark ? 'rgba(255,255,255,0.05)' : '#F9FAFB',
+    border: `1.5px solid ${err ? theme.colors.danger : palette.cardBorder}`,
+    borderRadius: 12, padding: '0 14px',
+    fontSize: 14, color: palette.text,
+    fontFamily: theme.font.family, outline: 'none',
+    transition: 'all 0.15s',
+  })
+
+  return (
+    <div>
+      {/* Modal suppression */}
+      {toDelete && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', padding: 16 }}>
+          <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 20, padding: '28px 24px', maxWidth: 380, width: '100%', boxShadow: '0 24px 60px rgba(0,0,0,0.25)' }}>
+            <div style={{ fontSize: 28, textAlign: 'center', marginBottom: 14 }}>⚠️</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: palette.text, textAlign: 'center', marginBottom: 8 }}>Supprimer {toDelete.nom} ?</div>
+            <div style={{ fontSize: 12, color: palette.textSub, textAlign: 'center', marginBottom: 22, lineHeight: 1.6 }}>Cette action est irréversible.</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <button onClick={() => setToDelete(null)} style={{ padding: '11px', borderRadius: 12, border: `1px solid ${palette.cardBorder}`, background: 'transparent', color: palette.textSub, cursor: 'pointer', fontFamily: theme.font.family, fontSize: 13 }}>Annuler</button>
+              <button onClick={() => handleDelete(toDelete.id)} style={{ padding: '11px', borderRadius: 12, border: 'none', background: theme.colors.danger, color: '#fff', cursor: 'pointer', fontFamily: theme.font.family, fontSize: 13, fontWeight: 700 }}>Supprimer</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: palette.text }}>Mes chauffeurs</div>
+          <div style={{ fontSize: 12, color: palette.textSub, marginTop: 2 }}>{chauffeurs.length} chauffeur{chauffeurs.length > 1 ? 's' : ''} créé{chauffeurs.length > 1 ? 's' : ''}</div>
+        </div>
+        <button onClick={() => setShowForm(v => !v)}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: 'none', background: theme.colors.primary, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: theme.font.family }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+          Ajouter
+        </button>
+      </div>
+
+      {/* Formulaire création */}
+      {showForm && (
+        <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 14, padding: '18px 16px', marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 14 }}>Nouveau chauffeur</div>
+          <form onSubmit={handleCreate}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12, marginBottom: 14 }}>
+              <div>
+                <div style={{ fontSize: 11, color: palette.textSub, marginBottom: 5 }}>Nom complet</div>
+                <input value={form.nom} onChange={e => { setForm(p => ({ ...p, nom: e.target.value })); setErrors(p => ({ ...p, nom: '' })) }} placeholder="Mamadou Bah" style={inputSt(errors.nom)} />
+                {errors.nom && <div style={{ fontSize: 10, color: theme.colors.danger, marginTop: 3 }}>{errors.nom}</div>}
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: palette.textSub, marginBottom: 5 }}>Email</div>
+                <input type="email" value={form.email} onChange={e => { setForm(p => ({ ...p, email: e.target.value })); setErrors(p => ({ ...p, email: '' })) }} placeholder="chauffeur@mastation.com" style={inputSt(errors.email)} />
+                {errors.email && <div style={{ fontSize: 10, color: theme.colors.danger, marginTop: 3 }}>{errors.email}</div>}
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: palette.textSub, marginBottom: 5 }}>Mot de passe</div>
+                <div style={{ position: 'relative' }}>
+                  <input type={showPwd ? 'text' : 'password'} value={form.password} onChange={e => { setForm(p => ({ ...p, password: e.target.value })); setErrors(p => ({ ...p, password: '' })) }} placeholder="Minimum 6 caractères" style={{ ...inputSt(errors.password), paddingRight: 40 }} />
+                  <button type="button" onClick={() => setShowPwd(v => !v)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: palette.textMuted }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      {showPwd ? <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" /><line x1="1" y1="1" x2="23" y2="23" /></> : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>}
+                    </svg>
+                  </button>
+                </div>
+                {errors.password && <div style={{ fontSize: 10, color: theme.colors.danger, marginTop: 3 }}>{errors.password}</div>}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button type="submit" disabled={creating}
+                style={{ flex: 1, height: 44, borderRadius: 10, border: 'none', background: creating ? theme.colors.primaryDark : theme.colors.primary, color: '#fff', fontSize: 13, fontWeight: 700, cursor: creating ? 'not-allowed' : 'pointer', fontFamily: theme.font.family, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                {creating && <div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />}
+                {creating ? 'Création...' : 'Créer le compte'}
+              </button>
+              <button type="button" onClick={() => { setForm({ nom: '', email: '', password: '' }); setErrors({}); setShowForm(false) }}
+                style={{ padding: '0 16px', height: 44, borderRadius: 10, border: `1px solid ${palette.cardBorder}`, background: 'transparent', color: palette.textSub, fontSize: 12, cursor: 'pointer', fontFamily: theme.font.family }}>
+                Annuler
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Liste chauffeurs */}
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {[1,2].map(i => <div key={i} style={{ height: 64, background: palette.card, borderRadius: 12, border: `1px solid ${palette.cardBorder}` }} />)}
+        </div>
+      ) : chauffeurs.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '32px 16px', color: palette.textMuted }}>
+          <div style={{ fontSize: 32, marginBottom: 10 }}>👤</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: palette.textSub, marginBottom: 6 }}>Aucun chauffeur</div>
+          <div style={{ fontSize: 12 }}>Ajoutez des chauffeurs pour gérer vos trajets.</div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {chauffeurs.map(c => (
+            <div key={c.id} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '12px 14px',
+              background: palette.card,
+              border: `1px solid ${c.actif === false ? theme.colors.dangerLight : palette.cardBorder}`,
+              borderRadius: 12, gap: 10,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: ORANGE, flexShrink: 0 }}>
+                  {c.nom?.charAt(0)?.toUpperCase() ?? '?'}
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: palette.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nom}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: c.actif !== false ? theme.colors.success : theme.colors.danger, background: c.actif !== false ? theme.colors.successLight : theme.colors.dangerLight, padding: '1px 7px', borderRadius: 99 }}>
+                      {c.actif !== false ? 'Actif' : 'Désactivé'}
+                    </span>
+                    <span style={{ fontSize: 10, color: palette.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</span>
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                <button onClick={() => handleToggle(c.id, c.nom)} title={c.actif !== false ? 'Désactiver' : 'Activer'}
+                  style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.actif !== false ? theme.colors.warning : theme.colors.success, transition: 'all 0.15s' }}
+                  onMouseEnter={e => e.currentTarget.style.background = palette.hover}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <path d={c.actif !== false ? 'M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636' : 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'} />
+                  </svg>
+                </button>
+                <button onClick={() => setToDelete(c)} title="Supprimer"
+                  style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: theme.colors.danger, transition: 'all 0.15s' }}
+                  onMouseEnter={e => e.currentTarget.style.background = theme.colors.dangerLight}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Onglet Rapports ───────────────────────────────
 function TabRapports({ palette}) {
   const { trajets, loading, stats } = useTrajets({})
@@ -495,10 +702,11 @@ export default function LogistiquePage() {
 
       {/* Contenu */}
       <div style={{ flex: 1, padding: '16px', overflowY: 'auto', maxWidth: 600, margin: '0 auto', width: '100%' }}>
-        {onglet === 'trajets'  && <TabTrajets  palette={palette} isDark={isDark} />}
-        {onglet === 'citernes' && <TabCiternes palette={palette} isDark={isDark} />}
-        {onglet === 'alertes'  && <TabAlertes  palette={palette} />}
-        {onglet === 'rapports' && <TabRapports palette={palette} isDark={isDark} />}
+        {onglet === 'trajets'    && <TabTrajets    palette={palette} isDark={isDark} />}
+        {onglet === 'citernes'   && <TabCiternes   palette={palette} isDark={isDark} />}
+        {onglet === 'chauffeurs' && <TabChauffeurs  palette={palette} isDark={isDark} />}
+        {onglet === 'alertes'    && <TabAlertes     palette={palette} />}
+        {onglet === 'rapports'   && <TabRapports    palette={palette} isDark={isDark} />}
       </div>
 
       <style>{`
