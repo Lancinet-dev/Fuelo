@@ -8,6 +8,7 @@ const multer      = require('multer')
 const cloudinary  = require('../config/cloudinary')
 const verifyToken = require('../middleware/auth')
 const { checkRole, isPompiste, isManager, isOwner } = require('../middleware/checkRole')
+const { checkMaxStations } = require('../middleware/checkPlan')
 const pool        = require('../config/database')
 const {
   getStation,
@@ -57,7 +58,7 @@ router.delete('/logo', verifyToken, isOwner, async (req, res) => {
 
 // Multi-stations — propriétaire uniquement
 router.get('/mes-stations', verifyToken, isOwner, getMesStations)
-router.post('/nouvelle',    verifyToken, isOwner, creerStation)
+router.post('/nouvelle',    verifyToken, isOwner, checkMaxStations, creerStation)
 router.post('/changer',     verifyToken, isOwner, changerStation)
 router.get('/consolide',    verifyToken, isOwner, getConsolide)
 

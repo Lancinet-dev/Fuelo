@@ -6,6 +6,7 @@ const express     = require('express')
 const router      = express.Router()
 const verifyToken = require('../middleware/auth')
 const { isTransport } = require('../middleware/checkRole')
+const { checkPlan }   = require('../middleware/checkPlan')
 const pool   = require('../config/database')
 const logger = require('../utils/logger')
 
@@ -30,7 +31,7 @@ router.get('/', verifyToken, isTransport, async (req, res) => {
 })
 
 // POST /api/citernes
-router.post('/', verifyToken, isTransport, async (req, res) => {
+router.post('/', verifyToken, isTransport, checkPlan('citernes'), async (req, res) => {
   try {
     const { code, capacite, chauffeur_id } = req.body
     if (!code || !capacite) return res.status(400).json({ error: 'code et capacite requis' })
@@ -53,7 +54,7 @@ router.post('/', verifyToken, isTransport, async (req, res) => {
 })
 
 // PUT /api/citernes/:id
-router.put('/:id', verifyToken, isTransport, async (req, res) => {
+router.put('/:id', verifyToken, isTransport, checkPlan('citernes'), async (req, res) => {
   try {
     const { code, capacite, chauffeur_id } = req.body
     const result = await pool.query(
