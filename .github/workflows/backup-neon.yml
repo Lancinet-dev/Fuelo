@@ -1,0 +1,46 @@
+name: Backup Neon DB
+
+on:
+  schedule:
+    - cron: '0 3 * * *'   # 3h UTC chaque nuit
+  workflow_dispatch:        # déclenchement manuel depuis GitHub Actions
+
+jobs:
+  backup:
+    name: pg_dump → artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Installer postgresql-client
+        run: sudo apt-get install -y --no-install-recommends postgresql-client
+
+      - name: Dump de la base Neon
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          FILENAME="fuelo_backup_${DATE}.dump"
+          pg_dump "$DATABASE_URL" \
+            --no-password \
+            --format=custom \
+            --compress=9 \
+            --file="$FILENAME"
+          echo "BACKUP_FILE=$FILENAME" >> $GITHUB_ENV
+          SIZE=$(du -sh "$FILENAME" | cut -f1)
+          echo "✅ Backup créé : $FILENAME ($SIZE)"
+
+      - name: Upload artifact (30 jours)
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuelo-backup-${{ github.run_number }}-${{ env.BACKUP_FILE }}
+          path: ${{ env.BACKUP_FILE }}
+          retention-days: 30
+
+      - name: Résumé
+        run: |
+          echo "## 🗄️ Backup Fuelo — $(date +%Y-%m-%d)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Fichier** : ${{ env.BACKUP_FILE }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Format** : pg_dump custom (restaurable avec \`pg_restore\`)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Rétention** : 30 jours" >> $GITHUB_STEP_SUMMARY
