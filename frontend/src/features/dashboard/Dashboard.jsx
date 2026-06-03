@@ -1,5 +1,5 @@
 // ================================================
-// FUELO V2.2 — Dashboard (gérant-aware)
+// FUELO V2.3 — Dashboard (owner premium + gérant)
 // ================================================
 
 import { useNavigate } from 'react-router-dom'
@@ -9,6 +9,7 @@ import { useTheme }     from '../../context/ThemeContext'
 import { useDashboard } from '../../hooks/useDashboard'
 import { useVentes }    from '../../hooks/useVentes'
 import { useEmployes }  from '../../hooks/useEmployes'
+import { usePlan, PLAN_COLORS } from '../../hooks/usePlan'
 import StockGauge       from '../../ui/StockGauge'
 import EmptyState       from '../../ui/EmptyState'
 import { SkeletonDashboard, SkeletonStyle } from '../../ui/Skeleton'
@@ -16,14 +17,19 @@ import { formatGNF, formatLitres, formatRelative } from '../../utils/format'
 import theme from '../../config/theme'
 
 const ICONS = {
-  ventes:   'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
-  trend:    'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6',
-  alertes:  'M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01',
-  stock:    'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4',
-  employes: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 7a4 4 0 100 8 4 4 0 000-8z',
-  refresh:  'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15',
-  eye:      'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 100 6 3 3 0 000-6',
-  chevron:  'M9 18l6-6-6-6',
+  ventes:        'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
+  trend:         'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6',
+  alertes:       'M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01',
+  stock:         'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4',
+  employes:      'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 7a4 4 0 100 8 4 4 0 000-8z',
+  equipe:        'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+  refresh:       'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15',
+  eye:           'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 100 6 3 3 0 000-6',
+  chevron:       'M9 18l6-6-6-6',
+  abonnements:   'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z',
+  stations:      'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z',
+  essence:       'M5 3h14a2 2 0 012 2v6h-4V5H7v6H3V5a2 2 0 012-2zM3 11h18v2a2 2 0 01-2 2h-1v4a1 1 0 01-1 1H7a1 1 0 01-1-1v-4H5a2 2 0 01-2-2v-2z',
+  crown:         'M5 20l3-9 4 6 4-6 3 9M3 20h18',
 }
 
 function Icon({ d, size = 14, color = 'currentColor', strokeWidth = 2 }) {
@@ -47,7 +53,7 @@ function ChartTooltip({ active, payload, label, palette }) {
   )
 }
 
-// ── Mini stat card ────────────────────────────────
+// ── Carte KPI ─────────────────────────────────────
 function StatCard({ label, value, sub, iconD, color, onClick, pulse }) {
   const { palette } = useTheme()
   return (
@@ -113,12 +119,11 @@ function PompistePerf({ palette, isDark }) {
   const pompistes = employes.filter(e => e.role === 'pompiste')
   if (pompistes.length === 0) return null
 
-  const maxTotal = Math.max(...pompistes.map(e => Number(e.total_ventes_jour ?? 0)), 1)
+  const maxTotal  = Math.max(...pompistes.map(e => Number(e.total_ventes_jour ?? 0)), 1)
   const totalJour = pompistes.reduce((s, e) => s + Number(e.total_ventes_jour ?? 0), 0)
 
   return (
     <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 16, overflow: 'hidden', boxShadow: theme.shadow.sm }}>
-      {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: `1px solid ${palette.cardBorder}` }}>
         <div>
           <div style={{ fontSize: 14, fontWeight: 700, color: palette.text }}>Performance pompistes — aujourd'hui</div>
@@ -131,18 +136,16 @@ function PompistePerf({ palette, isDark }) {
         </button>
       </div>
 
-      {/* En-tête colonnes */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 120px 120px', padding: '8px 20px', background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', gap: 10 }}>
         {['Pompiste', 'Ventes', 'Montant', 'Activité'].map(h => (
           <div key={h} style={{ fontSize: 10, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
         ))}
       </div>
 
-      {/* Lignes */}
       {pompistes.map((emp, i) => {
-        const pct    = maxTotal > 0 ? Math.round((Number(emp.total_ventes_jour ?? 0) / maxTotal) * 100) : 0
-        const initial = emp.nom?.charAt(0)?.toUpperCase() ?? '?'
-        const isLast  = i === pompistes.length - 1
+        const pct      = maxTotal > 0 ? Math.round((Number(emp.total_ventes_jour ?? 0) / maxTotal) * 100) : 0
+        const initial  = emp.nom?.charAt(0)?.toUpperCase() ?? '?'
+        const isLast   = i === pompistes.length - 1
         const hasVentes = Number(emp.nb_ventes_jour ?? 0) > 0
 
         return (
@@ -155,7 +158,6 @@ function PompistePerf({ palette, isDark }) {
             onMouseEnter={e => e.currentTarget.style.background = palette.hover}
             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
 
-            {/* Nom + statut */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
               <div style={{
                 width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
@@ -176,17 +178,14 @@ function PompistePerf({ palette, isDark }) {
               </div>
             </div>
 
-            {/* # ventes */}
             <div style={{ fontSize: 14, fontWeight: 800, color: hasVentes ? palette.text : palette.textMuted, fontFamily: theme.font.mono }}>
               {emp.nb_ventes_jour ?? 0}
             </div>
 
-            {/* Montant */}
             <div style={{ fontSize: 13, fontWeight: 700, color: hasVentes ? theme.colors.primary : palette.textMuted, fontFamily: theme.font.mono }}>
               {hasVentes ? formatGNF(emp.total_ventes_jour) : '—'}
             </div>
 
-            {/* Barre de progression */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <div style={{ flex: 1, height: 6, background: isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)', borderRadius: 99, overflow: 'hidden' }}>
                 <div style={{
@@ -209,6 +208,153 @@ function PompistePerf({ palette, isDark }) {
   )
 }
 
+// ── Aperçu équipe (owner uniquement) ─────────────
+const MEMBRE_ROLE_COLORS = {
+  gerant:      { color: theme.colors.info,    bg: theme.colors.infoLight,    label: 'Gérant'       },
+  logisticien: { color: '#8B5CF6',            bg: 'rgba(139,92,246,0.10)',   label: 'Logisticien'  },
+}
+
+function EquipeApercu({ palette, isDark }) {
+  const navigate = useNavigate()
+  const { employes, loading } = useEmployes()
+
+  if (loading) return (
+    <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 16, padding: '18px 20px', boxShadow: theme.shadow.sm }}>
+      <div style={{ height: 18, background: palette.hover, borderRadius: 6, width: '40%', marginBottom: 16 }} />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+        {[1,2,3].map(i => <div key={i} style={{ height: 80, background: palette.hover, borderRadius: 12 }} />)}
+      </div>
+    </div>
+  )
+
+  const membres = employes.filter(e => e.role === 'gerant' || e.role === 'logisticien')
+  if (membres.length === 0) return null
+
+  const actifs = membres.filter(e => e.actif !== false).length
+
+  return (
+    <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 16, overflow: 'hidden', boxShadow: theme.shadow.sm }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: `1px solid ${palette.cardBorder}` }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: palette.text }}>Aperçu de l'équipe</div>
+          <div style={{ fontSize: 11, color: palette.textSub, marginTop: 2 }}>
+            <strong style={{ color: theme.colors.success }}>{actifs}</strong> membre{actifs > 1 ? 's' : ''} actif{actifs > 1 ? 's' : ''} sur {membres.length}
+          </div>
+        </div>
+        <button onClick={() => navigate('/employes')}
+          style={{ fontSize: 11, color: theme.colors.primary, fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}>
+          Gérer <Icon d={ICONS.chevron} size={12} color={theme.colors.primary} />
+        </button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(155px, 1fr))', gap: 10, padding: '16px 20px' }}>
+        {membres.map(emp => {
+          const rc      = MEMBRE_ROLE_COLORS[emp.role] ?? MEMBRE_ROLE_COLORS.gerant
+          const initial = emp.nom?.charAt(0)?.toUpperCase() ?? '?'
+          const isActif = emp.actif !== false
+
+          return (
+            <div key={emp.id} style={{
+              border: `1px solid ${isActif ? rc.color + '30' : palette.cardBorder}`,
+              borderRadius: 12, padding: '14px',
+              background: isActif ? rc.bg : (isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'),
+              transition: 'all 0.15s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = theme.shadow.sm }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <div style={{
+                  width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                  background: isActif ? rc.color + '20' : (isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'),
+                  border: `1px solid ${isActif ? rc.color + '40' : palette.cardBorder}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 14, fontWeight: 800, color: isActif ? rc.color : palette.textMuted,
+                }}>
+                  {initial}
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: palette.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {emp.nom}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: rc.color, background: rc.color + '15', padding: '2px 8px', borderRadius: 99 }}>
+                  {rc.label}
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: isActif ? theme.colors.success : '#94A3B8' }} />
+                  <span style={{ fontSize: 10, color: palette.textMuted }}>{isActif ? 'Actif' : 'Inactif'}</span>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ── Répartition carburant (owner uniquement) ──────
+function RepartitionCarburant({ recentes, palette, isDark }) {
+  const essenceMontant = recentes.filter(v => v.type === 'essence').reduce((s, v) => s + Number(v.montant_gnf ?? 0), 0)
+  const gasoilMontant  = recentes.filter(v => v.type === 'gasoil').reduce((s, v) => s + Number(v.montant_gnf ?? 0), 0)
+  const total = essenceMontant + gasoilMontant
+  if (total === 0) return null
+
+  const pctEssence = Math.round((essenceMontant / total) * 100)
+  const pctGasoil  = 100 - pctEssence
+
+  const barBg = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)'
+
+  return (
+    <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 16, padding: '18px 20px', boxShadow: theme.shadow.sm }}>
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: palette.text, marginBottom: 3 }}>Répartition carburant</div>
+        <div style={{ fontSize: 11, color: palette.textSub }}>Basée sur les ventes récentes</div>
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <div style={{ width: 24, height: 24, borderRadius: 6, background: theme.colors.warningLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>⛽</div>
+            <span style={{ fontSize: 12, fontWeight: 600, color: palette.text }}>Essence</span>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: theme.colors.warning, fontFamily: theme.font.mono }}>{pctEssence}%</span>
+            <span style={{ fontSize: 10, color: palette.textMuted, marginLeft: 6, fontFamily: theme.font.mono }}>{formatGNF(essenceMontant)}</span>
+          </div>
+        </div>
+        <div style={{ height: 8, background: barBg, borderRadius: 99, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${pctEssence}%`, background: `linear-gradient(90deg, ${theme.colors.warning}, #FBBF24)`, borderRadius: 99, transition: 'width 0.8s ease' }} />
+        </div>
+      </div>
+
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <div style={{ width: 24, height: 24, borderRadius: 6, background: theme.colors.infoLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>🛢️</div>
+            <span style={{ fontSize: 12, fontWeight: 600, color: palette.text }}>Gasoil</span>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: theme.colors.info, fontFamily: theme.font.mono }}>{pctGasoil}%</span>
+            <span style={{ fontSize: 10, color: palette.textMuted, marginLeft: 6, fontFamily: theme.font.mono }}>{formatGNF(gasoilMontant)}</span>
+          </div>
+        </div>
+        <div style={{ height: 8, background: barBg, borderRadius: 99, overflow: 'hidden' }}>
+          <div style={{ height: '100%', width: `${pctGasoil}%`, background: `linear-gradient(90deg, ${theme.colors.info}, #60A5FA)`, borderRadius: 99, transition: 'width 0.8s ease' }} />
+        </div>
+      </div>
+
+      {/* Combiné */}
+      <div style={{ marginTop: 16, paddingTop: 14, borderTop: `1px solid ${palette.cardBorder}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 11, color: palette.textSub }}>{recentes.length} vente{recentes.length > 1 ? 's' : ''} récente{recentes.length > 1 ? 's' : ''}</span>
+        <span style={{ fontSize: 12, fontWeight: 800, color: palette.text, fontFamily: theme.font.mono }}>{formatGNF(total)}</span>
+      </div>
+    </div>
+  )
+}
+
 // ── Page principale ───────────────────────────────
 export default function Dashboard() {
   const navigate    = useNavigate()
@@ -217,9 +363,12 @@ export default function Dashboard() {
 
   const userRole = String(user?.role ?? '').toLowerCase()
   const isGerant = userRole === 'gerant' || userRole === 'manager'
+  const isOwner  = userRole === 'owner'
 
   const { stocks, aujourdhui, cemois, graphique7j, alertesNonLues, loading, refetch } = useDashboard()
   const { recentes } = useVentes()
+  const { employes }  = useEmployes()
+  const { plan, colors: planColors, loading: planLoading } = usePlan()
 
   const stockEssence = parseFloat(stocks.find(s => s.type === 'essence')?.quantite ?? 0)
   const stockGasoil  = parseFloat(stocks.find(s => s.type === 'gasoil')?.quantite  ?? 0)
@@ -229,9 +378,35 @@ export default function Dashboard() {
     montant: parseFloat(d.montant) / 1_000_000,
   }))
 
+  // Dérive données owner
+  const membresEquipe = isOwner ? employes.filter(e => e.role === 'gerant' || e.role === 'logisticien') : []
+  const membresActifs  = membresEquipe.filter(e => e.actif !== false).length
+
   if (loading) return (<><SkeletonStyle /><SkeletonDashboard /></>)
 
   const prenom = user?.nom?.split(' ')[0] ?? (isGerant ? 'Gérant' : 'Propriétaire')
+
+  // Badge plan (owner seulement)
+  const planBadge = isOwner && !planLoading ? (
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: planColors.bg, border: `1px solid ${planColors.border}`, borderRadius: 99, padding: '3px 12px' }}>
+      <span style={{ fontSize: 12 }}>{planColors.emoji ?? '🔘'}</span>
+      <span style={{ fontSize: 11, fontWeight: 700, color: planColors.text, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+        Plan {planColors.label ?? plan}
+      </span>
+    </div>
+  ) : null
+
+  // Actions rapides selon rôle
+  const actions = isOwner ? [
+    { label: 'Gérer les stocks',  sub: 'Niveaux essence & gasoil',   icon: ICONS.stock,       path: '/stock',        color: theme.colors.success },
+    { label: 'Voir les alertes',  sub: `${alertesNonLues} non lue${alertesNonLues > 1 ? 's' : ''}`, icon: ICONS.alertes, path: '/alertes', color: alertesNonLues > 0 ? theme.colors.danger : theme.colors.info },
+    { label: 'Gérer l\'équipe',   sub: 'Gérants & logisticiens',      icon: ICONS.employes,    path: '/employes',     color: theme.colors.info },
+    { label: 'Abonnements',       sub: 'Plans & facturation',         icon: ICONS.abonnements, path: '/abonnements',  color: '#8B5CF6' },
+  ] : [
+    { label: 'Ajouter livraison', sub: 'Enregistrer réception stock', icon: ICONS.stock,    path: '/stock',    color: theme.colors.success },
+    { label: 'Voir les alertes',  sub: `${alertesNonLues} non lue${alertesNonLues > 1 ? 's' : ''}`, icon: ICONS.alertes, path: '/alertes', color: alertesNonLues > 0 ? theme.colors.danger : theme.colors.info },
+    { label: 'Mes pompistes',     sub: 'Gérer et créer des comptes',  icon: ICONS.employes, path: '/employes', color: theme.colors.info },
+  ]
 
   return (
     <div style={{ padding: '32px 28px', maxWidth: 1200, margin: '0 auto' }} className="fuelo-dashboard">
@@ -239,9 +414,12 @@ export default function Dashboard() {
       {/* ── Header ───────────────────────────────── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 14 }}>
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: isDark ? 'rgba(37,99,235,0.12)' : 'rgba(37,99,235,0.07)', border: `1px solid ${isDark ? 'rgba(37,99,235,0.25)' : 'rgba(37,99,235,0.15)'}`, borderRadius: 99, padding: '3px 12px', marginBottom: 10 }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: theme.colors.success, boxShadow: `0 0 6px ${theme.colors.success}` }} />
-            <span style={{ fontSize: 11, fontWeight: 700, color: theme.colors.primary, letterSpacing: '0.04em' }}>En ligne</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: isDark ? 'rgba(37,99,235,0.12)' : 'rgba(37,99,235,0.07)', border: `1px solid ${isDark ? 'rgba(37,99,235,0.25)' : 'rgba(37,99,235,0.15)'}`, borderRadius: 99, padding: '3px 12px' }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: theme.colors.success, boxShadow: `0 0 6px ${theme.colors.success}` }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: theme.colors.primary, letterSpacing: '0.04em' }}>En ligne</span>
+            </div>
+            {planBadge}
           </div>
           <h1 style={{ fontSize: 26, fontWeight: 900, color: palette.text, letterSpacing: '-0.6px', margin: 0, marginBottom: 5, lineHeight: 1.1 }}>
             Bonjour, {prenom} 👋
@@ -287,7 +465,8 @@ export default function Dashboard() {
       </div>
 
       {/* ── Stat cards ────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }} className="fuelo-grid-3">
+      {/* Owner : 4 cartes | Gérant : 3 cartes */}
+      <div style={{ display: 'grid', gridTemplateColumns: isOwner ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }} className={isOwner ? 'fuelo-grid-4' : 'fuelo-grid-3'}>
         <StatCard
           label="Ventes aujourd'hui"
           value={formatGNF(aujourdhui.montant)}
@@ -311,6 +490,16 @@ export default function Dashboard() {
           onClick={() => navigate('/alertes')}
           pulse={alertesNonLues > 0}
         />
+        {isOwner && (
+          <StatCard
+            label="Mon équipe"
+            value={String(membresActifs)}
+            sub={`${membresEquipe.length} membre${membresEquipe.length > 1 ? 's' : ''} · ${membresEquipe.filter(e => e.role === 'gerant').length} gérant${membresEquipe.filter(e => e.role === 'gerant').length > 1 ? 's' : ''}`}
+            iconD={ICONS.equipe}
+            color={theme.colors.info}
+            onClick={() => navigate('/employes')}
+          />
+        )}
       </div>
 
       {/* ── Graphique + Ventes récentes ──────────── */}
@@ -352,7 +541,6 @@ export default function Dashboard() {
             </button>
           </div>
 
-          {/* En-tête colonnes — desktop */}
           <div className="vente-header" style={{ display: 'grid', gridTemplateColumns: '32px 1fr 80px 110px 85px', padding: '8px 20px', background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', borderBottom: `1px solid ${palette.cardBorder}`, gap: 10, flexShrink: 0 }}>
             {['', 'Type', 'Litres', 'Montant', 'Quand'].map(h => (
               <div key={h} style={{ fontSize: 10, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
@@ -368,6 +556,22 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* ── Sections owner uniquement ─────────────── */}
+      {isOwner && (
+        <>
+          {/* Séparateur section */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>Vue propriétaire</div>
+            <div style={{ flex: 1, height: 1, background: palette.cardBorder }} />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 14, marginBottom: 20 }} className="fuelo-grid-owner">
+            <EquipeApercu palette={palette} isDark={isDark} />
+            <RepartitionCarburant recentes={recentes} palette={palette} isDark={isDark} />
+          </div>
+        </>
+      )}
+
       {/* ── Performance pompistes (gérant uniquement) ── */}
       {isGerant && (
         <div style={{ marginBottom: 20 }}>
@@ -376,16 +580,8 @@ export default function Dashboard() {
       )}
 
       {/* ── Actions rapides ──────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }} className="fuelo-grid-3">
-        {[
-          isGerant
-            ? { label: 'Ajouter livraison', sub: 'Enregistrer réception stock', icon: ICONS.stock,    path: '/stock',    color: theme.colors.success }
-            : { label: 'Gérer les stocks',  sub: 'Niveaux essence & gasoil',    icon: ICONS.stock,    path: '/stock',    color: theme.colors.success },
-          { label: 'Voir les alertes',   sub: `${alertesNonLues} non lue${alertesNonLues > 1 ? 's' : ''}`, icon: ICONS.alertes,  path: '/alertes',  color: alertesNonLues > 0 ? theme.colors.danger : theme.colors.info },
-          isGerant
-            ? { label: 'Mes pompistes',   sub: 'Gérer et créer des comptes',   icon: ICONS.employes, path: '/employes', color: theme.colors.info }
-            : { label: 'Gérer employés',  sub: 'Gérants & logisticiens',        icon: ICONS.employes, path: '/employes', color: theme.colors.info },
-        ].map(({ label, sub, icon, path, color }) => (
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${actions.length}, 1fr)`, gap: 14 }} className={`fuelo-actions fuelo-grid-${actions.length}`}>
+        {actions.map(({ label, sub, icon, path, color }) => (
           <button key={path} onClick={() => navigate(path)}
             style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px', borderRadius: 14, border: `1px solid ${palette.cardBorder}`, background: palette.card, cursor: 'pointer', fontFamily: 'inherit', boxShadow: theme.shadow.sm, transition: 'all 0.2s', textAlign: 'left', width: '100%' }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = color + '60'; e.currentTarget.style.boxShadow = theme.shadow.md; e.currentTarget.style.transform = 'translateY(-1px)' }}
@@ -404,15 +600,25 @@ export default function Dashboard() {
       <style>{`
         @keyframes alertPulse { 0%,100%{opacity:1;box-shadow:0 0 6px rgba(239,68,68,0.6)} 50%{opacity:0.5;box-shadow:0 0 12px rgba(239,68,68,0.9)} }
         @keyframes pulse      { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        @media (max-width: 1100px) {
+          .fuelo-grid-4   { grid-template-columns: repeat(2, 1fr) !important; }
+        }
         @media (max-width: 1024px) {
           .fuelo-grid-chart { grid-template-columns: 1fr !important; }
+          .fuelo-grid-owner { grid-template-columns: 1fr !important; }
           .fuelo-grid-2     { grid-template-columns: 1fr 1fr !important; }
         }
         @media (max-width: 768px) {
           .fuelo-dashboard { padding: 20px 16px !important; }
           .fuelo-grid-2    { grid-template-columns: 1fr !important; }
           .fuelo-grid-3    { grid-template-columns: 1fr !important; }
+          .fuelo-grid-4    { grid-template-columns: 1fr 1fr !important; }
+          .fuelo-actions   { grid-template-columns: 1fr 1fr !important; }
           .vente-header    { display: none !important; }
+        }
+        @media (max-width: 480px) {
+          .fuelo-grid-4    { grid-template-columns: 1fr !important; }
+          .fuelo-actions   { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>
