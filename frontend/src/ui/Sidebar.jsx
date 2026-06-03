@@ -79,7 +79,6 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
         {navItems.map((item) => {
           const active   = location.pathname === item.path
           const isAlerte = item.path === '/alertes'
-          const isPlan   = item.path === '/abonnements'
 
           return (
             <button
@@ -112,17 +111,6 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
                   {alertesNb}
                 </span>
               )}
-              {isPlan && isOwner && (
-                <span style={{
-                  fontSize: 9, fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase',
-                  padding: '2px 6px', borderRadius: 99,
-                  background: colors.border + '22',
-                  color: colors.text,
-                  border: `1px solid ${colors.border}44`,
-                }}>
-                  {plan}
-                </span>
-              )}
             </button>
           )
         })}
@@ -143,6 +131,19 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
             <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', textTransform: 'capitalize' }}>
               {getRoleLabel(role)}
             </div>
+            {isOwner && plan && (
+              <button
+                onClick={() => navigate('/abonnements')}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 3, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
+              >
+                <svg width="9" height="9" viewBox="0 0 24 24" fill={colors.border} stroke="none">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+                <span style={{ fontSize: 9, color: colors.border, fontWeight: 600, letterSpacing: '0.03em' }}>
+                  Plan {colors.label}
+                </span>
+              </button>
+            )}
           </div>
         </div>
 
