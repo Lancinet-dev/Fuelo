@@ -1,5 +1,5 @@
 // ================================================
-// FUELO — Interface chauffeur GPS
+// FUELO — Interface Chauffeur GPS (premium mobile)
 // ================================================
 
 import { useState, useEffect, useRef } from 'react'
@@ -10,9 +10,11 @@ import { useCiternes }    from '../../hooks/useTrajets'
 import { useParametres }  from '../../hooks/useParametres'
 import theme from '../../config/theme'
 
+const GREEN  = '#10B981'
+const BLUE   = '#2563EB'
 const ORANGE = '#F59E0B'
 
-// Durée en cours depuis started_at
+// ── Durée depuis started_at ───────────────────────
 function useElapsed(startedAt) {
   const [elapsed, setElapsed] = useState('')
   useEffect(() => {
@@ -21,7 +23,7 @@ function useElapsed(startedAt) {
       const diff = Math.floor((Date.now() - new Date(startedAt)) / 1000)
       const h = Math.floor(diff / 3600)
       const m = Math.floor((diff % 3600) / 60)
-      setElapsed(h > 0 ? `${h}h${String(m).padStart(2,'0')}` : `${m} min`)
+      setElapsed(h > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${m} min`)
     }
     update()
     const t = setInterval(update, 30_000)
@@ -30,6 +32,281 @@ function useElapsed(startedAt) {
   return elapsed
 }
 
+// ── Carte GPS live (Leaflet) ──────────────────────
+function LiveMap({ lastPos, isDark }) {
+  const containerRef = useRef(null)
+  const mapRef       = useRef(null)
+  const markerRef    = useRef(null)
+  const leafletRef   = useRef(null)
+
+  // Init carte une seule fois
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const L = await import('leaflet')
+      await import('leaflet/dist/leaflet.css')
+      if (cancelled || !containerRef.current || mapRef.current) return
+
+      leafletRef.current = L
+      const center = lastPos ? [lastPos.lat, lastPos.lng] : [9.537, -13.677]
+      const map = L.map(containerRef.current, {
+        zoomControl: true, attributionControl: false,
+      }).setView(center, 15)
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map)
+
+      if (lastPos) {
+        const icon = L.divIcon({
+          html: `<div style="width:22px;height:22px;background:${BLUE};border:3px solid #fff;border-radius:50%;box-shadow:0 0 14px rgba(37,99,235,0.65)"></div>`,
+          className: '', iconAnchor: [11, 11],
+        })
+        markerRef.current = L.marker([lastPos.lat, lastPos.lng], { icon }).addTo(map)
+      }
+
+      mapRef.current = map
+    })()
+    return () => { cancelled = true }
+  }, [])
+
+  // Mise à jour du marqueur quand la position change
+  useEffect(() => {
+    if (!mapRef.current || !leafletRef.current || !lastPos) return
+    const L = leafletRef.current
+
+    if (markerRef.current) {
+      markerRef.current.setLatLng([lastPos.lat, lastPos.lng])
+      mapRef.current.panTo([lastPos.lat, lastPos.lng], { animate: true, duration: 1 })
+    } else {
+      const icon = L.divIcon({
+        html: `<div style="width:22px;height:22px;background:${BLUE};border:3px solid #fff;border-radius:50%;box-shadow:0 0 14px rgba(37,99,235,0.65)"></div>`,
+        className: '', iconAnchor: [11, 11],
+      })
+      markerRef.current = L.marker([lastPos.lat, lastPos.lng], { icon }).addTo(mapRef.current)
+      mapRef.current.setView([lastPos.lat, lastPos.lng], 15)
+    }
+  }, [lastPos])
+
+  // Nettoyage
+  useEffect(() => () => {
+    if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; markerRef.current = null }
+  }, [])
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <div ref={containerRef} style={{
+        height: 240, borderRadius: 18, overflow: 'hidden',
+        border: `2px solid ${isDark ? 'rgba(37,99,235,0.35)' : 'rgba(37,99,235,0.22)'}`,
+        boxShadow: '0 8px 32px rgba(37,99,235,0.15)',
+      }} />
+      {!lastPos && (
+        <div style={{
+          position: 'absolute', inset: 0, borderRadius: 18,
+          background: isDark ? 'rgba(13,27,42,0.75)' : 'rgba(240,244,255,0.75)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
+        }}>
+          <div style={{ width: 36, height: 36, border: '3px solid rgba(37,99,235,0.3)', borderTopColor: BLUE, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          <span style={{ fontSize: 12, fontWeight: 600, color: BLUE }}>Acquisition GPS...</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Modal Démarrer un trajet ──────────────────────
+function ModalDemarrer({ citernes, onClose, onConfirm, loading, palette, isDark }) {
+  const [citerneId, setCiterneId] = useState('')
+  const [qty,       setQty]       = useState('')
+  const canSubmit = citerneId && qty && parseFloat(qty) > 0
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 200,
+      background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
+      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+    }} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div style={{
+        background: isDark ? '#0D1B2A' : '#fff',
+        borderRadius: '28px 28px 0 0',
+        padding: '12px 24px 48px',
+        width: '100%', maxWidth: 520,
+        animation: 'slideUp 0.3s ease',
+        boxShadow: '0 -12px 48px rgba(0,0,0,0.25)',
+      }}>
+        {/* Handle */}
+        <div style={{ width: 44, height: 5, background: palette.cardBorder, borderRadius: 99, margin: '0 auto 24px', opacity: 0.5 }} />
+
+        <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <div style={{ fontSize: 36, marginBottom: 10 }}>🚚</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: palette.text, letterSpacing: '-0.3px' }}>Démarrer un trajet</div>
+          <div style={{ fontSize: 13, color: palette.textSub, marginTop: 4 }}>Le GPS sera activé automatiquement</div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
+          {/* Citerne */}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 8 }}>Citerne</div>
+            <select value={citerneId} onChange={e => setCiterneId(e.target.value)} style={{
+              width: '100%', height: 52, background: palette.inputBg,
+              border: `1.5px solid ${citerneId ? BLUE : palette.cardBorder}`,
+              borderRadius: 14, padding: '0 16px',
+              fontSize: 15, color: palette.text,
+              fontFamily: theme.font.family, outline: 'none', cursor: 'pointer',
+              appearance: 'none',
+              transition: 'border-color 0.15s',
+            }}>
+              <option value="">Sélectionner une citerne</option>
+              {citernes.map(c => <option key={c.id} value={c.id}>{c.code} — {c.capacite.toLocaleString('fr-FR')} L</option>)}
+            </select>
+          </div>
+
+          {/* Quantité */}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 8 }}>
+              Quantité chargée (litres)
+            </div>
+            <input type="number" min="0" step="100" placeholder="15 000" value={qty}
+              onChange={e => setQty(e.target.value)}
+              onFocus={e => { e.target.style.borderColor = BLUE; e.target.style.boxShadow = `0 0 0 3px rgba(37,99,235,0.15)` }}
+              onBlur={e  => { e.target.style.borderColor = qty ? BLUE : palette.cardBorder; e.target.style.boxShadow = 'none' }}
+              style={{
+                width: '100%', height: 72, boxSizing: 'border-box',
+                background: palette.inputBg, border: `1.5px solid ${qty ? BLUE : palette.cardBorder}`,
+                borderRadius: 14, padding: '0 16px',
+                fontSize: 36, fontWeight: 800, fontFamily: theme.font.mono,
+                color: palette.text, outline: 'none',
+                textAlign: 'center', transition: 'all 0.15s',
+              }} />
+          </div>
+        </div>
+
+        <button onClick={() => onConfirm(citerneId, qty)} disabled={!canSubmit || loading}
+          style={{
+            width: '100%', height: 58, borderRadius: 16, border: 'none',
+            background: canSubmit && !loading
+              ? `linear-gradient(135deg, ${GREEN}, #059669)`
+              : (isDark ? 'rgba(255,255,255,0.08)' : '#E5E7EB'),
+            color: canSubmit && !loading ? '#fff' : palette.textMuted,
+            fontSize: 16, fontWeight: 800, fontFamily: 'inherit', cursor: canSubmit && !loading ? 'pointer' : 'not-allowed',
+            boxShadow: canSubmit && !loading ? '0 8px 24px rgba(16,185,129,0.4)' : 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            transition: 'all 0.2s',
+          }}>
+          {loading
+            ? <div style={{ width: 22, height: 22, border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6"/></svg>
+          }
+          {loading ? 'Démarrage...' : 'Démarrer et activer le GPS'}
+        </button>
+        <button onClick={onClose} style={{ display: 'block', width: '100%', marginTop: 12, padding: '12px 0', background: 'none', border: 'none', color: palette.textMuted, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
+          Annuler
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── Modal Arriver à destination ───────────────────
+function ModalArriver({ trajetActif, onClose, onConfirm, loading, palette, isDark }) {
+  const [qty, setQty] = useState('')
+  const depart  = trajetActif?.qty_depart ?? 0
+  const arrivee = parseFloat(qty) || 0
+  const ecart   = depart - arrivee
+  const seuil   = trajetActif?.seuil_fraude ?? 50
+  const isFraude = ecart > seuil
+  const canSubmit = qty && arrivee > 0
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 200,
+      background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
+      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+    }} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div style={{
+        background: isDark ? '#0D1B2A' : '#fff',
+        borderRadius: '28px 28px 0 0',
+        padding: '12px 24px 48px',
+        width: '100%', maxWidth: 520,
+        animation: 'slideUp 0.3s ease',
+        boxShadow: '0 -12px 48px rgba(0,0,0,0.25)',
+      }}>
+        <div style={{ width: 44, height: 5, background: palette.cardBorder, borderRadius: 99, margin: '0 auto 24px', opacity: 0.5 }} />
+
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <div style={{ fontSize: 36, marginBottom: 10 }}>📍</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: palette.text, letterSpacing: '-0.3px' }}>Arrivée à destination</div>
+          <div style={{ fontSize: 13, color: palette.textSub, marginTop: 4 }}>
+            Chargement départ : <strong style={{ color: BLUE }}>{depart.toLocaleString('fr-FR')} L</strong>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 8 }}>
+            Quantité livrée (litres)
+          </div>
+          <input type="number" min="0" step="100" placeholder="14 800" value={qty}
+            onChange={e => setQty(e.target.value)}
+            onFocus={e => { e.target.style.borderColor = BLUE; e.target.style.boxShadow = `0 0 0 3px rgba(37,99,235,0.15)` }}
+            onBlur={e  => { e.target.style.borderColor = palette.cardBorder; e.target.style.boxShadow = 'none' }}
+            style={{
+              width: '100%', height: 80, boxSizing: 'border-box',
+              background: palette.inputBg, border: `1.5px solid ${palette.cardBorder}`,
+              borderRadius: 14, padding: '0 16px',
+              fontSize: 40, fontWeight: 800, fontFamily: theme.font.mono,
+              color: palette.text, outline: 'none',
+              textAlign: 'center', transition: 'all 0.15s',
+            }} />
+        </div>
+
+        {/* Écart en temps réel */}
+        {qty && (
+          <div style={{
+            borderRadius: 14, padding: '14px 18px', marginBottom: 20, textAlign: 'center',
+            background: isFraude ? theme.colors.dangerLight : theme.colors.successLight,
+            border: `1.5px solid ${isFraude ? theme.colors.danger + '40' : theme.colors.success + '40'}`,
+            transition: 'all 0.3s',
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: isFraude ? theme.colors.danger : GREEN, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
+              Écart constaté
+            </div>
+            <div style={{ fontSize: 28, fontWeight: 900, fontFamily: theme.font.mono, color: isFraude ? theme.colors.danger : GREEN }}>
+              {ecart > 0 ? '+' : ''}{ecart.toFixed(1)} L
+            </div>
+            {isFraude && (
+              <div style={{ fontSize: 12, color: theme.colors.danger, marginTop: 4, fontWeight: 600 }}>
+                ⚠️ Écart supérieur au seuil — alerte fraude générée
+              </div>
+            )}
+          </div>
+        )}
+
+        <button onClick={() => onConfirm(qty)} disabled={!canSubmit || loading}
+          style={{
+            width: '100%', height: 58, borderRadius: 16, border: 'none',
+            background: canSubmit && !loading
+              ? `linear-gradient(135deg, ${BLUE}, #1D4ED8)`
+              : (isDark ? 'rgba(255,255,255,0.08)' : '#E5E7EB'),
+            color: canSubmit && !loading ? '#fff' : palette.textMuted,
+            fontSize: 16, fontWeight: 800, fontFamily: 'inherit', cursor: canSubmit && !loading ? 'pointer' : 'not-allowed',
+            boxShadow: canSubmit && !loading ? '0 8px 24px rgba(37,99,235,0.4)' : 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            transition: 'all 0.2s',
+          }}>
+          {loading
+            ? <div style={{ width: 22, height: 22, border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+            : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          }
+          {loading ? 'Enregistrement...' : "Confirmer l'arrivée"}
+        </button>
+        <button onClick={onClose} style={{ display: 'block', width: '100%', marginTop: 12, padding: '12px 0', background: 'none', border: 'none', color: palette.textMuted, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
+          Annuler
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── Page principale ───────────────────────────────
 export default function ChauffeurPage() {
   const { user, logout }            = useAuth()
   const { isDark, toggle, palette } = useTheme()
@@ -38,30 +315,24 @@ export default function ChauffeurPage() {
   const { parametres }              = useParametres()
   const citernes = citernesData?.citernes ?? []
 
-  const [modal,         setModal]         = useState(null) // 'demarrer' | 'arriver'
-  const [citerneId,     setCiterneId]     = useState('')
-  const [qtyDepart,     setQtyDepart]     = useState('')
-  const [qtyArrivee,    setQtyArrivee]    = useState('')
-  const [gpsStatus,     setGpsStatus]     = useState('inactif') // 'inactif' | 'actif' | 'erreur'
-  const [lastPos,       setLastPos]       = useState(null)
+  const [modal,     setModal]     = useState(null) // 'demarrer' | 'arriver'
+  const [gpsStatus, setGpsStatus] = useState('inactif')
+  const [lastPos,   setLastPos]   = useState(null)
   const watchRef = useRef(null)
   const elapsed  = useElapsed(trajetActif?.started_at)
 
-  // Démarrer/arrêter le GPS watchPosition selon le trajet actif
+  // Watchposition GPS quand trajet actif
   useEffect(() => {
     if (!trajetActif) {
       if (watchRef.current != null) {
         navigator.geolocation.clearWatch(watchRef.current)
         watchRef.current = null
         setGpsStatus('inactif')
+        setLastPos(null)
       }
       return
     }
-
-    if (!navigator.geolocation) {
-      setGpsStatus('erreur')
-      return
-    }
+    if (!navigator.geolocation) { setGpsStatus('erreur'); return }
 
     watchRef.current = navigator.geolocation.watchPosition(
       (pos) => {
@@ -71,13 +342,9 @@ export default function ChauffeurPage() {
         setGpsStatus('actif')
         envoyerPosition({ id: trajetActif.id, lat, lng, vitesse })
       },
-      (err) => {
-        console.error('GPS error:', err)
-        setGpsStatus('erreur')
-      },
-      { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 }
+      () => setGpsStatus('erreur'),
+      { enableHighAccuracy: true, maximumAge: 10_000, timeout: 30_000 }
     )
-
     return () => {
       if (watchRef.current != null) {
         navigator.geolocation.clearWatch(watchRef.current)
@@ -86,181 +353,223 @@ export default function ChauffeurPage() {
     }
   }, [trajetActif?.id])
 
-  const handleDemarrer = async () => {
-    if (!citerneId || !qtyDepart) return
-    await demarrer({ citerne_id: parseInt(citerneId), qty_depart: parseFloat(qtyDepart) })
+  const handleDemarrer = async (citerneId, qty) => {
+    await demarrer({ citerne_id: parseInt(citerneId), qty_depart: parseFloat(qty) })
     setModal(null)
   }
 
-  const handleArriver = async () => {
-    if (!qtyArrivee || !trajetActif) return
-    await arriver({ id: trajetActif.id, qty_arrivee: parseFloat(qtyArrivee) })
+  const handleArriver = async (qty) => {
+    if (!trajetActif) return
+    await arriver({ id: trajetActif.id, qty_arrivee: parseFloat(qty) })
     setModal(null)
-    setQtyArrivee('')
   }
 
   const BG = isDark ? '#0D1B2A' : '#F0F4FF'
-  const inputSt = { width: '100%', height: 52, background: isDark ? 'rgba(255,255,255,0.05)' : '#F9FAFB', border: `1.5px solid ${palette.cardBorder}`, borderRadius: 12, padding: '0 14px', fontSize: 15, color: palette.text, fontFamily: theme.font.family, outline: 'none' }
+
+  const GPS_ICON_COLOR = { actif: GREEN, erreur: theme.colors.danger, inactif: '#94A3B8' }[gpsStatus]
+  const GPS_LABEL      = { actif: 'GPS actif', erreur: 'GPS indisponible', inactif: 'Acquisition GPS...' }[gpsStatus]
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, fontFamily: theme.font.family, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: BG, fontFamily: theme.font.family, display: 'flex', flexDirection: 'column', transition: 'background 0.3s' }}>
 
-      {/* Header */}
-      <div style={{ background: '#0A1628', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 20px rgba(0,0,0,0.25)' }}>
+      {/* ── Header ─────────────────────────────── */}
+      <div style={{ background: '#0A1628', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 24px rgba(0,0,0,0.3)', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {parametres?.logo_url ? (
-            <img src={parametres.logo_url} alt="logo" style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }} />
+            <img src={parametres.logo_url} alt="logo" style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.12)' }} />
           ) : (
-            <div style={{ width: 32, height: 32, background: ORANGE, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A1628" strokeWidth="2.5" strokeLinecap="round"><path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM18.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/></svg>
+            <div style={{ width: 32, height: 32, background: ORANGE, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 12px rgba(245,158,11,0.4)' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A1628" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM18.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/>
+              </svg>
             </div>
           )}
-          <span style={{ fontSize: 15, fontWeight: 800, color: '#fff' }}>
-            {parametres?.nom ?? <span>fuel<span style={{ color: ORANGE }}>o</span></span>}
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', fontWeight: 400, marginLeft: 6 }}>Chauffeur</span>
-          </span>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>
+              {parametres?.nom ?? <span>fuel<span style={{ color: ORANGE }}>o</span></span>}
+            </div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>Chauffeur</div>
+          </div>
         </div>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>{user?.nom}</span>
-          <button
-            onClick={logout}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'rgba(239,68,68,0.85)', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', padding: '5px 11px', transition: 'all 0.15s' }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.18)'; e.currentTarget.style.color = '#EF4444' }}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(245,158,11,0.18)', border: '1px solid rgba(245,158,11,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: ORANGE }}>
+              {(user?.nom || 'C').charAt(0).toUpperCase()}
+            </div>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>{user?.nom}</span>
+          </div>
+          <button onClick={toggle} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', color: 'rgba(255,255,255,0.35)' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              {isDark ? <><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></> : <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>}
+            </svg>
+          </button>
+          <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'rgba(239,68,68,0.85)', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', padding: '5px 11px' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.2)'; e.currentTarget.style.color = '#EF4444' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.color = 'rgba(239,68,68,0.85)' }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
             Déconnexion
           </button>
         </div>
       </div>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 16px', gap: 14 }}>
+      {/* ── Contenu ─────────────────────────────── */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 16px 32px', gap: 16, maxWidth: 520, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
 
-        {/* Carte trajet actif / démarrer */}
-        {trajetActif ? (
-          <div style={{ background: isDark ? 'rgba(16,185,129,0.08)' : '#fff', border: `2px solid rgba(16,185,129,0.3)`, borderRadius: 20, padding: '20px', width: '100%', maxWidth: 480, boxShadow: theme.shadow.md }}>
-
-            {/* Statut GPS */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: gpsStatus === 'actif' ? theme.colors.success : gpsStatus === 'erreur' ? theme.colors.danger : '#94A3B8', animation: gpsStatus === 'actif' ? 'pulse 2s infinite' : 'none', boxShadow: gpsStatus === 'actif' ? '0 0 8px rgba(16,185,129,0.6)' : 'none' }} />
-                <span style={{ fontSize: 13, fontWeight: 700, color: gpsStatus === 'actif' ? theme.colors.success : gpsStatus === 'erreur' ? theme.colors.danger : palette.textSub }}>
-                  {gpsStatus === 'actif' ? 'GPS actif' : gpsStatus === 'erreur' ? 'GPS indisponible' : 'GPS en attente...'}
-                </span>
+        {loading ? (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 200, gap: 12 }}>
+            <div style={{ width: 36, height: 36, border: `3px solid ${palette.cardBorder}`, borderTopColor: BLUE, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            <span style={{ fontSize: 13, color: palette.textSub }}>Chargement...</span>
+          </div>
+        ) : trajetActif ? (
+          <>
+            {/* ─ Barre statut GPS + vitesse ─ */}
+            <div style={{
+              width: '100%',
+              background: palette.card,
+              border: `1px solid ${palette.cardBorder}`,
+              borderRadius: 18,
+              padding: '14px 18px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+              boxShadow: theme.shadow.sm,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: GPS_ICON_COLOR, boxShadow: gpsStatus === 'actif' ? `0 0 8px ${GPS_ICON_COLOR}80` : 'none', animation: gpsStatus === 'actif' ? 'pulse 2s infinite' : 'none' }} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: GPS_ICON_COLOR }}>{GPS_LABEL}</span>
               </div>
-              <span style={{ fontSize: 12, color: palette.textSub }}>Depuis {elapsed}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                {lastPos && (
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: palette.text, fontFamily: theme.font.mono, lineHeight: 1 }}>{lastPos.vitesse}</div>
+                    <div style={{ fontSize: 9, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>km/h</div>
+                  </div>
+                )}
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: palette.text, fontFamily: theme.font.mono, lineHeight: 1 }}>{elapsed}</div>
+                  <div style={{ fontSize: 9, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>en route</div>
+                </div>
+              </div>
             </div>
 
-            {/* Infos trajet */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+            {/* ─ Carte GPS live ─ */}
+            <div style={{ width: '100%' }}>
+              <LiveMap lastPos={lastPos} isDark={isDark} />
+            </div>
+
+            {/* ─ Infos trajet ─ */}
+            <div style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
               {[
-                { l: 'Citerne', v: trajetActif.citerne_code ?? '—' },
-                { l: 'Destination', v: trajetActif.station_nom ?? '—' },
-                { l: 'Chargement', v: `${trajetActif.qty_depart} L` },
-                { l: lastPos ? 'Vitesse' : 'Position', v: lastPos ? `${lastPos.vitesse} km/h` : 'En attente...' },
-              ].map(({ l, v }) => (
-                <div key={l} style={{ background: isDark ? 'rgba(255,255,255,0.04)' : '#F9FAFB', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: palette.text, fontFamily: theme.font.mono }}>{v}</div>
-                  <div style={{ fontSize: 10, color: palette.textMuted, marginTop: 2 }}>{l}</div>
+                { label: 'Citerne',     value: trajetActif.citerne_code ?? '—' },
+                { label: 'Destination', value: trajetActif.station_nom ?? '—' },
+                { label: 'Chargement',  value: `${(trajetActif.qty_depart ?? 0).toLocaleString('fr-FR')} L` },
+              ].map(({ label, value }) => (
+                <div key={label} style={{
+                  background: palette.card, border: `1px solid ${palette.cardBorder}`,
+                  borderRadius: 14, padding: '12px 10px', textAlign: 'center',
+                  boxShadow: theme.shadow.sm,
+                }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: palette.text, fontFamily: theme.font.mono, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
+                  <div style={{ fontSize: 9, color: palette.textMuted, marginTop: 3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
                 </div>
               ))}
             </div>
 
             {gpsStatus === 'erreur' && (
-              <div style={{ fontSize: 12, color: theme.colors.danger, background: theme.colors.dangerLight, borderRadius: 10, padding: '10px 14px', marginBottom: 14, textAlign: 'center' }}>
-                Activez la localisation dans les paramètres de votre téléphone
+              <div style={{ width: '100%', background: theme.colors.dangerLight, border: `1px solid ${theme.colors.danger}40`, borderRadius: 14, padding: '12px 16px', textAlign: 'center', fontSize: 13, color: theme.colors.danger, fontWeight: 600 }}>
+                📍 Activez la localisation dans les paramètres de votre téléphone
               </div>
             )}
 
-            <button onClick={() => setModal('arriver')}
-              style={{ width: '100%', height: 54, borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${theme.colors.primary}, #1D4ED8)`, color: '#fff', fontSize: 15, fontWeight: 800, fontFamily: 'inherit', boxShadow: '0 6px 20px rgba(37,99,235,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            {/* ─ Bouton arriver ─ */}
+            <button onClick={() => setModal('arriver')} style={{
+              width: '100%', height: 64, borderRadius: 18, border: 'none',
+              background: `linear-gradient(135deg, ${BLUE}, #1D4ED8)`,
+              color: '#fff', fontSize: 17, fontWeight: 800, fontFamily: 'inherit',
+              cursor: 'pointer',
+              boxShadow: '0 8px 28px rgba(37,99,235,0.4)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+              transition: 'all 0.2s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 36px rgba(37,99,235,0.5)' }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(37,99,235,0.4)' }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+              </svg>
               Arriver à destination
             </button>
-          </div>
+          </>
         ) : (
-          <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 20, padding: '32px 20px', width: '100%', maxWidth: 480, textAlign: 'center', boxShadow: theme.shadow.md }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🚚</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: palette.text, marginBottom: 6 }}>Aucun trajet en cours</div>
-            <div style={{ fontSize: 13, color: palette.textSub, marginBottom: 24 }}>Démarrez un trajet pour activer le GPS</div>
-            <button onClick={() => setModal('demarrer')}
-              style={{ width: '100%', height: 54, borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${theme.colors.success}, #059669)`, color: '#fff', fontSize: 15, fontWeight: 800, fontFamily: 'inherit', boxShadow: '0 6px 20px rgba(16,185,129,0.35)' }}>
-              Démarrer un trajet
-            </button>
+          /* ─ Aucun trajet ─ */
+          <div style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0, paddingTop: 40 }}>
+            <div style={{
+              width: '100%',
+              background: palette.card, border: `1px solid ${palette.cardBorder}`,
+              borderRadius: 24, padding: '48px 24px 36px',
+              textAlign: 'center', boxShadow: theme.shadow.md,
+            }}>
+              <div style={{
+                width: 80, height: 80, borderRadius: '50%', margin: '0 auto 20px',
+                background: isDark ? 'rgba(245,158,11,0.1)' : 'rgba(245,158,11,0.08)',
+                border: `2px solid rgba(245,158,11,0.25)`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 36,
+              }}>
+                🚚
+              </div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: palette.text, marginBottom: 8, letterSpacing: '-0.3px' }}>
+                Aucun trajet en cours
+              </div>
+              <div style={{ fontSize: 14, color: palette.textSub, marginBottom: 32, lineHeight: 1.6, maxWidth: 300, margin: '0 auto 32px' }}>
+                Démarrez un trajet pour activer le suivi GPS en temps réel.
+              </div>
+              <button onClick={() => setModal('demarrer')} style={{
+                width: '100%', height: 62, borderRadius: 18, border: 'none',
+                background: `linear-gradient(135deg, ${GREEN}, #059669)`,
+                color: '#fff', fontSize: 17, fontWeight: 800, fontFamily: 'inherit',
+                cursor: 'pointer',
+                boxShadow: '0 8px 28px rgba(16,185,129,0.4)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+                transition: 'all 0.2s',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 36px rgba(16,185,129,0.5)' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(16,185,129,0.4)' }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                Démarrer un trajet
+              </button>
+            </div>
           </div>
         )}
-
       </div>
 
-      {/* Modal démarrer */}
+      {/* ── Modals ──────────────────────────────── */}
       {modal === 'demarrer' && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
-          onClick={e => { if (e.target === e.currentTarget) setModal(null) }}>
-          <div style={{ background: isDark ? '#0D1B2A' : '#fff', borderRadius: '24px 24px 0 0', padding: '28px 20px 40px', width: '100%', maxWidth: 480, animation: 'slideUp 0.3s ease' }}>
-            <div style={{ width: 40, height: 4, background: palette.cardBorder, borderRadius: 99, margin: '0 auto 20px', opacity: 0.6 }} />
-            <div style={{ fontSize: 17, fontWeight: 800, color: palette.text, marginBottom: 20, textAlign: 'center' }}>🚚 Démarrer un trajet</div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Citerne</div>
-                <select value={citerneId} onChange={e => setCiterneId(e.target.value)} style={{ ...inputSt }}>
-                  <option value="">Sélectionner une citerne</option>
-                  {citernes.map(c => <option key={c.id} value={c.id}>{c.code} — {c.capacite} L</option>)}
-                </select>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Quantité chargée (litres)</div>
-                <input type="number" min="0" step="1" placeholder="ex: 15000" value={qtyDepart} onChange={e => setQtyDepart(e.target.value)} style={{ ...inputSt, fontSize: 22, fontWeight: 700, textAlign: 'center', fontFamily: theme.font.mono }} />
-              </div>
-            </div>
-
-            <button onClick={handleDemarrer} disabled={demarrerLoading || !citerneId || !qtyDepart}
-              style={{ width: '100%', height: 54, borderRadius: 14, border: 'none', cursor: 'pointer', background: !citerneId || !qtyDepart ? (isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0') : `linear-gradient(135deg, ${theme.colors.success}, #059669)`, color: !citerneId || !qtyDepart ? palette.textMuted : '#fff', fontSize: 15, fontWeight: 800, fontFamily: 'inherit' }}>
-              {demarrerLoading ? 'Démarrage...' : 'Démarrer et activer le GPS'}
-            </button>
-            <button onClick={() => setModal(null)} style={{ width: '100%', marginTop: 10, padding: '10px 0', background: 'none', border: 'none', color: palette.textMuted, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Annuler</button>
-          </div>
-        </div>
+        <ModalDemarrer
+          citernes={citernes}
+          onClose={() => setModal(null)}
+          onConfirm={handleDemarrer}
+          loading={demarrerLoading}
+          palette={palette} isDark={isDark}
+        />
       )}
-
-      {/* Modal arriver */}
       {modal === 'arriver' && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
-          onClick={e => { if (e.target === e.currentTarget) setModal(null) }}>
-          <div style={{ background: isDark ? '#0D1B2A' : '#fff', borderRadius: '24px 24px 0 0', padding: '28px 20px 40px', width: '100%', maxWidth: 480, animation: 'slideUp 0.3s ease' }}>
-            <div style={{ width: 40, height: 4, background: palette.cardBorder, borderRadius: 99, margin: '0 auto 20px', opacity: 0.6 }} />
-            <div style={{ fontSize: 17, fontWeight: 800, color: palette.text, marginBottom: 8, textAlign: 'center' }}>📍 Arrivée à destination</div>
-            <div style={{ fontSize: 12, color: palette.textSub, textAlign: 'center', marginBottom: 20 }}>
-              Départ : <strong style={{ color: palette.text }}>{trajetActif?.qty_depart} L</strong>
-            </div>
-
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Quantité livrée (litres)</div>
-              <input type="number" min="0" step="1" placeholder="ex: 14800" value={qtyArrivee} onChange={e => setQtyArrivee(e.target.value)}
-                style={{ ...inputSt, fontSize: 30, fontWeight: 800, textAlign: 'center', fontFamily: theme.font.mono, height: 70 }} />
-            </div>
-
-            {qtyArrivee && trajetActif && (
-              <div style={{ textAlign: 'center', marginBottom: 16, padding: '10px', background: isDark ? 'rgba(255,255,255,0.04)' : '#F9FAFB', borderRadius: 10 }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: (trajetActif.qty_depart - qtyArrivee) > (trajetActif.seuil_fraude ?? 50) ? theme.colors.danger : theme.colors.success }}>
-                  Écart : {(trajetActif.qty_depart - parseFloat(qtyArrivee || 0)).toFixed(1)} L
-                  {(trajetActif.qty_depart - qtyArrivee) > (trajetActif.seuil_fraude ?? 50) ? ' ⚠️' : ' ✓'}
-                </span>
-              </div>
-            )}
-
-            <button onClick={handleArriver} disabled={arriverLoading || !qtyArrivee}
-              style={{ width: '100%', height: 54, borderRadius: 14, border: 'none', cursor: 'pointer', background: !qtyArrivee ? (isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0') : `linear-gradient(135deg, ${theme.colors.primary}, #1D4ED8)`, color: !qtyArrivee ? palette.textMuted : '#fff', fontSize: 15, fontWeight: 800, fontFamily: 'inherit' }}>
-              {arriverLoading ? 'Enregistrement...' : 'Confirmer l\'arrivée'}
-            </button>
-            <button onClick={() => setModal(null)} style={{ width: '100%', marginTop: 10, padding: '10px 0', background: 'none', border: 'none', color: palette.textMuted, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>Annuler</button>
-          </div>
-        </div>
+        <ModalArriver
+          trajetActif={trajetActif}
+          onClose={() => setModal(null)}
+          onConfirm={handleArriver}
+          loading={arriverLoading}
+          palette={palette} isDark={isDark}
+        />
       )}
 
       <style>{`
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: translateY(0) } }
-        @keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 8px rgba(16,185,129,0.6)} 50%{opacity:0.6;box-shadow:0 0 16px rgba(16,185,129,0.9)} }
-        select { appearance: none; }
+        @keyframes spin    { to { transform: rotate(360deg); } }
+        @keyframes slideUp { from { opacity:0; transform:translateY(30px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes pulse   { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        select { appearance: none; -webkit-appearance: none; }
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
       `}</style>
     </div>
   )
