@@ -7,7 +7,7 @@ const router      = express.Router()
 const multer      = require('multer')
 const cloudinary  = require('../config/cloudinary')
 const verifyToken = require('../middleware/auth')
-const { isPompiste, isManager, isOwner } = require('../middleware/checkRole')
+const { checkRole, isPompiste, isManager, isOwner } = require('../middleware/checkRole')
 const pool        = require('../config/database')
 const {
   getStation,
@@ -20,8 +20,8 @@ const {
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } })
 
-// Station actuelle — accessible par tous les rôles (pompiste lit les prix)
-router.get('/',  verifyToken, isPompiste, getStation)
+// Station actuelle — accessible par tous les rôles (pompiste lit les prix, owner/gerant gèrent)
+router.get('/',  verifyToken, checkRole(['pompiste']), getStation)
 router.put('/',  verifyToken, isManager,  updateStation)
 
 // Logo station — owner uniquement

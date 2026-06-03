@@ -7,7 +7,7 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth }   from '../context/AuthContext'
 import { useTheme }  from '../context/ThemeContext'
-import FueloLogo     from '../components/FueloLogo'
+
 import { usePlan, PLAN_COLORS } from '../hooks/usePlan'
 import { useParametres } from '../hooks/useParametres'
 
@@ -53,22 +53,34 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
 
-      {/* Logo + nom station */}
-      <div style={{ padding: '20px 14px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+      {/* Header espace de travail — logo + nom station */}
+      <div style={{ padding: '16px 14px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '0.5px solid rgba(255,255,255,0.07)', marginBottom: 6 }}>
         {logoUrl ? (
           <img
             src={logoUrl}
             alt="logo"
-            style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(255,255,255,0.1)' }}
+            style={{ width: 38, height: 38, borderRadius: 10, objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}
           />
         ) : (
-          <FueloLogo size={32} forceTextColor="#fff" />
+          <div style={{
+            width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+            background: 'linear-gradient(135deg, #1E3A5F 0%, #1E40AF 100%)',
+            border: '1px solid rgba(37,99,235,0.35)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 16, fontWeight: 800, color: '#93C5FD',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+          }}>
+            {stationNom ? stationNom.charAt(0).toUpperCase() : 'F'}
+          </div>
         )}
-        {stationNom && (
-          <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.5)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-            {stationNom}
-          </span>
-        )}
+        <div style={{ overflow: 'hidden', flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '-0.1px' }}>
+            {stationNom || 'Ma station'}
+          </div>
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.28)', marginTop: 1 }}>
+            fuel<span style={{ color: '#F59E0B' }}>o</span>
+          </div>
+        </div>
       </div>
 
       <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6, paddingLeft: 12 }}>
