@@ -75,7 +75,7 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
         Navigation
       </div>
 
-      <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1, overflowY: 'auto', minHeight: 0 }}>
         {navItems.map((item) => {
           const active   = location.pathname === item.path
           const isAlerte = item.path === '/alertes'
