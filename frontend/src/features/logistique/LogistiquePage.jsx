@@ -6,6 +6,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useAuth }    from '../../context/AuthContext'
 import { useTheme }   from '../../context/ThemeContext'
 import { useTrajets, useGpsPoints, useCiternes } from '../../hooks/useTrajets'
+import { usePerformances, useValiderPrime } from '../../hooks/usePerformances'
 import { useParametres } from '../../hooks/useParametres'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api            from '../../services/api'
@@ -16,11 +17,12 @@ import theme from '../../config/theme'
 
 const ORANGE = '#F59E0B'
 const TABS   = [
-  { key: 'trajets',   label: 'Trajets',    icon: '🗺️' },
-  { key: 'citernes',  label: 'Citernes',   icon: '🚛' },
-  { key: 'chauffeurs',label: 'Chauffeurs', icon: '👤' },
-  { key: 'alertes',   label: 'Alertes',    icon: '🚨' },
-  { key: 'rapports',  label: 'Rapports',   icon: '📊' },
+  { key: 'trajets',      label: 'Trajets',      icon: '🗺️' },
+  { key: 'citernes',     label: 'Citernes',     icon: '🚛' },
+  { key: 'chauffeurs',   label: 'Chauffeurs',   icon: '👤' },
+  { key: 'alertes',      label: 'Alertes',      icon: '🚨' },
+  { key: 'performances', label: 'Primes',       icon: '⭐' },
+  { key: 'rapports',     label: 'Rapports',     icon: '📊' },
 ]
 
 const STATUT_CFG = {
@@ -659,6 +661,127 @@ function TabChauffeurs({ palette, isDark }) {
   )
 }
 
+// ── Onglet Performances (chauffeurs) ─────────────
+const NIVEAUX_LOG = [
+  { min: 95, label: 'Exemplaire', color: '#7C3AED', bg: '#EDE9FE', stars: 5 },
+  { min: 80, label: 'Excellent',  color: '#059669', bg: '#D1FAE5', stars: 4 },
+  { min: 60, label: 'Très bien',  color: '#2563EB', bg: '#DBEAFE', stars: 3 },
+  { min: 40, label: 'Bon',        color: '#D97706', bg: '#FEF3C7', stars: 2 },
+  { min: 0,  label: 'Débutant',   color: '#6B7280', bg: '#F3F4F6', stars: 1 },
+]
+const getNiveauLog = (score) => NIVEAUX_LOG.find(n => (score ?? -1) >= n.min) ?? NIVEAUX_LOG[NIVEAUX_LOG.length - 1]
+const fmtLog = (n) => (n ?? 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+
+function TabPerformances({ palette, isDark }) {
+  const now   = new Date()
+  const [mois,  setMois]  = useState(now.getMonth() + 1)
+  const [annee, setAnnee] = useState(now.getFullYear())
+  const { data, isLoading } = usePerformances({ mois, annee })
+  const { mutateAsync: valider, isPending } = useValiderPrime()
+  const performances = data?.performances ?? []
+
+  const MOIS_S = ['','Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc']
+
+  return (
+    <div>
+      {/* Sélecteur mois */}
+      <div style={{ display: 'flex', gap: 5, marginBottom: 14, overflowX: 'auto' }}>
+        {[...Array(12)].map((_, i) => {
+          const m = i + 1
+          return (
+            <button key={m} onClick={() => setMois(m)} style={{
+              padding: '4px 9px', borderRadius: 99, border: `1px solid ${mois === m ? 'transparent' : palette.cardBorder}`,
+              background: mois === m ? theme.colors.primary : palette.card,
+              color: mois === m ? '#fff' : palette.textSub,
+              fontSize: 10, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+            }}>{MOIS_S[m]}</button>
+          )
+        })}
+        <select value={annee} onChange={e => setAnnee(parseInt(e.target.value))}
+          style={{ height: 28, padding: '0 8px', background: palette.inputBg, border: `1px solid ${palette.cardBorder}`, borderRadius: 8, color: palette.text, fontSize: 11, fontFamily: 'inherit', outline: 'none', flexShrink: 0 }}>
+          {[now.getFullYear(), now.getFullYear()-1].map(a => <option key={a} value={a}>{a}</option>)}
+        </select>
+      </div>
+
+      {isLoading ? (
+        <div style={{ height: 80, background: palette.card, borderRadius: 12 }} />
+      ) : performances.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: 32, color: palette.textMuted, fontSize: 13 }}>
+          Aucune donnée — les performances sont calculées fin de mois
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {performances.map(p => {
+            const niv    = getNiveauLog(p.score)
+            const enAtt  = p.prime_proposee && p.prime_validee === null
+            return (
+              <div key={p.id} style={{
+                background: palette.card,
+                border: `1px solid ${enAtt ? '#D9770650' : palette.cardBorder}`,
+                borderRadius: 14, padding: '14px 16px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: p.score != null ? 10 : 0 }}>
+                  <div style={{ width: 38, height: 38, borderRadius: '50%', background: `${niv.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: niv.color, flexShrink: 0 }}>
+                    {p.nom?.charAt(0)?.toUpperCase()}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: palette.text }}>{p.nom}</div>
+                    <div style={{ fontSize: 10, color: palette.textSub }}>Chauffeur</div>
+                  </div>
+                  {p.score != null && (
+                    <span style={{ fontSize: 9, fontWeight: 700, color: niv.color, background: niv.bg, padding: '3px 9px', borderRadius: 99 }}>{niv.label}</span>
+                  )}
+                </div>
+
+                {p.score != null && (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <span style={{ fontSize: 11, color: palette.textSub }}>
+                        {p.nb_trajets ?? 0} trajets · {p.nb_fraudes ?? 0} fraudes · {p.nb_alertes ?? 0} arrêts
+                      </span>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: niv.color, fontFamily: theme.font.mono }}>{p.score}%</span>
+                    </div>
+                    <div style={{ height: 5, background: 'rgba(0,0,0,0.08)', borderRadius: 99, overflow: 'hidden', marginBottom: 10 }}>
+                      <div style={{ height: '100%', width: `${p.score}%`, background: niv.color, borderRadius: 99 }} />
+                    </div>
+
+                    {p.prime_proposee && (
+                      <div style={{
+                        padding: '10px 12px', borderRadius: 10,
+                        background: p.prime_validee === true ? theme.colors.successLight : p.prime_validee === false ? theme.colors.dangerLight : '#FEF3C7',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+                      }}>
+                        <div>
+                          <div style={{ fontSize: 9, fontWeight: 700, color: p.prime_validee === true ? theme.colors.success : p.prime_validee === false ? theme.colors.danger : '#D97706', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                            {p.prime_validee === true ? 'Prime validée' : p.prime_validee === false ? 'Prime refusée' : 'Prime proposée'}
+                          </div>
+                          <div style={{ fontSize: 15, fontWeight: 900, color: palette.text, fontFamily: theme.font.mono }}>{fmtLog(p.prime_montant)} GNF</div>
+                        </div>
+                        {enAtt && (
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button onClick={() => valider({ userId: p.id, mois, annee, action: 'valider' })} disabled={isPending}
+                              style={{ padding: '6px 12px', borderRadius: 8, border: 'none', background: theme.colors.success, color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                              ✓
+                            </button>
+                            <button onClick={() => valider({ userId: p.id, mois, annee, action: 'refuser' })} disabled={isPending}
+                              style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${theme.colors.danger}`, background: 'transparent', color: theme.colors.danger, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                              ✗
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Onglet Rapports ───────────────────────────────
 function TabRapports({ palette}) {
   const { trajets, loading, stats } = useTrajets({})
@@ -834,8 +957,9 @@ export default function LogistiquePage() {
         {onglet === 'trajets'    && <TabTrajets    palette={palette} isDark={isDark} />}
         {onglet === 'citernes'   && <TabCiternes   palette={palette} isDark={isDark} />}
         {onglet === 'chauffeurs' && <TabChauffeurs  palette={palette} isDark={isDark} />}
-        {onglet === 'alertes'    && <TabAlertes     palette={palette} />}
-        {onglet === 'rapports'   && <TabRapports    palette={palette} isDark={isDark} />}
+        {onglet === 'alertes'       && <TabAlertes      palette={palette} />}
+        {onglet === 'performances'  && <TabPerformances palette={palette} isDark={isDark} />}
+        {onglet === 'rapports'      && <TabRapports     palette={palette} isDark={isDark} />}
       </div>
 
       <style>{`

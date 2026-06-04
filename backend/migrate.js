@@ -210,6 +210,42 @@ ALTER TABLE trajets ADD COLUMN IF NOT EXISTS qr_code VARCHAR(10);
 ALTER TABLE trajets ADD COLUMN IF NOT EXISTS qr_expires_at TIMESTAMP;
 ALTER TABLE trajets ADD COLUMN IF NOT EXISTS photo_depart_url VARCHAR(500);
 ALTER TABLE trajets ADD COLUMN IF NOT EXISTS photo_arrivee_url VARCHAR(500);
+
+-- Performances et primes employés
+CREATE TABLE IF NOT EXISTS performances (
+  id                  SERIAL PRIMARY KEY,
+  user_id             INT REFERENCES users(id) ON DELETE CASCADE,
+  mois                SMALLINT NOT NULL,
+  annee               SMALLINT NOT NULL,
+  score               FLOAT DEFAULT 0,
+  nb_jours_travailles INT DEFAULT 0,
+  nb_ventes           INT DEFAULT 0,
+  nb_trajets          INT DEFAULT 0,
+  nb_fraudes          INT DEFAULT 0,
+  nb_alertes          INT DEFAULT 0,
+  montant_vendu       BIGINT DEFAULT 0,
+  prime_proposee      BOOLEAN DEFAULT FALSE,
+  prime_validee       BOOLEAN,
+  prime_montant       BIGINT DEFAULT 0,
+  validee_par         INT REFERENCES users(id),
+  created_at          TIMESTAMP DEFAULT NOW(),
+  UNIQUE (user_id, mois, annee)
+);
+
+CREATE TABLE IF NOT EXISTS primes (
+  id          SERIAL PRIMARY KEY,
+  user_id     INT REFERENCES users(id) ON DELETE CASCADE,
+  validee_par INT REFERENCES users(id),
+  montant     BIGINT NOT NULL DEFAULT 0,
+  mois        SMALLINT NOT NULL,
+  annee       SMALLINT NOT NULL,
+  motif       TEXT,
+  statut      VARCHAR(20) DEFAULT 'propose' NOT NULL,
+  created_at  TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_performances_user ON performances(user_id);
+CREATE INDEX IF NOT EXISTS idx_primes_user ON primes(user_id);
 `
 
 async function migrate() {

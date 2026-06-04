@@ -37,6 +37,7 @@ const Profile        = lazy(() => import('../features/profile/Profile'))
 const NotFound           = lazy(() => import('../features/auth/NotFound'))
 const AbonnementsPage        = lazy(() => import('../features/abonnements/AbonnementsPage'))
 const SuperadminDashboard    = lazy(() => import('../features/dashboard/SuperadminDashboard'))
+const PerformancesPage       = lazy(() => import('../features/performances/PerformancesPage'))
 
 // ── Fallback loading ──────────────────────────────────
 const PageLoader = () => (
@@ -140,7 +141,8 @@ export default function Router() {
             <Route path="/stations"   element={<Stations />} />
             <Route path="/parametres"  element={<Parametres />} />
             <Route path="/profile"     element={<Profile />} />
-            <Route path="/abonnements"  element={<AbonnementsPage />} />
+            <Route path="/abonnements"   element={<AbonnementsPage />} />
+            <Route path="/performances" element={<PerformancesPage />} />
             <Route path="/admin"        element={
               <PrivateRoute allowedRoles={['superadmin']}>
                 <SuperadminDashboard />

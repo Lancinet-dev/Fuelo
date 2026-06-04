@@ -7,6 +7,7 @@ const cron   = require('node-cron')
 const logger = require('./logger')
 const { envoyerTousLesRapports } = require('../services/reportService')
 const { lancerBackup }           = require('../services/backupService')
+const { calculerPerformances }   = require('../services/performanceService')
 
 const initCronJobs = () => {
 
@@ -63,6 +64,15 @@ const initCronJobs = () => {
   cron.schedule('0 2 * * *', async () => {
     logger.info('🕐 Cron: Backup quotidien DB...')
     await lancerBackup()
+  }, { timezone: 'Africa/Conakry' })
+
+  // ── Calcul performances mensuelles — 1er du mois à 0h30 ─
+  cron.schedule('30 0 1 * *', async () => {
+    logger.info('🕐 Cron: Calcul performances mensuelles...')
+    const d    = new Date()
+    const mois  = d.getMonth() === 0 ? 12 : d.getMonth()
+    const annee = d.getMonth() === 0 ? d.getFullYear() - 1 : d.getFullYear()
+    await calculerPerformances(mois, annee)
   }, { timezone: 'Africa/Conakry' })
 
   logger.info('✅ Cron jobs initialisés')
