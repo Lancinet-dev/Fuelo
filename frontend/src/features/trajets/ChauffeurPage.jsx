@@ -111,7 +111,7 @@ function LiveMap({ lastPos, isDark }) {
 }
 
 // ── Sélecteur photo (caméra) ──────────────────────
-function PhotoInput({ label, photoFile, onChange, palette, isDark }) {
+function PhotoInput({ label, btnLabel, photoFile, onChange, palette, isDark }) {
   const inputRef = useRef(null)
   const preview  = photoFile ? URL.createObjectURL(photoFile) : null
 
@@ -123,21 +123,29 @@ function PhotoInput({ label, photoFile, onChange, palette, isDark }) {
       <div
         onClick={() => inputRef.current?.click()}
         style={{
-          height: preview ? 'auto' : 80, borderRadius: 14, overflow: 'hidden',
-          border: `2px dashed ${photoFile ? GREEN : palette.cardBorder}`,
-          background: isDark ? 'rgba(255,255,255,0.03)' : '#F9FAFB',
+          height: preview ? 'auto' : 96, borderRadius: 14, overflow: 'hidden',
+          border: `2px dashed ${photoFile ? GREEN : BLUE + '60'}`,
+          background: isDark ? 'rgba(37,99,235,0.06)' : 'rgba(37,99,235,0.04)',
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexDirection: 'column', gap: 6, transition: 'all 0.15s',
+          flexDirection: 'column', gap: 8, transition: 'all 0.15s',
         }}
       >
         {preview ? (
-          <img src={preview} alt="aperçu" style={{ width: '100%', maxHeight: 180, objectFit: 'cover', display: 'block' }} />
+          <img src={preview} alt="aperçu" style={{ width: '100%', maxHeight: 200, objectFit: 'cover', display: 'block' }} />
         ) : (
           <>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={palette.textMuted} strokeWidth="1.5" strokeLinecap="round">
-              <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>
-            </svg>
-            <span style={{ fontSize: 12, color: palette.textMuted, fontWeight: 500 }}>Prendre une photo</span>
+            <div style={{
+              width: 48, height: 48, borderRadius: 14,
+              background: isDark ? 'rgba(37,99,235,0.15)' : 'rgba(37,99,235,0.10)',
+              border: `1.5px solid ${BLUE}40`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={BLUE} strokeWidth="1.8" strokeLinecap="round">
+                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>
+              </svg>
+            </div>
+            <span style={{ fontSize: 14, fontWeight: 700, color: BLUE }}>{btnLabel || 'Prendre une photo'}</span>
+            <span style={{ fontSize: 11, color: palette.textMuted }}>Appuyez pour ouvrir la caméra</span>
           </>
         )}
       </div>
@@ -229,7 +237,8 @@ function ModalDemarrer({ citernes, onClose, onConfirm, loading, palette, isDark 
 
           {/* Photo départ */}
           <PhotoInput
-            label="Photo compteur au départ"
+            label="Photo jauge au départ"
+            btnLabel="Prendre photo jauge"
             photoFile={photoFile}
             onChange={setPhotoFile}
             palette={palette}
@@ -336,7 +345,8 @@ function ModalArriver({ trajetActif, onClose, onConfirm, loading, palette, isDar
         {/* Photo arrivée */}
         <div style={{ marginBottom: 20 }}>
           <PhotoInput
-            label="Photo compteur à l'arrivée"
+            label="Photo jauge à l'arrivée"
+            btnLabel="Prendre photo jauge arrivée"
             photoFile={photoFile}
             onChange={setPhotoFile}
             palette={palette}
@@ -373,6 +383,14 @@ function ModalArriver({ trajetActif, onClose, onConfirm, loading, palette, isDar
 // ── Écran Attente validation QR ───────────────────
 function EcranAttenteQR({ trajetActif, palette, isDark }) {
   const qr = trajetActif?.qr_code ?? '------'
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(qr.toString()).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2500)
+    }).catch(() => {})
+  }
 
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
@@ -386,34 +404,64 @@ function EcranAttenteQR({ trajetActif, palette, isDark }) {
         boxShadow: '0 8px 32px rgba(37,99,235,0.12)',
       }}>
         <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
-        <div style={{ fontSize: 18, fontWeight: 800, color: palette.text, marginBottom: 6 }}>
+        <div style={{ fontSize: 20, fontWeight: 800, color: palette.text, marginBottom: 6 }}>
           Arrivée déclarée
         </div>
-        <div style={{ fontSize: 13, color: palette.textSub, marginBottom: 28, lineHeight: 1.6 }}>
-          Montrez ce code à votre logisticien<br/>pour valider la livraison
+        <div style={{ fontSize: 14, color: palette.textSub, marginBottom: 28, lineHeight: 1.7 }}>
+          Montrez ce code au logisticien<br/>pour valider la livraison
         </div>
 
-        {/* Code QR */}
+        {/* Code PIN style */}
         <div style={{
           background: isDark ? '#0D1B2A' : '#fff',
           border: `3px solid ${BLUE}`,
-          borderRadius: 20, padding: '20px 32px',
+          borderRadius: 24, padding: '24px 28px 20px',
           display: 'inline-block',
-          boxShadow: `0 0 32px ${BLUE}30`,
+          boxShadow: `0 0 40px ${BLUE}35`,
         }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: BLUE, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 8 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: BLUE, textTransform: 'uppercase', letterSpacing: '0.25em', marginBottom: 14 }}>
             Code de validation
           </div>
           <div style={{
-            fontSize: 48, fontWeight: 900, fontFamily: theme.font.mono,
-            color: BLUE, letterSpacing: '0.18em',
-            textShadow: `0 0 24px ${BLUE}50`,
+            fontSize: 62, fontWeight: 900, fontFamily: theme.font.mono,
+            color: BLUE, letterSpacing: '0.22em',
+            textShadow: `0 0 28px ${BLUE}55`,
+            lineHeight: 1,
           }}>
             {qr.toString().split('').join(' ')}
           </div>
         </div>
 
-        <div style={{ fontSize: 11, color: palette.textMuted, marginTop: 16 }}>
+        {/* Bouton copier */}
+        <div style={{ marginTop: 18 }}>
+          <button
+            onClick={handleCopy}
+            style={{
+              height: 46, borderRadius: 12, border: `1.5px solid ${copied ? GREEN + '60' : BLUE + '50'}`,
+              background: copied
+                ? (isDark ? 'rgba(16,185,129,0.12)' : 'rgba(16,185,129,0.08)')
+                : (isDark ? 'rgba(37,99,235,0.12)' : 'rgba(37,99,235,0.08)'),
+              color: copied ? GREEN : BLUE,
+              fontSize: 14, fontWeight: 700, fontFamily: 'inherit',
+              cursor: 'pointer', padding: '0 24px',
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              transition: 'all 0.2s',
+            }}>
+            {copied ? (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+                Copié !
+              </>
+            ) : (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                Copier le code
+              </>
+            )}
+          </button>
+        </div>
+
+        <div style={{ fontSize: 11, color: palette.textMuted, marginTop: 14 }}>
           Valide 24 heures
         </div>
       </div>
