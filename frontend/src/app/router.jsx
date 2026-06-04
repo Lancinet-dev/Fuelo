@@ -35,7 +35,8 @@ const ResetPassword  = lazy(() => import('../features/auth/ResetPassword'))
 const GoogleSuccess  = lazy(() => import('../features/auth/GoogleSuccess'))
 const Profile        = lazy(() => import('../features/profile/Profile'))
 const NotFound           = lazy(() => import('../features/auth/NotFound'))
-const AbonnementsPage    = lazy(() => import('../features/abonnements/AbonnementsPage'))
+const AbonnementsPage        = lazy(() => import('../features/abonnements/AbonnementsPage'))
+const SuperadminDashboard    = lazy(() => import('../features/dashboard/SuperadminDashboard'))
 
 // ── Fallback loading ──────────────────────────────────
 const PageLoader = () => (
@@ -72,9 +73,10 @@ function PublicRoute({ children }) {
 
   if (!isAuthenticated) return children
 
-  if (userRole === 'pompiste')    return <Navigate to="/pompiste"   replace />
-  if (userRole === 'chauffeur')   return <Navigate to="/chauffeur"  replace />
-  if (userRole === 'logisticien') return <Navigate to="/logistique" replace />
+  if (userRole === 'pompiste')     return <Navigate to="/pompiste"   replace />
+  if (userRole === 'chauffeur')    return <Navigate to="/chauffeur"  replace />
+  if (userRole === 'logisticien')  return <Navigate to="/logistique" replace />
+  if (userRole === 'superadmin')   return <Navigate to="/admin"      replace />
   return <Navigate to="/dashboard" replace />
 }
 
@@ -138,7 +140,12 @@ export default function Router() {
             <Route path="/stations"   element={<Stations />} />
             <Route path="/parametres"  element={<Parametres />} />
             <Route path="/profile"     element={<Profile />} />
-            <Route path="/abonnements" element={<AbonnementsPage />} />
+            <Route path="/abonnements"  element={<AbonnementsPage />} />
+            <Route path="/admin"        element={
+              <PrivateRoute allowedRoles={['superadmin']}>
+                <SuperadminDashboard />
+              </PrivateRoute>
+            } />
           </Route>
 
           {/* Route inconnue — page 404 */}
