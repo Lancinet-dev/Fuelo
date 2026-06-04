@@ -165,3 +165,27 @@
 {"timestamp":"2026-06-04 03:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 300L)"}
 {"timestamp":"2026-06-04 03:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 1300L)"}
 {"timestamp":"2026-06-04 03:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-04 07:49:50","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-06-04 07:49:50","level":"info","message":"✅ Cron jobs initialisés"}
+{"timestamp":"2026-06-04 07:51:09","level":"info","message":"🔌 Socket connecté: o9MoX2PtILqocMQ2AAAB"}
+{"timestamp":"2026-06-04 07:51:09","level":"info","message":"Socket o9MoX2PtILqocMQ2AAAB rejoint station_12"}
+{"timestamp":"2026-06-04 07:59:47","level":"info","message":"Socket o9MoX2PtILqocMQ2AAAB rejoint station_12"}
+{"timestamp":"2026-06-04 08:00:00","level":"info","message":"🕐 Cron: Vérification stocks..."}
+{"timestamp":"2026-06-04 08:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-04 08:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-04 08:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-04 08:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-04 08:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-04 08:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-04 08:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-04 08:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-04 08:00:00","level":"info","message":"Alerte créée: Stock essence faible: 68.0L (seuil: 300L)"}
+{"timestamp":"2026-06-04 08:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-04 08:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-04 08:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 1300L)"}
+{"timestamp":"2026-06-04 08:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-04 08:01:11","level":"info","message":"Socket o9MoX2PtILqocMQ2AAAB rejoint station_12"}
+{"timestamp":"2026-06-04 08:01:11","level":"info","message":"Socket o9MoX2PtILqocMQ2AAAB rejoint station_12"}
+{"timestamp":"2026-06-04 08:05:05","level":"error","message":"Erreur audit log la colonne « ip » de la relation « audit_logs » n'existe pas","stack":"error: la colonne « ip » de la relation « audit_logs » n'existe pas\n    at C:\\Users\\DIAKITE KABA\\mon-projet\\backend\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async auditLog (C:\\Users\\DIAKITE KABA\\mon-projet\\backend\\middleware\\auditLog.js:14:5)\n    at async C:\\Users\\DIAKITE KABA\\mon-projet\\backend\\controllers\\employeController.js:167:3","length":139,"name":"error","severity":"ERREUR","code":"42703","position":"74","file":"parse_target.c","line":"1073","routine":"checkInsertTargets"}
+{"timestamp":"2026-06-04 08:05:08","level":"error","message":"Erreur audit log la colonne « ip » de la relation « audit_logs » n'existe pas","stack":"error: la colonne « ip » de la relation « audit_logs » n'existe pas\n    at C:\\Users\\DIAKITE KABA\\mon-projet\\backend\\node_modules\\pg-pool\\index.js:45:11\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at async auditLog (C:\\Users\\DIAKITE KABA\\mon-projet\\backend\\middleware\\auditLog.js:14:5)\n    at async C:\\Users\\DIAKITE KABA\\mon-projet\\backend\\controllers\\employeController.js:167:3","length":139,"name":"error","severity":"ERREUR","code":"42703","position":"74","file":"parse_target.c","line":"1073","routine":"checkInsertTargets"}
+{"timestamp":"2026-06-04 08:05:49","level":"info","message":"🔌 Socket déconnecté: o9MoX2PtILqocMQ2AAAB"}
