@@ -103,6 +103,7 @@ const serviceRoutes      = require('./routes/services')
 const trajetRoutes       = require('./routes/trajets')
 const citerneRoutes      = require('./routes/citernes')
 const abonnementRoutes   = require('./routes/abonnements')
+const adminRoutes        = require('./routes/admin')
 
 app.use('/api/auth',      limiterAuth, authRoutes)
 app.use('/api/stock',     stockRoutes)
@@ -115,6 +116,7 @@ app.use('/api/services',      serviceRoutes)
 app.use('/api/trajets',       trajetRoutes)
 app.use('/api/citernes',      citerneRoutes)
 app.use('/api/abonnements',   abonnementRoutes)
+app.use('/api/admin',         adminRoutes)
 
 // ── Route test ────────────────────────────────────────
 app.get('/', (req, res) => {
