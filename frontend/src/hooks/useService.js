@@ -31,12 +31,7 @@ export function useService() {
     mutationFn: ({ id, formData }) =>
       api.post(`/services/${id}/terminer`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
         .then(r => r.data),
-    onSuccess: (data) => {
-      if (data.alerte_fraude) {
-        toast.error('Service terminé — Alerte fraude générée !', { duration: 6000 })
-      } else {
-        toast.success('Service terminé avec succès')
-      }
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['service-actif'] })
       queryClient.invalidateQueries({ queryKey: ['alertes'] })
     },
