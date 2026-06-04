@@ -11,10 +11,12 @@ const {
   performanceEmploye,
   validerPrimeHandler,
   badgeCount,
+  anneesDisponiblesHandler,
 } = require('../controllers/performanceController')
 
 // Routes spécifiques avant paramétrées
 router.get('/badge',             verifyToken, canManageEmployes, badgeCount)
+router.get('/annees',            verifyToken, canManageEmployes, anneesDisponiblesHandler)
 router.get('/',                  verifyToken, canManageEmployes, listePerformances)
 router.get('/:userId',           verifyToken, canManageEmployes, performanceEmploye)
 router.post('/:userId/valider',  verifyToken, canManageEmployes, validerPrimeHandler)

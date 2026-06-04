@@ -7,6 +7,7 @@ const {
   getPerformanceEmploye,
   validerPrime,
   countPrimesEnAttente,
+  getAnneesDisponibles,
 } = require('../services/performanceService')
 const logger = require('../utils/logger')
 
@@ -61,4 +62,14 @@ const badgeCount = async (req, res) => {
   }
 }
 
-module.exports = { listePerformances, performanceEmploye, validerPrimeHandler, badgeCount }
+const anneesDisponiblesHandler = async (req, res) => {
+  try {
+    const annees = await getAnneesDisponibles(req.user)
+    res.json({ annees })
+  } catch (err) {
+    logger.error('anneesDisponibles', err)
+    res.status(500).json({ error: err.message })
+  }
+}
+
+module.exports = { listePerformances, performanceEmploye, validerPrimeHandler, badgeCount, anneesDisponiblesHandler }

@@ -5,7 +5,7 @@
 import { useState } from 'react'
 import { useTheme }  from '../../context/ThemeContext'
 import { useAuth }   from '../../context/AuthContext'
-import { usePerformances, usePerformancesEmploye, useValiderPrime } from '../../hooks/usePerformances'
+import { usePerformances, usePerformancesEmploye, useValiderPrime, useAnneesDisponibles } from '../../hooks/usePerformances'
 import theme from '../../config/theme'
 
 const NIVEAUX = [
@@ -289,6 +289,7 @@ export default function PerformancesPage() {
   const [historique, setHistorique] = useState(null)
 
   const { data, isLoading } = usePerformances({ mois, annee })
+  const { data: anneesData } = useAnneesDisponibles()
   const performances = data?.performances ?? []
 
   const enAttente  = performances.filter(p => p.prime_proposee && p.prime_validee === null)
@@ -296,7 +297,10 @@ export default function PerformancesPage() {
     .filter(p => p.prime_validee === true)
     .reduce((s, p) => s + (p.prime_montant ?? 0), 0)
 
-  const annees = Array.from({ length: 3 }, (_, i) => now.getFullYear() - i)
+  // Années avec données réelles en base ; fallback sur l'année courante
+  const annees = anneesData?.annees?.length > 0
+    ? anneesData.annees
+    : [now.getFullYear()]
 
   return (
     <div style={{ padding: '24px 28px', maxWidth: 900, fontFamily: theme.font.family }}>

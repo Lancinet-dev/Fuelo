@@ -27,6 +27,14 @@ export function usePerformancesEmploye(userId) {
   })
 }
 
+export function useAnneesDisponibles() {
+  return useQuery({
+    queryKey:  ['performances-annees'],
+    queryFn:   () => api.get('/performances/annees').then(r => r.data),
+    staleTime: 300_000,
+  })
+}
+
 export function usePerformancesBadge() {
   return useQuery({
     queryKey:        ['performances-badge'],

@@ -226,6 +226,35 @@ const validerPrime = async (userId, mois, annee, user, action) => {
   return perf
 }
 
+// ── Années distinctes avec données réelles ─────────
+const getAnneesDisponibles = async (user) => {
+  const role = user.role
+  let whereUser, params
+
+  if (role === 'owner' || role === 'superadmin') {
+    whereUser = `u.station_id = $1`
+    params = [user.station_id]
+  } else if (role === 'gerant') {
+    whereUser = `u.created_by = $1 AND u.role = 'pompiste'`
+    params = [user.id]
+  } else if (role === 'logisticien') {
+    whereUser = `u.created_by = $1 AND u.role = 'chauffeur'`
+    params = [user.id]
+  } else {
+    throw new Error('Accès refusé')
+  }
+
+  const result = await pool.query(
+    `SELECT DISTINCT p.annee
+     FROM performances p
+     JOIN users u ON u.id = p.user_id
+     WHERE u.deleted_at IS NULL AND ${whereUser}
+     ORDER BY p.annee DESC`,
+    params
+  )
+  return result.rows.map(r => parseInt(r.annee))
+}
+
 // ── Nombre de primes en attente (badge sidebar) ───
 const countPrimesEnAttente = async (user) => {
   const role = user.role
@@ -254,4 +283,4 @@ const countPrimesEnAttente = async (user) => {
   return parseInt(result.rows[0].nb || 0)
 }
 
-module.exports = { calculerPerformances, getPerformances, getPerformanceEmploye, validerPrime, countPrimesEnAttente, getNiveau, NIVEAUX }
+module.exports = { calculerPerformances, getPerformances, getPerformanceEmploye, validerPrime, countPrimesEnAttente, getAnneesDisponibles, getNiveau, NIVEAUX }
