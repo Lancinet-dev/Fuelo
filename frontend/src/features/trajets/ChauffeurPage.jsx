@@ -39,7 +39,6 @@ function LiveMap({ lastPos, isDark }) {
   const markerRef    = useRef(null)
   const leafletRef   = useRef(null)
 
-  // Init carte une seule fois
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -68,7 +67,6 @@ function LiveMap({ lastPos, isDark }) {
     return () => { cancelled = true }
   }, [])
 
-  // Mise à jour du marqueur quand la position change
   useEffect(() => {
     if (!mapRef.current || !leafletRef.current || !lastPos) return
     const L = leafletRef.current
@@ -86,7 +84,6 @@ function LiveMap({ lastPos, isDark }) {
     }
   }, [lastPos])
 
-  // Nettoyage
   useEffect(() => () => {
     if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; markerRef.current = null }
   }, [])
@@ -113,11 +110,63 @@ function LiveMap({ lastPos, isDark }) {
   )
 }
 
+// ── Sélecteur photo (caméra) ──────────────────────
+function PhotoInput({ label, photoFile, onChange, palette, isDark }) {
+  const inputRef = useRef(null)
+  const preview  = photoFile ? URL.createObjectURL(photoFile) : null
+
+  return (
+    <div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 8 }}>
+        {label} <span style={{ color: theme.colors.danger }}>*</span>
+      </div>
+      <div
+        onClick={() => inputRef.current?.click()}
+        style={{
+          height: preview ? 'auto' : 80, borderRadius: 14, overflow: 'hidden',
+          border: `2px dashed ${photoFile ? GREEN : palette.cardBorder}`,
+          background: isDark ? 'rgba(255,255,255,0.03)' : '#F9FAFB',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexDirection: 'column', gap: 6, transition: 'all 0.15s',
+        }}
+      >
+        {preview ? (
+          <img src={preview} alt="aperçu" style={{ width: '100%', maxHeight: 180, objectFit: 'cover', display: 'block' }} />
+        ) : (
+          <>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={palette.textMuted} strokeWidth="1.5" strokeLinecap="round">
+              <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>
+            </svg>
+            <span style={{ fontSize: 12, color: palette.textMuted, fontWeight: 500 }}>Prendre une photo</span>
+          </>
+        )}
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        style={{ display: 'none' }}
+        onChange={e => onChange(e.target.files?.[0] ?? null)}
+      />
+      {preview && (
+        <button
+          onClick={e => { e.stopPropagation(); onChange(null) }}
+          style={{ marginTop: 6, fontSize: 11, color: theme.colors.danger, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          Supprimer la photo
+        </button>
+      )}
+    </div>
+  )
+}
+
 // ── Modal Démarrer un trajet ──────────────────────
 function ModalDemarrer({ citernes, onClose, onConfirm, loading, palette, isDark }) {
   const [citerneId, setCiterneId] = useState('')
   const [qty,       setQty]       = useState('')
-  const canSubmit = citerneId && qty && parseFloat(qty) > 0
+  const [photoFile, setPhotoFile] = useState(null)
+  const canSubmit = citerneId && qty && parseFloat(qty) > 0 && photoFile
 
   return (
     <div style={{
@@ -132,14 +181,14 @@ function ModalDemarrer({ citernes, onClose, onConfirm, loading, palette, isDark 
         width: '100%', maxWidth: 520,
         animation: 'slideUp 0.3s ease',
         boxShadow: '0 -12px 48px rgba(0,0,0,0.25)',
+        maxHeight: '90vh', overflowY: 'auto',
       }}>
-        {/* Handle */}
         <div style={{ width: 44, height: 5, background: palette.cardBorder, borderRadius: 99, margin: '0 auto 24px', opacity: 0.5 }} />
 
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{ fontSize: 36, marginBottom: 10 }}>🚚</div>
           <div style={{ fontSize: 20, fontWeight: 800, color: palette.text, letterSpacing: '-0.3px' }}>Démarrer un trajet</div>
-          <div style={{ fontSize: 13, color: palette.textSub, marginTop: 4 }}>Le GPS sera activé automatiquement</div>
+          <div style={{ fontSize: 13, color: palette.textSub, marginTop: 4 }}>Photo du compteur obligatoire</div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
@@ -152,7 +201,6 @@ function ModalDemarrer({ citernes, onClose, onConfirm, loading, palette, isDark 
               borderRadius: 14, padding: '0 16px',
               fontSize: 15, color: palette.text,
               fontFamily: theme.font.family, outline: 'none', cursor: 'pointer',
-              appearance: 'none',
               transition: 'border-color 0.15s',
             }}>
               <option value="">Sélectionner une citerne</option>
@@ -178,9 +226,18 @@ function ModalDemarrer({ citernes, onClose, onConfirm, loading, palette, isDark 
                 textAlign: 'center', transition: 'all 0.15s',
               }} />
           </div>
+
+          {/* Photo départ */}
+          <PhotoInput
+            label="Photo compteur au départ"
+            photoFile={photoFile}
+            onChange={setPhotoFile}
+            palette={palette}
+            isDark={isDark}
+          />
         </div>
 
-        <button onClick={() => onConfirm(citerneId, qty)} disabled={!canSubmit || loading}
+        <button onClick={() => onConfirm(citerneId, qty, photoFile)} disabled={!canSubmit || loading}
           style={{
             width: '100%', height: 58, borderRadius: 16, border: 'none',
             background: canSubmit && !loading
@@ -208,13 +265,14 @@ function ModalDemarrer({ citernes, onClose, onConfirm, loading, palette, isDark 
 
 // ── Modal Arriver à destination ───────────────────
 function ModalArriver({ trajetActif, onClose, onConfirm, loading, palette, isDark }) {
-  const [qty, setQty] = useState('')
-  const depart  = trajetActif?.qty_depart ?? 0
-  const arrivee = parseFloat(qty) || 0
-  const ecart   = depart - arrivee
-  const seuil   = trajetActif?.seuil_fraude ?? 50
-  const isFraude = ecart > seuil
-  const canSubmit = qty && arrivee > 0
+  const [qty,       setQty]       = useState('')
+  const [photoFile, setPhotoFile] = useState(null)
+  const depart     = trajetActif?.qty_depart ?? 0
+  const arrivee    = parseFloat(qty) || 0
+  const ecart      = depart - arrivee
+  const seuil      = trajetActif?.seuil_fraude ?? 50
+  const isFraude   = ecart > seuil
+  const canSubmit  = qty && arrivee > 0 && photoFile
 
   return (
     <div style={{
@@ -229,6 +287,7 @@ function ModalArriver({ trajetActif, onClose, onConfirm, loading, palette, isDar
         width: '100%', maxWidth: 520,
         animation: 'slideUp 0.3s ease',
         boxShadow: '0 -12px 48px rgba(0,0,0,0.25)',
+        maxHeight: '90vh', overflowY: 'auto',
       }}>
         <div style={{ width: 44, height: 5, background: palette.cardBorder, borderRadius: 99, margin: '0 auto 24px', opacity: 0.5 }} />
 
@@ -258,10 +317,9 @@ function ModalArriver({ trajetActif, onClose, onConfirm, loading, palette, isDar
             }} />
         </div>
 
-        {/* Écart en temps réel */}
         {qty && (
           <div style={{
-            borderRadius: 14, padding: '14px 18px', marginBottom: 20, textAlign: 'center',
+            borderRadius: 14, padding: '14px 18px', marginBottom: 16, textAlign: 'center',
             background: isFraude ? theme.colors.dangerLight : theme.colors.successLight,
             border: `1.5px solid ${isFraude ? theme.colors.danger + '40' : theme.colors.success + '40'}`,
             transition: 'all 0.3s',
@@ -272,15 +330,21 @@ function ModalArriver({ trajetActif, onClose, onConfirm, loading, palette, isDar
             <div style={{ fontSize: 28, fontWeight: 900, fontFamily: theme.font.mono, color: isFraude ? theme.colors.danger : GREEN }}>
               {ecart > 0 ? '+' : ''}{ecart.toFixed(1)} L
             </div>
-            {isFraude && (
-              <div style={{ fontSize: 12, color: theme.colors.danger, marginTop: 4, fontWeight: 600 }}>
-                ⚠️ Écart supérieur au seuil — alerte fraude générée
-              </div>
-            )}
           </div>
         )}
 
-        <button onClick={() => onConfirm(qty)} disabled={!canSubmit || loading}
+        {/* Photo arrivée */}
+        <div style={{ marginBottom: 20 }}>
+          <PhotoInput
+            label="Photo compteur à l'arrivée"
+            photoFile={photoFile}
+            onChange={setPhotoFile}
+            palette={palette}
+            isDark={isDark}
+          />
+        </div>
+
+        <button onClick={() => onConfirm(qty, photoFile)} disabled={!canSubmit || loading}
           style={{
             width: '100%', height: 58, borderRadius: 16, border: 'none',
             background: canSubmit && !loading
@@ -306,6 +370,76 @@ function ModalArriver({ trajetActif, onClose, onConfirm, loading, palette, isDar
   )
 }
 
+// ── Écran Attente validation QR ───────────────────
+function EcranAttenteQR({ trajetActif, palette, isDark }) {
+  const qr = trajetActif?.qr_code ?? '------'
+
+  return (
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+      {/* Carte principale */}
+      <div style={{
+        width: '100%',
+        background: isDark ? 'rgba(37,99,235,0.12)' : 'rgba(37,99,235,0.06)',
+        border: `2px solid ${BLUE}40`,
+        borderRadius: 24, padding: '32px 24px',
+        textAlign: 'center',
+        boxShadow: '0 8px 32px rgba(37,99,235,0.12)',
+      }}>
+        <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
+        <div style={{ fontSize: 18, fontWeight: 800, color: palette.text, marginBottom: 6 }}>
+          Arrivée déclarée
+        </div>
+        <div style={{ fontSize: 13, color: palette.textSub, marginBottom: 28, lineHeight: 1.6 }}>
+          Montrez ce code à votre logisticien<br/>pour valider la livraison
+        </div>
+
+        {/* Code QR */}
+        <div style={{
+          background: isDark ? '#0D1B2A' : '#fff',
+          border: `3px solid ${BLUE}`,
+          borderRadius: 20, padding: '20px 32px',
+          display: 'inline-block',
+          boxShadow: `0 0 32px ${BLUE}30`,
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: BLUE, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 8 }}>
+            Code de validation
+          </div>
+          <div style={{
+            fontSize: 48, fontWeight: 900, fontFamily: theme.font.mono,
+            color: BLUE, letterSpacing: '0.18em',
+            textShadow: `0 0 24px ${BLUE}50`,
+          }}>
+            {qr.toString().split('').join(' ')}
+          </div>
+        </div>
+
+        <div style={{ fontSize: 11, color: palette.textMuted, marginTop: 16 }}>
+          Valide 24 heures
+        </div>
+      </div>
+
+      {/* Infos trajet */}
+      <div style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        {[
+          { label: 'Chargement',  value: `${(trajetActif.qty_depart ?? 0).toLocaleString('fr-FR')} L` },
+          { label: 'Livraison',   value: trajetActif.qty_arrivee ? `${parseFloat(trajetActif.qty_arrivee).toLocaleString('fr-FR')} L` : '—' },
+          { label: 'Citerne',     value: trajetActif.citerne_code ?? '—' },
+          { label: 'Destination', value: trajetActif.station_nom ?? '—' },
+        ].map(({ label, value }) => (
+          <div key={label} style={{
+            background: palette.card, border: `1px solid ${palette.cardBorder}`,
+            borderRadius: 14, padding: '12px 10px', textAlign: 'center',
+            boxShadow: theme.shadow.sm,
+          }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: palette.text, fontFamily: theme.font.mono, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
+            <div style={{ fontSize: 9, color: palette.textMuted, marginTop: 3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Page principale ───────────────────────────────
 export default function ChauffeurPage() {
   const { user, logout }            = useAuth()
@@ -321,9 +455,11 @@ export default function ChauffeurPage() {
   const watchRef = useRef(null)
   const elapsed  = useElapsed(trajetActif?.started_at)
 
-  // Watchposition GPS quand trajet actif
+  const isAttenteQR = trajetActif?.statut === 'arrive_attente'
+
+  // Watchposition GPS quand trajet en cours (pas en attente QR)
   useEffect(() => {
-    if (!trajetActif) {
+    if (!trajetActif || isAttenteQR) {
       if (watchRef.current != null) {
         navigator.geolocation.clearWatch(watchRef.current)
         watchRef.current = null
@@ -351,16 +487,16 @@ export default function ChauffeurPage() {
         watchRef.current = null
       }
     }
-  }, [trajetActif?.id])
+  }, [trajetActif?.id, isAttenteQR])
 
-  const handleDemarrer = async (citerneId, qty) => {
-    await demarrer({ citerne_id: parseInt(citerneId), qty_depart: parseFloat(qty) })
+  const handleDemarrer = async (citerneId, qty, photoFile) => {
+    await demarrer({ citerne_id: parseInt(citerneId), qty_depart: parseFloat(qty), photoFile })
     setModal(null)
   }
 
-  const handleArriver = async (qty) => {
+  const handleArriver = async (qty, photoFile) => {
     if (!trajetActif) return
-    await arriver({ id: trajetActif.id, qty_arrivee: parseFloat(qty) })
+    await arriver({ id: trajetActif.id, qty_arrivee: parseFloat(qty), photoFile })
     setModal(null)
   }
 
@@ -421,6 +557,9 @@ export default function ChauffeurPage() {
             <div style={{ width: 36, height: 36, border: `3px solid ${palette.cardBorder}`, borderTopColor: BLUE, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
             <span style={{ fontSize: 13, color: palette.textSub }}>Chargement...</span>
           </div>
+        ) : isAttenteQR ? (
+          /* ─ Attente validation QR ─ */
+          <EcranAttenteQR trajetActif={trajetActif} palette={palette} isDark={isDark} />
         ) : trajetActif ? (
           <>
             {/* ─ Barre statut GPS + vitesse ─ */}

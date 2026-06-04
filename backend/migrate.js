@@ -204,6 +204,12 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token_expires_at TIMESTAMP;
 
 -- Logo station
 ALTER TABLE stations ADD COLUMN IF NOT EXISTS logo_url VARCHAR(500);
+
+-- QR code anti-vol transport
+ALTER TABLE trajets ADD COLUMN IF NOT EXISTS qr_code VARCHAR(10);
+ALTER TABLE trajets ADD COLUMN IF NOT EXISTS qr_expires_at TIMESTAMP;
+ALTER TABLE trajets ADD COLUMN IF NOT EXISTS photo_depart_url VARCHAR(500);
+ALTER TABLE trajets ADD COLUMN IF NOT EXISTS photo_arrivee_url VARCHAR(500);
 `
 
 async function migrate() {

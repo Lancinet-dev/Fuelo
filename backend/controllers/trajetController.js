@@ -3,11 +3,29 @@
 // ================================================
 
 const trajetService = require('../services/trajetService')
+const cloudinary    = require('../config/cloudinary')
 const logger        = require('../utils/logger')
+
+const uploadPhoto = async (buffer, folder, publicId) => {
+  const b64     = buffer.toString('base64')
+  const dataUri = `data:image/jpeg;base64,${b64}`
+  const result  = await cloudinary.uploader.upload(dataUri, {
+    folder,
+    public_id: publicId,
+    resource_type: 'image',
+    overwrite: true,
+  })
+  return result.secure_url
+}
 
 const demarrerTrajet = async (req, res) => {
   try {
-    const trajet = await trajetService.demarrerTrajet(req.user, req.body)
+    let photoUrl = null
+    if (req.file) {
+      const folder = `fuelo/trajets/station_${req.user?.station_id || 'unknown'}`
+      photoUrl = await uploadPhoto(req.file.buffer, folder, `depart_${Date.now()}_${req.user?.id}`)
+    }
+    const trajet = await trajetService.demarrerTrajet(req.user, req.body, photoUrl)
     res.status(201).json({ message: 'Trajet démarré', trajet })
   } catch (err) {
     logger.error('demarrerTrajet', err)
@@ -27,13 +45,28 @@ const ajouterPosition = async (req, res) => {
 
 const arriverDestination = async (req, res) => {
   try {
-    const result = await trajetService.arriverDestination(req.user, parseInt(req.params.id), req.body, req.app)
+    let photoUrl = null
+    if (req.file) {
+      const folder = `fuelo/trajets/station_${req.user?.station_id || 'unknown'}`
+      photoUrl = await uploadPhoto(req.file.buffer, folder, `arrivee_${Date.now()}_${req.user?.id}`)
+    }
+    const result = await trajetService.arriverDestination(req.user, parseInt(req.params.id), req.body, photoUrl)
+    res.json({ message: 'Arrivée déclarée — En attente de validation QR', ...result })
+  } catch (err) {
+    logger.error('arriverDestination', err)
+    res.status(400).json({ error: err.message })
+  }
+}
+
+const validerQrArrivee = async (req, res) => {
+  try {
+    const result = await trajetService.validerQrArrivee(req.user, req.body, req.app)
     res.json({
-      message: result.alerte_fraude ? 'Arrivée enregistrée — Alerte fraude générée' : 'Arrivée enregistrée avec succès',
+      message: result.alerte_fraude ? 'Trajet validé — Alerte fraude générée' : 'Trajet validé avec succès',
       ...result,
     })
   } catch (err) {
-    logger.error('arriverDestination', err)
+    logger.error('validerQrArrivee', err)
     res.status(400).json({ error: err.message })
   }
 }
@@ -84,11 +117,11 @@ const exportCSV = async (req, res) => {
     const csv = lignes.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n')
     res.setHeader('Content-Type', 'text/csv; charset=utf-8')
     res.setHeader('Content-Disposition', 'attachment; filename="trajets_fuelo.csv"')
-    res.send('﻿' + csv) // BOM UTF-8 pour Excel
+    res.send('﻿' + csv)
   } catch (err) {
     logger.error('exportCSV', err)
     res.status(500).json({ error: err.message })
   }
 }
 
-module.exports = { demarrerTrajet, ajouterPosition, arriverDestination, getTrajetActif, getTrajets, getGpsPoints, exportCSV }
+module.exports = { demarrerTrajet, ajouterPosition, arriverDestination, validerQrArrivee, getTrajetActif, getTrajets, getGpsPoints, exportCSV }

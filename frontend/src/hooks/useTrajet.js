@@ -17,7 +17,12 @@ export function useTrajet() {
   })
 
   const { mutateAsync: demarrer, isPending: demarrerLoading } = useMutation({
-    mutationFn: (payload) => api.post('/trajets', payload).then(r => r.data),
+    mutationFn: ({ photoFile, ...fields }) => {
+      const fd = new FormData()
+      Object.entries(fields).forEach(([k, v]) => fd.append(k, String(v)))
+      if (photoFile) fd.append('photo', photoFile)
+      return api.post('/trajets', fd).then(r => r.data)
+    },
     onSuccess: () => {
       toast.success('Trajet démarré — GPS activé')
       queryClient.invalidateQueries({ queryKey: ['trajet-actif'] })
@@ -27,7 +32,6 @@ export function useTrajet() {
 
   const { mutateAsync: envoyerPosition } = useMutation({
     mutationFn: ({ id, ...pos }) => api.post(`/trajets/${id}/position`, pos).then(r => r.data),
-    // Toast avec id fixe : remplace le précédent au lieu de s'accumuler
     onError: () => {
       toast.error('Position GPS non envoyée — vérifiez votre connexion', {
         id: 'gps-sync-error',
@@ -37,13 +41,14 @@ export function useTrajet() {
   })
 
   const { mutateAsync: arriver, isPending: arriverLoading } = useMutation({
-    mutationFn: ({ id, qty_arrivee }) => api.post(`/trajets/${id}/arriver`, { qty_arrivee }).then(r => r.data),
-    onSuccess: (data) => {
-      if (data.alerte_fraude) {
-        toast.error('Arrivée enregistrée — Alerte fraude générée !', { duration: 6000 })
-      } else {
-        toast.success('Arrivée enregistrée avec succès !')
-      }
+    mutationFn: ({ id, photoFile, ...fields }) => {
+      const fd = new FormData()
+      Object.entries(fields).forEach(([k, v]) => fd.append(k, String(v)))
+      if (photoFile) fd.append('photo', photoFile)
+      return api.post(`/trajets/${id}/arriver`, fd).then(r => r.data)
+    },
+    onSuccess: () => {
+      toast.success('Arrivée déclarée — Montrez votre code au logisticien')
       queryClient.invalidateQueries({ queryKey: ['trajet-actif'] })
     },
     onError: (err) => toast.error(err.response?.data?.error ?? 'Erreur'),

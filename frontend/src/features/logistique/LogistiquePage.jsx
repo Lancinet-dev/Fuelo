@@ -24,9 +24,10 @@ const TABS   = [
 ]
 
 const STATUT_CFG = {
-  en_cours: { label: 'En cours',      color: theme.colors.success, bg: theme.colors.successLight },
-  alerte:   { label: 'Fraude',        color: theme.colors.danger,  bg: theme.colors.dangerLight  },
-  arrive:   { label: 'Arrivé',        color: theme.colors.info,    bg: theme.colors.infoLight    },
+  en_cours:       { label: 'En cours',    color: theme.colors.success, bg: theme.colors.successLight },
+  arrive_attente: { label: 'Attente QR',  color: '#D97706',            bg: '#FEF3C7'                 },
+  alerte:         { label: 'Fraude',      color: theme.colors.danger,  bg: theme.colors.dangerLight  },
+  arrive:         { label: 'Arrivé',      color: theme.colors.info,    bg: theme.colors.infoLight    },
 }
 
 // ── Carte Leaflet ─────────────────────────────────
@@ -68,31 +69,137 @@ function MiniMap({ trajetId, isDark }) {
   return <div ref={mapRef} style={{ height: 200, borderRadius: 12, overflow: 'hidden', border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : '#E5E7EB'}` }} />
 }
 
+// ── Modal validation QR ───────────────────────────
+function ModalQR({ onClose, onConfirm, loading, palette, isDark }) {
+  const [code, setCode] = useState('')
+  const canSubmit = code.replace(/\s/g, '').length === 6
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 300,
+      background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+    }} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div style={{
+        background: isDark ? '#0D1B2A' : '#fff',
+        borderRadius: 24, padding: '32px 28px',
+        width: '100%', maxWidth: 380,
+        boxShadow: '0 24px 60px rgba(0,0,0,0.25)',
+        animation: 'slideUp 0.25s ease',
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <div style={{ fontSize: 36, marginBottom: 10 }}>🔐</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: palette.text, marginBottom: 6 }}>Valider l'arrivée</div>
+          <div style={{ fontSize: 13, color: palette.textSub, lineHeight: 1.6 }}>
+            Saisissez le code affiché sur le téléphone du chauffeur
+          </div>
+        </div>
+
+        <input
+          type="text"
+          inputMode="numeric"
+          maxLength={6}
+          placeholder="000000"
+          value={code}
+          onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+          autoFocus
+          style={{
+            width: '100%', height: 76, boxSizing: 'border-box',
+            background: isDark ? 'rgba(255,255,255,0.06)' : '#F9FAFB',
+            border: `2px solid ${canSubmit ? theme.colors.primary : palette.cardBorder}`,
+            borderRadius: 16, padding: '0 20px',
+            fontSize: 40, fontWeight: 800, fontFamily: theme.font.mono,
+            color: palette.text, outline: 'none', textAlign: 'center',
+            letterSpacing: '0.25em', transition: 'border-color 0.15s',
+          }}
+        />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 20 }}>
+          <button onClick={onClose} style={{ height: 48, borderRadius: 12, border: `1px solid ${palette.cardBorder}`, background: 'transparent', color: palette.textSub, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Annuler
+          </button>
+          <button onClick={() => onConfirm(code)} disabled={!canSubmit || loading}
+            style={{
+              height: 48, borderRadius: 12, border: 'none',
+              background: canSubmit && !loading ? theme.colors.primary : (isDark ? 'rgba(255,255,255,0.08)' : '#E5E7EB'),
+              color: canSubmit && !loading ? '#fff' : palette.textMuted,
+              fontSize: 14, fontWeight: 700, cursor: canSubmit && !loading ? 'pointer' : 'not-allowed',
+              fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}>
+            {loading
+              ? <div style={{ width: 16, height: 16, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              : 'Valider'
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Onglet Trajets ────────────────────────────────
 function TabTrajets({ palette, isDark }) {
+  const queryClient                = useQueryClient()
   const [selected, setSelected]   = useState(null)
   const [filtre,   setFiltre]     = useState(null)
+  const [modalQR,  setModalQR]    = useState(false)
+  const [qrLoading, setQrLoading] = useState(false)
   const { trajets, loading, stats } = useTrajets({ statut: filtre })
+
+  const handleValiderQR = async (code) => {
+    setQrLoading(true)
+    try {
+      await api.post('/trajets/valider-qr', { qr_code: code })
+      toast.success('Arrivée validée avec succès !')
+      queryClient.invalidateQueries({ queryKey: ['trajets'] })
+      setModalQR(false)
+    } catch (err) {
+      toast.error(err.response?.data?.error ?? 'Code invalide')
+    } finally {
+      setQrLoading(false)
+    }
+  }
+
+  const nbAttenteQR = trajets.filter(t => t.statut === 'arrive_attente').length
 
   return (
     <div>
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
-        {[
-          { l: 'Total',    v: stats.total,   color: palette.text },
-          { l: 'En route', v: stats.enCours, color: theme.colors.success },
-          { l: 'Alertes',  v: stats.alertes, color: stats.alertes > 0 ? theme.colors.danger : theme.colors.success },
-        ].map(({ l, v, color }) => (
-          <div key={l} style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 12, padding: '12px', textAlign: 'center', boxShadow: theme.shadow.sm }}>
-            <div style={{ fontSize: 20, fontWeight: 800, color, fontFamily: theme.font.mono }}>{v}</div>
-            <div style={{ fontSize: 10, color: palette.textMuted, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{l}</div>
-          </div>
-        ))}
+      {/* Stats + bouton QR */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16, alignItems: 'stretch' }}>
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+          {[
+            { l: 'Total',    v: stats.total,   color: palette.text },
+            { l: 'En route', v: stats.enCours, color: theme.colors.success },
+            { l: 'Alertes',  v: stats.alertes, color: stats.alertes > 0 ? theme.colors.danger : theme.colors.success },
+          ].map(({ l, v, color }) => (
+            <div key={l} style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 12, padding: '12px', textAlign: 'center', boxShadow: theme.shadow.sm }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color, fontFamily: theme.font.mono }}>{v}</div>
+              <div style={{ fontSize: 10, color: palette.textMuted, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{l}</div>
+            </div>
+          ))}
+        </div>
+        <button onClick={() => setModalQR(true)} style={{
+          flexShrink: 0, width: 64, borderRadius: 12, border: 'none',
+          background: nbAttenteQR > 0 ? '#D97706' : (isDark ? 'rgba(255,255,255,0.06)' : '#F3F4F6'),
+          color: nbAttenteQR > 0 ? '#fff' : palette.textMuted,
+          cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
+          boxShadow: nbAttenteQR > 0 ? '0 4px 16px rgba(217,119,6,0.35)' : 'none',
+          transition: 'all 0.2s', position: 'relative',
+        }}>
+          {nbAttenteQR > 0 && (
+            <span style={{ position: 'absolute', top: 6, right: 6, background: theme.colors.danger, color: '#fff', fontSize: 9, fontWeight: 700, borderRadius: 99, padding: '1px 5px', minWidth: 14, textAlign: 'center' }}>{nbAttenteQR}</span>
+          )}
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/><path d="M14 14h.01M18 14h.01M14 18h.01M18 18h.01M14 14v4h4v-4h-4z"/>
+          </svg>
+          <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>QR</span>
+        </button>
       </div>
 
       {/* Filtres */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 14, overflowX: 'auto' }}>
-        {[{ k: null, l: 'Tous' }, { k: 'en_cours', l: 'En cours' }, { k: 'alerte', l: 'Alertes' }, { k: 'arrive', l: 'Arrivés' }].map(({ k, l }) => (
+        {[{ k: null, l: 'Tous' }, { k: 'en_cours', l: 'En cours' }, { k: 'arrive_attente', l: 'Attente QR' }, { k: 'alerte', l: 'Alertes' }, { k: 'arrive', l: 'Arrivés' }].map(({ k, l }) => (
           <button key={String(k)} onClick={() => setFiltre(k)}
             style={{ padding: '5px 14px', borderRadius: 99, border: `1px solid ${filtre === k ? 'transparent' : palette.cardBorder}`, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', background: filtre === k ? (k === 'alerte' ? theme.colors.danger : theme.colors.primary) : palette.card, color: filtre === k ? '#fff' : palette.textSub, transition: 'all 0.15s' }}>
             {l}
@@ -142,12 +249,34 @@ function TabTrajets({ palette, isDark }) {
                       ))}
                     </div>
                     <MiniMap trajetId={t.id} isDark={isDark} />
+                    {/* Bouton valider QR si en attente */}
+                    {t.statut === 'arrive_attente' && (
+                      <button onClick={() => setModalQR(true)}
+                        style={{
+                          marginTop: 10, width: '100%', height: 42, borderRadius: 10, border: 'none',
+                          background: '#D97706', color: '#fff', fontSize: 13, fontWeight: 700,
+                          cursor: 'pointer', fontFamily: 'inherit',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                        }}>
+                        🔐 Saisir le code de validation
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
             )
           })}
         </div>
+      )}
+
+      {/* Modal QR */}
+      {modalQR && (
+        <ModalQR
+          onClose={() => setModalQR(false)}
+          onConfirm={handleValiderQR}
+          loading={qrLoading}
+          palette={palette} isDark={isDark}
+        />
       )}
     </div>
   )
