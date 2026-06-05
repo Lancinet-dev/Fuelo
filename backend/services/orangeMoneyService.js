@@ -1,6 +1,7 @@
 // ================================================
 // FUELO — Orange Money Web Payment API (Guinée)
-// Doc : https://developer.orange.com/apis/orange-money-webpay-gin
+// Sandbox : ORANGE_MONEY_SANDBOX=true → simulation locale
+// Prod    : renseigner CLIENT_ID / CLIENT_SECRET / MERCHANT_KEY
 // ================================================
 
 const logger = require('../utils/logger')
@@ -9,8 +10,15 @@ const OM_BASE  = 'https://api.orange.com'
 const COUNTRY  = process.env.ORANGE_MONEY_COUNTRY  || 'GIN'
 const CURRENCY = process.env.ORANGE_MONEY_CURRENCY || 'GNF'
 
-// ── Récupère le token OAuth 2.0 ──────────────────
+// ── Cache du token OAuth (valide 3600s) ───────────
+let _tokenCache = { token: null, expiresAt: 0 }
+
 async function getToken() {
+  const now = Date.now()
+  if (_tokenCache.token && _tokenCache.expiresAt > now + 30_000) {
+    return _tokenCache.token
+  }
+
   const creds = Buffer.from(
     `${process.env.ORANGE_MONEY_CLIENT_ID}:${process.env.ORANGE_MONEY_CLIENT_SECRET}`
   ).toString('base64')
@@ -30,12 +38,42 @@ async function getToken() {
     throw new Error(`Orange Money auth échoué (${res.status}): ${txt}`)
   }
 
-  const { access_token } = await res.json()
-  return access_token
+  const data = await res.json()
+  _tokenCache = {
+    token:     data.access_token,
+    expiresAt: now + (data.expires_in ?? 3600) * 1000,
+  }
+  logger.info('Orange Money — token OAuth renouvelé')
+  return _tokenCache.token
 }
 
-// ── Initie un paiement — retourne { payment_url, pay_token } ──
+// ── Sandbox : URL de simulation locale ───────────
+function buildSandboxPaymentUrl({ orderId, montant }) {
+  const params = new URLSearchParams({
+    order_id:   orderId,
+    amount:     String(montant),
+    currency:   CURRENCY,
+    return_url: `${process.env.FRONTEND_URL}/abonnements?status=success`,
+    cancel_url: `${process.env.FRONTEND_URL}/abonnements?status=cancel`,
+  })
+  return `${process.env.BACKEND_URL}/api/abonnements/sandbox/simulate?${params}`
+}
+
+// ── Initie un paiement ────────────────────────────
+// Retourne { payment_url, pay_token }
 async function initiatePayment({ montant, orderId, description }) {
+
+  // Mode sandbox : simulation sans appel Orange
+  if (process.env.ORANGE_MONEY_SANDBOX === 'true') {
+    logger.info(`[SANDBOX] Orange Money — ${orderId} — ${montant} ${CURRENCY}`)
+    return {
+      payment_url: buildSandboxPaymentUrl({ orderId, montant }),
+      pay_token:   `SANDBOX-${orderId}`,
+      status:      'PENDING',
+    }
+  }
+
+  // Mode production
   const token = await getToken()
 
   const body = {
@@ -50,7 +88,7 @@ async function initiatePayment({ montant, orderId, description }) {
     reference:    description,
   }
 
-  logger.info(`Orange Money — initiation paiement ${orderId} (${montant} ${CURRENCY})`)
+  logger.info(`Orange Money — initiation ${orderId} (${montant} ${CURRENCY})`)
 
   const res = await fetch(`${OM_BASE}/orange-money-webpay/${COUNTRY}/v1/webpayment`, {
     method:  'POST',
@@ -72,6 +110,10 @@ async function initiatePayment({ montant, orderId, description }) {
 
 // ── Vérifie le statut d'un paiement ──────────────
 async function getPaymentStatus(payToken) {
+  if (payToken?.startsWith('SANDBOX-')) {
+    return { status: 'PENDING', pay_token: payToken, sandbox: true }
+  }
+
   const token = await getToken()
 
   const res = await fetch(
