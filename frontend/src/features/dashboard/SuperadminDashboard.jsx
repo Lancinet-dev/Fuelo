@@ -200,148 +200,133 @@ export default function SuperadminDashboard() {
           />
         </div>
 
-        {/* En-tête colonnes */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: COLS,
-          padding: '8px 20px', gap: 10,
-          background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
-          borderBottom: `1px solid ${palette.cardBorder}`,
-        }} className="admin-cols">
-          {['Client', 'Email', 'Plan', 'Statut', 'Sites', 'Paiement', 'Expire', 'Actions'].map(h => (
-            <div key={h} style={{ fontSize: 10, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
-          ))}
+        {/* Desktop : en-tête + lignes scrollables */}
+        <div style={{ overflowX: 'auto' }}>
+          <div style={{ minWidth: 860 }}>
+            <div style={{
+              display: 'grid', gridTemplateColumns: COLS,
+              padding: '8px 20px', gap: 10,
+              background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+              borderBottom: `1px solid ${palette.cardBorder}`,
+            }} className="admin-header">
+              {['Client', 'Email', 'Plan', 'Statut', 'Sites', 'Paiement', 'Expire', 'Actions'].map(h => (
+                <div key={h} style={{ fontSize: 10, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
+              ))}
+            </div>
+
+            {clientsLoading ? (
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: palette.textMuted, fontSize: 13 }}>Chargement...</div>
+            ) : filtered.length === 0 ? (
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: palette.textMuted, fontSize: 13 }}>Aucun client trouvé</div>
+            ) : filtered.map((client, i) => {
+              const s = STATUT[client.sub_statut] ?? STATUT.expire
+              const p = PLAN[client.sub_plan]     ?? { color: '#94A3B8', label: client.sub_plan ?? '—' }
+              const isLast      = i === filtered.length - 1
+              const isActioning = actionLoading?.id === client.sub_id
+              const expireDate  = client.expires_at
+                ? new Date(client.expires_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: '2-digit' })
+                : '—'
+              return (
+                <div key={client.id} className="admin-row"
+                  style={{ display: 'grid', gridTemplateColumns: COLS, padding: '12px 20px', gap: 10, alignItems: 'center', borderBottom: isLast ? 'none' : `1px solid ${palette.cardBorder}`, transition: 'background 0.15s' }}
+                  onMouseEnter={e => e.currentTarget.style.background = palette.hover}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', flexShrink: 0, background: theme.colors.primaryLight, border: `1px solid ${theme.colors.primary}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: theme.colors.primary }}>
+                      {(client.nom ?? '?').charAt(0).toUpperCase()}
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: palette.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{client.nom ?? '—'}</span>
+                  </div>
+                  <span style={{ fontSize: 12, color: palette.textSub, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{client.email}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: p.color, background: p.color + '18', borderRadius: 99, padding: '3px 10px', display: 'inline-block', whiteSpace: 'nowrap' }}>{p.label}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: s.color, background: s.bg, borderRadius: 99, padding: '3px 10px', display: 'inline-block', whiteSpace: 'nowrap' }}>{s.label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: palette.text, fontFamily: theme.font.mono }}>{client.nb_stations ?? 0}</span>
+                  <span style={{ fontSize: 11, color: palette.textSub, textTransform: 'capitalize' }}>{client.payment_method ?? '—'}</span>
+                  <span style={{ fontSize: 11, color: palette.textSub, fontFamily: theme.font.mono }}>{expireDate}</span>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {client.sub_id && client.sub_statut === 'en_attente' && (
+                      <button disabled={isActioning} onClick={() => handleValider(client.sub_id)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 8, border: 'none', background: 'rgba(16,185,129,0.12)', color: '#10B981', fontSize: 11, fontWeight: 700, cursor: isActioning ? 'default' : 'pointer', fontFamily: 'inherit', opacity: isActioning ? 0.6 : 1 }}>
+                        <Icon d={ICONS.check} size={11} color="#10B981" /> Valider
+                      </button>
+                    )}
+                    {client.sub_id && client.sub_statut === 'actif' && (
+                      <button disabled={isActioning} onClick={() => handleSuspendre(client.sub_id)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 8, border: 'none', background: 'rgba(239,68,68,0.08)', color: '#EF4444', fontSize: 11, fontWeight: 700, cursor: isActioning ? 'default' : 'pointer', fontFamily: 'inherit', opacity: isActioning ? 0.6 : 1 }}>
+                        <Icon d={ICONS.pause} size={11} color="#EF4444" /> Suspendre
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
-        {/* Lignes */}
-        {clientsLoading ? (
-          <div style={{ padding: '40px 20px', textAlign: 'center', color: palette.textMuted, fontSize: 13 }}>
-            Chargement...
-          </div>
-        ) : filtered.length === 0 ? (
-          <div style={{ padding: '40px 20px', textAlign: 'center', color: palette.textMuted, fontSize: 13 }}>
-            Aucun client trouvé
-          </div>
-        ) : filtered.map((client, i) => {
-          const s = STATUT[client.sub_statut] ?? STATUT.expire
-          const p = PLAN[client.sub_plan]     ?? { color: '#94A3B8', label: client.sub_plan ?? '—' }
-          const isLast       = i === filtered.length - 1
-          const isActioning  = actionLoading?.id === client.sub_id
-          const expireDate   = client.expires_at
-            ? new Date(client.expires_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: '2-digit' })
-            : '—'
-
-          return (
-            <div
-              key={client.id}
-              style={{
-                display: 'grid', gridTemplateColumns: COLS,
-                padding: '12px 20px', gap: 10, alignItems: 'center',
-                borderBottom: isLast ? 'none' : `1px solid ${palette.cardBorder}`,
-                transition: 'background 0.15s',
-              }}
-              className="admin-cols"
-              onMouseEnter={e => e.currentTarget.style.background = palette.hover}
-              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-            >
-              {/* Nom */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                <div style={{
-                  width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-                  background: theme.colors.primaryLight, border: `1px solid ${theme.colors.primary}30`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 12, fontWeight: 700, color: theme.colors.primary,
-                }}>
-                  {(client.nom ?? '?').charAt(0).toUpperCase()}
+        {/* Mobile : cards */}
+        <div className="admin-mobile-list">
+          {!clientsLoading && filtered.map((client, i) => {
+            const s = STATUT[client.sub_statut] ?? STATUT.expire
+            const p = PLAN[client.sub_plan]     ?? { color: '#94A3B8', label: client.sub_plan ?? '—' }
+            const isLast      = i === filtered.length - 1
+            const isActioning = actionLoading?.id === client.sub_id
+            return (
+              <div key={client.id} style={{ padding: '14px 16px', borderBottom: isLast ? 'none' : `1px solid ${palette.cardBorder}` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: theme.colors.primaryLight, border: `1px solid ${theme.colors.primary}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: theme.colors.primary, flexShrink: 0 }}>
+                      {(client.nom ?? '?').charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: palette.text }}>{client.nom ?? '—'}</div>
+                      <div style={{ fontSize: 11, color: palette.textSub, marginTop: 1 }}>{client.email}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    {client.sub_id && client.sub_statut === 'en_attente' && (
+                      <button disabled={isActioning} onClick={() => handleValider(client.sub_id)}
+                        style={{ padding: '5px 10px', borderRadius: 8, border: 'none', background: 'rgba(16,185,129,0.12)', color: '#10B981', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        Valider
+                      </button>
+                    )}
+                    {client.sub_id && client.sub_statut === 'actif' && (
+                      <button disabled={isActioning} onClick={() => handleSuspendre(client.sub_id)}
+                        style={{ padding: '5px 10px', borderRadius: 8, border: 'none', background: 'rgba(239,68,68,0.08)', color: '#EF4444', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        Suspendre
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <span style={{ fontSize: 13, fontWeight: 600, color: palette.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {client.nom ?? '—'}
-                </span>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: p.color, background: p.color + '18', borderRadius: 99, padding: '2px 9px' }}>{p.label}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: s.color, background: s.bg, borderRadius: 99, padding: '2px 9px' }}>{s.label}</span>
+                  <span style={{ fontSize: 11, color: palette.textMuted }}>{client.nb_stations ?? 0} site{(client.nb_stations ?? 0) > 1 ? 's' : ''}</span>
+                </div>
               </div>
-
-              {/* Email */}
-              <span style={{ fontSize: 12, color: palette.textSub, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {client.email}
-              </span>
-
-              {/* Plan */}
-              <span style={{ fontSize: 11, fontWeight: 700, color: p.color, background: p.color + '18', borderRadius: 99, padding: '3px 10px', display: 'inline-block', whiteSpace: 'nowrap' }}>
-                {p.label}
-              </span>
-
-              {/* Statut */}
-              <span style={{ fontSize: 11, fontWeight: 600, color: s.color, background: s.bg, borderRadius: 99, padding: '3px 10px', display: 'inline-block', whiteSpace: 'nowrap' }}>
-                {s.label}
-              </span>
-
-              {/* Nb stations */}
-              <span style={{ fontSize: 13, fontWeight: 700, color: palette.text, fontFamily: theme.font.mono }}>
-                {client.nb_stations ?? 0}
-              </span>
-
-              {/* Méthode paiement */}
-              <span style={{ fontSize: 11, color: palette.textSub, textTransform: 'capitalize' }}>
-                {client.payment_method ?? '—'}
-              </span>
-
-              {/* Date expiration */}
-              <span style={{ fontSize: 11, color: palette.textSub, fontFamily: theme.font.mono }}>
-                {expireDate}
-              </span>
-
-              {/* Actions */}
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {client.sub_id && client.sub_statut === 'en_attente' && (
-                  <button
-                    disabled={isActioning}
-                    onClick={() => handleValider(client.sub_id)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 4,
-                      padding: '5px 10px', borderRadius: 8, border: 'none',
-                      background: 'rgba(16,185,129,0.12)', color: '#10B981',
-                      fontSize: 11, fontWeight: 700, cursor: isActioning ? 'default' : 'pointer',
-                      fontFamily: 'inherit', transition: 'background 0.15s', opacity: isActioning ? 0.6 : 1,
-                    }}
-                    onMouseEnter={e => { if (!isActioning) e.currentTarget.style.background = 'rgba(16,185,129,0.24)' }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(16,185,129,0.12)' }}
-                  >
-                    <Icon d={ICONS.check} size={11} color="#10B981" />
-                    Valider
-                  </button>
-                )}
-                {client.sub_id && client.sub_statut === 'actif' && (
-                  <button
-                    disabled={isActioning}
-                    onClick={() => handleSuspendre(client.sub_id)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 4,
-                      padding: '5px 10px', borderRadius: 8, border: 'none',
-                      background: 'rgba(239,68,68,0.08)', color: '#EF4444',
-                      fontSize: 11, fontWeight: 700, cursor: isActioning ? 'default' : 'pointer',
-                      fontFamily: 'inherit', transition: 'background 0.15s', opacity: isActioning ? 0.6 : 1,
-                    }}
-                    onMouseEnter={e => { if (!isActioning) e.currentTarget.style.background = 'rgba(239,68,68,0.18)' }}
-                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)' }}
-                  >
-                    <Icon d={ICONS.pause} size={11} color="#EF4444" />
-                    Suspendre
-                  </button>
-                )}
-              </div>
-            </div>
-          )
-        })}
+            )
+          })}
+          {!clientsLoading && filtered.length === 0 && (
+            <div style={{ padding: '40px 16px', textAlign: 'center', color: palette.textMuted, fontSize: 13 }}>Aucun client trouvé</div>
+          )}
+          {clientsLoading && (
+            <div style={{ padding: '40px 16px', textAlign: 'center', color: palette.textMuted, fontSize: 13 }}>Chargement...</div>
+          )}
+        </div>
       </div>
 
       <style>{`
         @keyframes alertPulse { 0%,100%{opacity:1;box-shadow:0 0 6px rgba(245,158,11,0.6)} 50%{opacity:0.5;box-shadow:0 0 12px rgba(245,158,11,0.9)} }
         @keyframes pulse      { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        .admin-mobile-list { display: none; }
         @media (max-width: 1200px) {
           .fuelo-grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
-          .admin-cols   { grid-template-columns: 1fr 1fr !important; }
         }
         @media (max-width: 768px) {
-          .fuelo-dashboard { padding: 20px 16px !important; }
-          .fuelo-grid-4    { grid-template-columns: 1fr 1fr !important; }
+          .fuelo-dashboard   { padding: 16px 14px !important; }
+          .fuelo-grid-4      { grid-template-columns: 1fr 1fr !important; }
+          .admin-header      { display: none !important; }
+          .admin-row         { display: none !important; }
+          .admin-mobile-list { display: block !important; }
         }
         @media (max-width: 480px) {
           .fuelo-grid-4 { grid-template-columns: 1fr !important; }

@@ -644,7 +644,7 @@ export default function ChauffeurPage() {
             </div>
 
             {/* ─ Infos trajet ─ */}
-            <div style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+            <div style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }} className="chauffeur-grid-3">
               {[
                 { label: 'Citerne',     value: trajetActif.citerne_code ?? '—' },
                 { label: 'Destination', value: trajetActif.station_nom ?? '—' },
@@ -757,6 +757,9 @@ export default function ChauffeurPage() {
         select { appearance: none; -webkit-appearance: none; }
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+        @media (max-width: 480px) {
+          .chauffeur-grid-3 { grid-template-columns: 1fr 1fr !important; }
+        }
       `}</style>
     </div>
   )

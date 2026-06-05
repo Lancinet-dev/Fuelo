@@ -303,7 +303,7 @@ export default function PerformancesPage() {
     : [now.getFullYear()]
 
   return (
-    <div style={{ padding: '24px 28px', maxWidth: 900, fontFamily: theme.font.family }}>
+    <div style={{ padding: '24px 28px', maxWidth: 900, fontFamily: theme.font.family }} className="fuelo-perfs">
 
       {/* En-tête */}
       <div style={{ marginBottom: 24 }}>
@@ -403,6 +403,13 @@ export default function PerformancesPage() {
           isDark={isDark}
         />
       )}
+      <style>{`
+        @media (max-width: 768px) {
+          .fuelo-perfs  { padding: 16px 14px !important; }
+          .fuelo-grid-3 { grid-template-columns: 1fr !important; }
+          .fuelo-grid-2 { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </div>
   )
 }

@@ -85,7 +85,7 @@ function StatCard({ label, value, sub, iconD, color, onClick, pulse }) {
 // ── Ligne vente (desktop) ─────────────────────────
 function VenteRow({ vente, isLast, palette }) {
   return (
-    <div
+    <div className="vente-row"
       style={{ display: 'grid', gridTemplateColumns: '32px 1fr 80px 110px 85px', alignItems: 'center', padding: '11px 20px', borderBottom: isLast ? 'none' : `1px solid ${palette.cardBorder}`, gap: 10, transition: 'background 0.15s' }}
       onMouseEnter={e => e.currentTarget.style.background = palette.hover}
       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
@@ -139,7 +139,7 @@ function PompistePerf({ palette, isDark }) {
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 120px 120px', padding: '8px 20px', background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', gap: 10 }}>
+      <div className="perf-header" style={{ display: 'grid', gridTemplateColumns: '1fr 80px 120px 120px', padding: '8px 20px', background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', gap: 10 }}>
         {['Pompiste', 'Ventes', 'Montant', 'Activité'].map(h => (
           <div key={h} style={{ fontSize: 10, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
         ))}
@@ -152,7 +152,7 @@ function PompistePerf({ palette, isDark }) {
         const hasVentes = Number(emp.nb_ventes_jour ?? 0) > 0
 
         return (
-          <div key={emp.id} style={{
+          <div key={emp.id} className="perf-row" style={{
             display: 'grid', gridTemplateColumns: '1fr 80px 120px 120px',
             padding: '12px 20px', gap: 10, alignItems: 'center',
             borderBottom: isLast ? 'none' : `1px solid ${palette.cardBorder}`,
@@ -616,15 +616,23 @@ export default function Dashboard() {
           .fuelo-grid-2     { grid-template-columns: 1fr 1fr !important; }
         }
         @media (max-width: 768px) {
-          .fuelo-dashboard { padding: 20px 16px !important; }
+          .fuelo-dashboard { padding: 16px 14px !important; }
           .fuelo-grid-2    { grid-template-columns: 1fr !important; }
-          .fuelo-grid-3    { grid-template-columns: 1fr !important; }
+          .fuelo-grid-3    { grid-template-columns: 1fr 1fr !important; }
           .fuelo-grid-4    { grid-template-columns: 1fr 1fr !important; }
           .fuelo-actions   { grid-template-columns: 1fr 1fr !important; }
           .vente-header    { display: none !important; }
+          .vente-row       { grid-template-columns: 32px 1fr auto !important; gap: 6px !important; }
+          .vente-row > *:nth-child(3) { display: none !important; }
+          .vente-row > *:nth-child(5) { display: none !important; }
+          .perf-header     { display: none !important; }
+          .perf-row        { grid-template-columns: 1fr auto !important; }
+          .perf-row > *:nth-child(2) { display: none !important; }
+          .perf-row > *:nth-child(4) { display: none !important; }
         }
         @media (max-width: 480px) {
-          .fuelo-grid-4    { grid-template-columns: 1fr !important; }
+          .fuelo-grid-3    { grid-template-columns: 1fr !important; }
+          .fuelo-grid-4    { grid-template-columns: 1fr 1fr !important; }
           .fuelo-actions   { grid-template-columns: 1fr !important; }
         }
       `}</style>

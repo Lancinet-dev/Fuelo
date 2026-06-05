@@ -565,7 +565,7 @@ export default function PompistePage() {
         <div style={{ position: 'relative', width: '100%', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
           {/* ── Stats du jour ───────────────────────── */}
-          <div style={{ width: '100%', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+          <div style={{ width: '100%', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }} className="pompiste-grid-3">
             {[
               { label: 'Ventes', value: String(aujourdhui.nb ?? 0), iconType: 'cart',  color: BLUE },
               { label: 'Litres', value: formatLitres(aujourdhui.total_litres), iconType: 'pump', color: GREEN },
@@ -853,6 +853,10 @@ export default function PompistePage() {
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
         select { -webkit-appearance: none; }
+        @media (max-width: 480px) {
+          .pompiste-grid-3 { grid-template-columns: 1fr 1fr !important; }
+          .pompiste-grid-2 { grid-template-columns: 1fr !important; }
+        }
       `}</style>
     </div>
   )

@@ -517,11 +517,12 @@ export default function AbonnementsPage() {
           }}>
             Comparatif détaillé
           </h2>
+          <div style={{ overflowX: 'auto', borderRadius: 20, border: `1px solid ${palette.cardBorder}` }}>
           <div style={{
             background: palette.card,
-            border: `1px solid ${palette.cardBorder}`,
             borderRadius: 20,
             overflow: 'hidden',
+            minWidth: 480,
           }}>
             {/* En-tête du tableau */}
             <div style={{
@@ -564,6 +565,7 @@ export default function AbonnementsPage() {
               </div>
             ))}
           </div>
+          </div>
         </div>
       )}
 
@@ -589,14 +591,8 @@ export default function AbonnementsPage() {
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 0.3; } }
         @media (max-width: 768px) {
-          .fuelo-abonnements { padding: 32px 16px 56px !important; }
-          .fuelo-abonnements h1 { font-size: 28px !important; }
-        }
-        @media (max-width: 640px) {
-          .fuelo-abonnements > div > div[style*="repeat(3"] {
-            grid-template-columns: 1fr 80px 80px 80px !important;
-            overflow-x: auto;
-          }
+          .fuelo-abonnements { padding: 24px 14px 48px !important; }
+          .fuelo-abonnements h1 { font-size: 26px !important; }
         }
       `}</style>
     </div>
