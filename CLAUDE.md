@@ -63,7 +63,7 @@ Permet aux propriétaires/gérants de gérer stock, ventes, alertes, employés e
 | `logisticien` | `/logistique` dédié | Citernes CRUD, trajets GPS, alertes transport, export Excel | chauffeur |
 | `pompiste` | `/pompiste` dédié | Enregistrer ventes, démarrer/terminer son service (photo compteur) | — |
 | `chauffeur` | `/chauffeur` dédié | Démarrer/terminer trajets GPS | — |
-| `superadmin` | Prévu, pas codé | — | tous |
+| `superadmin` | `/superadmin` dédié | Dashboard global : stats, tableau clients, abonnements | tous |
 
 **Hiérarchie stricte (CREATION_RULES dans employeController.js) :**
 - Owner → crée gérant + logisticien uniquement (pas de pompiste/chauffeur direct)
@@ -120,6 +120,15 @@ Comptes test prod :
   - Table `subscriptions`, middleware `checkPlan`, modal paiement simulé (Orange Money, MTN, PayCard, Kulu)
 - WhatsApp retiré des pages internes (landing + login uniquement)
 - Bouton déconnexion visible pour tous les rôles
+- **Dashboard superadmin** — stats globales + tableau clients + abonnements (`/superadmin`)
+- **Backup auto DB Neon** — GitHub Actions workflow `backup-neon.yml` (cron quotidien)
+- **QR code anti-vol transport** — génération et scan QR sur les citernes/trajets
+- **Primes et performance employés** — système de calcul et affichage des primes
+- **Photos obligatoires chauffeur** — photo compteur départ ET arrivée (comme pompiste)
+- **Anti-fraude pompiste renforcé** — overlay lock pendant service actif + résumé détaillé fin de service
+- **Icônes SVG professionnelles** — remplacement complet des emojis par des SVG inline
+- **Sidebar responsive mobile** — hamburger menu + drawer mobile
+- **Skeleton loading** — états de chargement sur toutes les pages principales
 
 ---
 
@@ -133,9 +142,7 @@ Comptes test prod :
 ## ⏳ FONCTIONNALITÉS À CODER (priorité)
 
 ### Restant
-- Backup auto quotidien DB Neon
-- Dashboard superadmin (tous les clients + abonnements)
-- Migration Railway (remplacer Render, ~5$/mois)
+- Migration Railway (remplacer Render, ~5$/mois) — règle aussi la fiabilité des crons
 - Paiements Mobile Money réels (MTN MoMo API, agrégateur CinetPay/Bizao pour Orange Money)
 - Domaine personnalisé fuelo.africa
 
