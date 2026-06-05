@@ -322,12 +322,12 @@ const handlePwdSave = async (e) => {
       <SectionCard icon={ICONS.prix} title="Prix des carburants" desc="Le pompiste verra ces prix — le montant sera calculé automatiquement" palette={palette}>
         <form onSubmit={handlePrixSave}>
           <div style={{ background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: theme.radius.md, padding: '12px 16px', marginBottom: 20, fontSize: theme.font.size.sm, color: '#60A5FA', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span>💡</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#60A5FA" strokeWidth="2" strokeLinecap="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0018 8 6 6 0 006 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 018.91 14"/></svg>
             <span>Ces prix sont utilisés pour calculer automatiquement le montant quand le pompiste entre les litres.</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            <Field label="⛽ Prix Essence" type="number" value={prix.prix_essence} onChange={setP('prix_essence')} placeholder="10000" suffix="GNF/L" error={prixErrors.prix_essence} hint="Prix par litre d'essence" {...fieldProps} />
-            <Field label="🛢️ Prix Gasoil"  type="number" value={prix.prix_gasoil}  onChange={setP('prix_gasoil')}  placeholder="9000"  suffix="GNF/L" error={prixErrors.prix_gasoil}  hint="Prix par litre de gasoil"  {...fieldProps} />
+            <Field label="Prix Essence" type="number" value={prix.prix_essence} onChange={setP('prix_essence')} placeholder="10000" suffix="GNF/L" error={prixErrors.prix_essence} hint="Prix par litre d'essence" {...fieldProps} />
+            <Field label="Prix Gasoil"  type="number" value={prix.prix_gasoil}  onChange={setP('prix_gasoil')}  placeholder="9000"  suffix="GNF/L" error={prixErrors.prix_gasoil}  hint="Prix par litre de gasoil"  {...fieldProps} />
           </div>
           <div style={{ background: palette.hover, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.md, padding: '12px 16px', marginBottom: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <div style={{ textAlign: 'center' }}>
@@ -347,14 +347,14 @@ const handlePwdSave = async (e) => {
       <SectionCard icon={ICONS.bell} title="Seuils d'alerte stock" desc="Fuelo vous alerte automatiquement quand le stock descend sous ces valeurs" palette={palette}>
         <form onSubmit={handleSeuilSave}>
           <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: theme.radius.md, padding: '12px 16px', marginBottom: 20, fontSize: theme.font.size.sm, color: '#F59E0B', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span>⚠️</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <span>En dessous de ces seuils, une alerte est déclenchée automatiquement.</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            <Field label="⛽ Seuil Essence" type="number" value={seuils.seuil_essence} onChange={setQ('seuil_essence')} placeholder="300" suffix="Litres" hint="Recommandé : 300 L" {...fieldProps} />
-            <Field label="🛢️ Seuil Gasoil"  type="number" value={seuils.seuil_gasoil}  onChange={setQ('seuil_gasoil')}  placeholder="300" suffix="Litres" hint="Recommandé : 300 L" {...fieldProps} />
+            <Field label="Seuil Essence" type="number" value={seuils.seuil_essence} onChange={setQ('seuil_essence')} placeholder="300" suffix="Litres" hint="Recommandé : 300 L" {...fieldProps} />
+            <Field label="Seuil Gasoil"  type="number" value={seuils.seuil_gasoil}  onChange={setQ('seuil_gasoil')}  placeholder="300" suffix="Litres" hint="Recommandé : 300 L" {...fieldProps} />
           </div>
-          <Field label="🚛 Seuil fraude citerne" type="number" value={seuils.seuil_fraude_citerne} onChange={setQ('seuil_fraude_citerne')} placeholder="50" suffix="Litres" hint="Alerte si écart départ/arrivée dépasse ce seuil" {...fieldProps} />
+          <Field label="Seuil fraude citerne" type="number" value={seuils.seuil_fraude_citerne} onChange={setQ('seuil_fraude_citerne')} placeholder="50" suffix="Litres" hint="Alerte si écart départ/arrivée dépasse ce seuil" {...fieldProps} />
           <SaveBtn loading={seuilLoading} saved={seuilSaved} label="Enregistrer les seuils" />
         </form>
       </SectionCard>

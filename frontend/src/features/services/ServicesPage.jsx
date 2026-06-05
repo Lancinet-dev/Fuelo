@@ -35,7 +35,10 @@ function ServiceModal({ service, onClose, isDark, palette }) {
     return (
       <div style={{ background: hasAlerte ? theme.colors.dangerLight : isDark ? 'rgba(255,255,255,0.04)' : '#F9FAFB', border: `1px solid ${hasAlerte ? theme.colors.danger + '40' : palette.cardBorder}`, borderRadius: 12, padding: '12px 14px' }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: hasAlerte ? theme.colors.danger : palette.textSub, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>
-          {label} {hasAlerte && '⚠️'}
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            {label}
+            {hasAlerte && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
+          </span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
           {[

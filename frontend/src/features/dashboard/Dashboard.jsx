@@ -90,8 +90,11 @@ function VenteRow({ vente, isLast, palette }) {
       onMouseEnter={e => e.currentTarget.style.background = palette.hover}
       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
     >
-      <div style={{ width: 30, height: 30, borderRadius: 8, background: vente.type === 'essence' ? theme.colors.warningLight : theme.colors.infoLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>
-        {vente.type === 'essence' ? '⛽' : '🛢️'}
+      <div style={{ width: 30, height: 30, borderRadius: 8, background: vente.type === 'essence' ? theme.colors.warningLight : theme.colors.infoLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        {vente.type === 'essence'
+          ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.colors.warning} strokeWidth="2" strokeLinecap="round"><path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/><path d="M3 11h12"/><path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/><path d="M6 7h4"/></svg>
+          : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.colors.info} strokeWidth="2" strokeLinecap="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.657 3.582 3 8 3s8-1.343 8-3V6"/></svg>
+        }
       </div>
       <div>
         <div style={{ fontSize: 13, fontWeight: 600, color: palette.text, textTransform: 'capitalize' }}>{vente.type}</div>
@@ -317,7 +320,9 @@ function RepartitionCarburant({ recentes, palette, isDark }) {
       <div style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-            <div style={{ width: 24, height: 24, borderRadius: 6, background: theme.colors.warningLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>⛽</div>
+            <div style={{ width: 24, height: 24, borderRadius: 6, background: theme.colors.warningLight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={theme.colors.warning} strokeWidth="2" strokeLinecap="round"><path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/><path d="M3 11h12"/><path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/><path d="M6 7h4"/></svg>
+            </div>
             <span style={{ fontSize: 12, fontWeight: 600, color: palette.text }}>Essence</span>
           </div>
           <div style={{ textAlign: 'right' }}>
@@ -333,7 +338,9 @@ function RepartitionCarburant({ recentes, palette, isDark }) {
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-            <div style={{ width: 24, height: 24, borderRadius: 6, background: theme.colors.infoLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>🛢️</div>
+            <div style={{ width: 24, height: 24, borderRadius: 6, background: theme.colors.infoLight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={theme.colors.info} strokeWidth="2" strokeLinecap="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.657 3.582 3 8 3s8-1.343 8-3V6"/></svg>
+            </div>
             <span style={{ fontSize: 12, fontWeight: 600, color: palette.text }}>Gasoil</span>
           </div>
           <div style={{ textAlign: 'right' }}>
@@ -389,7 +396,7 @@ export default function Dashboard() {
   // Badge plan (owner seulement)
   const planBadge = isOwner && !planLoading ? (
     <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: planColors.bg, border: `1px solid ${planColors.border}`, borderRadius: 99, padding: '3px 12px' }}>
-      <span style={{ fontSize: 12 }}>{planColors.emoji ?? '🔘'}</span>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill={planColors.text} stroke="none"><circle cx="12" cy="12" r="10"/></svg>
       <span style={{ fontSize: 11, fontWeight: 700, color: planColors.text, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
         Plan {planColors.label ?? plan}
       </span>

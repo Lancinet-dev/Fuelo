@@ -279,15 +279,17 @@ export default function Profile() {
             {activite.map((item, i) => {
               const isVente  = item.event === 'vente'
               const color    = isVente ? theme.colors.primary : theme.colors.danger
-              const emoji    = isVente ? '💰' : '⚠️'
               const label    = isVente
                 ? `Vente ${item.carburant} — ${parseInt(item.montant_gnf ?? 0).toLocaleString('fr-FR')} GNF`
                 : item.message
 
               return (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: palette.inputBg, borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}` }}>
-                  <div style={{ width: 34, height: 34, borderRadius: theme.radius.md, background: `${color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
-                    {emoji}
+                  <div style={{ width: 34, height: 34, borderRadius: theme.radius.md, background: `${color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {isVente
+                      ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                      : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    }
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.semi, color: palette.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

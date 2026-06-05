@@ -76,10 +76,14 @@ export default function Stock() {
               Type de carburant
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              {[{ val: 'essence', emoji: '⛽' }, { val: 'gasoil', emoji: '🛢️' }].map(({ val, emoji }) => (
+              {[{ val: 'essence', icon: 'pump' }, { val: 'gasoil', icon: 'drum' }].map(({ val, icon }) => (
                 <button key={val} type="button" onClick={() => setType(val)}
-                  style={{ padding: '12px', borderRadius: theme.radius.md, border: `1.5px solid ${type === val ? theme.colors.primary : palette.cardBorder}`, background: type === val ? theme.colors.primaryLight : palette.inputBg, color: type === val ? theme.colors.primary : palette.textSub, fontFamily: theme.font.family, fontSize: theme.font.size.md, fontWeight: type === val ? theme.font.weight.bold : theme.font.weight.normal, cursor: 'pointer', textTransform: 'capitalize', transition: theme.transition.fast }}>
-                  {emoji} {val}
+                  style={{ padding: '12px', borderRadius: theme.radius.md, border: `1.5px solid ${type === val ? theme.colors.primary : palette.cardBorder}`, background: type === val ? theme.colors.primaryLight : palette.inputBg, color: type === val ? theme.colors.primary : palette.textSub, fontFamily: theme.font.family, fontSize: theme.font.size.md, fontWeight: type === val ? theme.font.weight.bold : theme.font.weight.normal, cursor: 'pointer', textTransform: 'capitalize', transition: theme.transition.fast, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  {icon === 'pump'
+                    ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/><path d="M3 11h12"/><path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/><path d="M6 7h4"/></svg>
+                    : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.657 3.582 3 8 3s8-1.343 8-3V6"/></svg>
+                  }
+                  {val}
                 </button>
               ))}
             </div>

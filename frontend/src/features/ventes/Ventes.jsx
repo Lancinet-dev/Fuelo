@@ -98,7 +98,7 @@ export default function Ventes() {
 
       {/* Filtres */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-        {[{ val: '', label: 'Toutes' }, { val: 'essence', label: '⛽ Essence' }, { val: 'gasoil', label: '🛢️ Gasoil' }].map(({ val, label }) => (
+        {[{ val: '', label: 'Toutes' }, { val: 'essence', label: 'Essence' }, { val: 'gasoil', label: 'Gasoil' }].map(({ val, label }) => (
           <button key={val} onClick={() => { setFilterType(val); setPage(1) }}
             style={{ padding: '7px 16px', borderRadius: theme.radius.full, border: `1px solid ${filterType === val ? theme.colors.primary : palette.cardBorder}`, background: filterType === val ? theme.colors.primaryLight : palette.card, color: filterType === val ? theme.colors.primary : palette.textSub, fontSize: theme.font.size.sm, fontWeight: filterType === val ? theme.font.weight.semi : theme.font.weight.normal, cursor: 'pointer', fontFamily: theme.font.family, transition: theme.transition.fast }}>
             {label}
@@ -135,7 +135,10 @@ export default function Ventes() {
               >
                 <div style={{ fontSize: theme.font.size.sm, color: palette.textMuted, fontFamily: theme.font.mono }}>#{v.id}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 15 }}>{v.type === 'essence' ? '⛽' : '🛢️'}</span>
+                  {v.type === 'essence'
+                    ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={theme.colors.warning} strokeWidth="2" strokeLinecap="round"><path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/><path d="M3 11h12"/><path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/><path d="M6 7h4"/></svg>
+                    : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={theme.colors.info} strokeWidth="2" strokeLinecap="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.657 3.582 3 8 3s8-1.343 8-3V6"/></svg>
+                  }
                   <div>
                     <div style={{ fontSize: theme.font.size.md, fontWeight: theme.font.weight.semi, color: palette.text, textTransform: 'capitalize' }}>{v.type}</div>
                     {v.employe_nom && <div style={{ fontSize: theme.font.size.xs, color: palette.textMuted }}>{v.employe_nom}</div>}
@@ -151,8 +154,11 @@ export default function Ventes() {
                 style={{ display: 'none', padding: '12px 16px', borderBottom: i < ventes.length - 1 ? `1px solid ${palette.cardBorder}` : 'none' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: theme.radius.md, background: v.type === 'essence' ? theme.colors.warningLight : theme.colors.infoLight, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
-                      {v.type === 'essence' ? '⛽' : '🛢️'}
+                    <div style={{ width: 36, height: 36, borderRadius: theme.radius.md, background: v.type === 'essence' ? theme.colors.warningLight : theme.colors.infoLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {v.type === 'essence'
+                        ? <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={theme.colors.warning} strokeWidth="2" strokeLinecap="round"><path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/><path d="M3 11h12"/><path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/><path d="M6 7h4"/></svg>
+                        : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={theme.colors.info} strokeWidth="2" strokeLinecap="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.657 3.582 3 8 3s8-1.343 8-3V6"/></svg>
+                      }
                     </div>
                     <div>
                       <div style={{ fontSize: theme.font.size.md, fontWeight: theme.font.weight.semi, color: palette.text, textTransform: 'capitalize' }}>{v.type}</div>

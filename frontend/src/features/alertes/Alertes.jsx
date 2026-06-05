@@ -12,12 +12,52 @@ import { formatRelative } from '../../utils/format'
 import theme from '../../config/theme'
 
 const TYPE_CONFIG = {
-  STOCK_FAIBLE: { color: theme.colors.danger,  bg: theme.colors.dangerLight,  icon: '⚠️', label: 'Stock faible'  },
-  FRAUDE:          { color: '#DC2626',  bg: 'rgba(220,38,38,0.10)',    icon: '🚨', label: 'Fraude pompiste'  },
-  FRAUDE_CITERNE:  { color: '#DC2626',  bg: 'rgba(220,38,38,0.10)',    icon: '🚛', label: 'Fraude citerne'   },
-  ARRET_SUSPECT:   { color: '#D97706',  bg: 'rgba(217,119,6,0.10)',    icon: '⏸️', label: 'Arrêt suspect'    },
-  ANOMALIE:     { color: theme.colors.warning,  bg: theme.colors.warningLight, icon: '🔍', label: 'Anomalie'      },
-  DEFAULT:      { color: theme.colors.info,     bg: theme.colors.infoLight,    icon: 'ℹ️', label: 'Information'   },
+  STOCK_FAIBLE:   { color: theme.colors.danger,   bg: theme.colors.dangerLight,   label: 'Stock faible'     },
+  FRAUDE:         { color: '#DC2626',              bg: 'rgba(220,38,38,0.10)',     label: 'Fraude pompiste'  },
+  FRAUDE_CITERNE: { color: '#DC2626',              bg: 'rgba(220,38,38,0.10)',     label: 'Fraude citerne'   },
+  ARRET_SUSPECT:  { color: '#D97706',              bg: 'rgba(217,119,6,0.10)',     label: 'Arrêt suspect'    },
+  ANOMALIE:       { color: theme.colors.warning,   bg: theme.colors.warningLight,  label: 'Anomalie'         },
+  DEFAULT:        { color: theme.colors.info,      bg: theme.colors.infoLight,     label: 'Information'      },
+}
+
+function AlertIcon({ type, color, size = 20 }) {
+  const p = { fill: 'none', stroke: color, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }
+  if (type === 'STOCK_FAIBLE') return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...p}>
+      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  )
+  if (type === 'FRAUDE') return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...p}>
+      <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+      <path d="M13.73 21a2 2 0 01-3.46 0"/>
+    </svg>
+  )
+  if (type === 'FRAUDE_CITERNE') return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...p}>
+      <rect x="1" y="3" width="15" height="13"/>
+      <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+      <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+    </svg>
+  )
+  if (type === 'ARRET_SUSPECT') return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...p}>
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/>
+    </svg>
+  )
+  if (type === 'ANOMALIE') return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...p}>
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+  )
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" {...p}>
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+    </svg>
+  )
 }
 
 const ICONS = {
@@ -100,8 +140,8 @@ export default function Alertes() {
               <div key={alerte.id}
                 style={{ background: alerte.lu ? palette.card : c.bg, border: `1px solid ${alerte.lu ? palette.cardBorder : c.color + '30'}`, borderRadius: theme.radius.lg, padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, transition: theme.transition.fast, boxShadow: theme.shadow.sm }}>
 
-                <div style={{ width: 44, height: 44, borderRadius: theme.radius.md, background: alerte.lu ? palette.hover : c.bg, border: `1px solid ${alerte.lu ? palette.cardBorder : c.color + '30'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>
-                  {c.icon}
+                <div style={{ width: 44, height: 44, borderRadius: theme.radius.md, background: alerte.lu ? palette.hover : c.bg, border: `1px solid ${alerte.lu ? palette.cardBorder : c.color + '30'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <AlertIcon type={alerte.type} color={alerte.lu ? palette.textMuted : c.color} size={20} />
                 </div>
 
                 <div style={{ flex: 1, minWidth: 0 }}>

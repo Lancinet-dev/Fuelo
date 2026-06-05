@@ -27,8 +27,8 @@ const ROLE_CONFIG = {
     btnLabel:    'Ajouter un membre',
     formTitle:   'Nouveau membre',
     rolesDispos: [
-      { value: 'gerant',      label: '👔 Gérant',      desc: 'Dashboard, ventes, stock, alertes, services, pompistes' },
-      { value: 'logisticien', label: '📦 Logisticien', desc: 'Citernes, trajets GPS, alertes transport, chauffeurs' },
+      { value: 'gerant',      label: 'Gérant',      desc: 'Dashboard, ventes, stock, alertes, services, pompistes' },
+      { value: 'logisticien', label: 'Logisticien', desc: 'Citernes, trajets GPS, alertes transport, chauffeurs' },
     ],
     showVentes: false,
   },
@@ -38,7 +38,7 @@ const ROLE_CONFIG = {
     btnLabel:    'Ajouter un pompiste',
     formTitle:   'Nouveau pompiste',
     rolesDispos: [
-      { value: 'pompiste', label: '⛽ Pompiste', desc: 'Enregistrement des ventes et gestion de service' },
+      { value: 'pompiste', label: 'Pompiste', desc: 'Enregistrement des ventes et gestion de service' },
     ],
     showVentes: true,
   },
@@ -48,7 +48,7 @@ const ROLE_CONFIG = {
     btnLabel:    'Ajouter un chauffeur',
     formTitle:   'Nouveau chauffeur',
     rolesDispos: [
-      { value: 'chauffeur', label: '🚛 Chauffeur', desc: 'Transport de citernes et trajets GPS' },
+      { value: 'chauffeur', label: 'Chauffeur', desc: 'Transport de citernes et trajets GPS' },
     ],
     showVentes: false,
   },
@@ -62,11 +62,11 @@ const ROLE_COLORS = {
 }
 
 const ROLE_LABELS = {
-  gerant:      '👔 Gérant',
-  logisticien: '📦 Logisticien',
-  pompiste:    '⛽ Pompiste',
-  chauffeur:   '🚛 Chauffeur',
-  owner:       '👑 Propriétaire',
+  gerant:      'Gérant',
+  logisticien: 'Logisticien',
+  pompiste:    'Pompiste',
+  chauffeur:   'Chauffeur',
+  owner:       'Propriétaire',
 }
 
 function StatusBadge({ actif }) {
@@ -88,7 +88,14 @@ function ConfirmModal({ employe, onConfirm, onCancel, palette }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', padding: 16 }}>
       <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.xl, padding: '28px 24px', maxWidth: 400, width: '100%', boxShadow: theme.shadow.lg }}>
-        <div style={{ fontSize: 32, marginBottom: 16, textAlign: 'center' }}>⚠️</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+          <div style={{ width: 52, height: 52, borderRadius: '50%', background: theme.colors.dangerLight, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={theme.colors.danger} strokeWidth="2" strokeLinecap="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          </div>
+        </div>
         <div style={{ fontSize: 16, fontWeight: 700, color: palette.text, marginBottom: 8, textAlign: 'center' }}>Supprimer {employe.nom} ?</div>
         <div style={{ fontSize: 13, color: palette.textSub, marginBottom: 24, textAlign: 'center', lineHeight: 1.6 }}>Cette action est irréversible.</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>

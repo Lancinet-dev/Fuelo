@@ -98,17 +98,21 @@ function StepBienvenue({ nom, palette }) {
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
         {[
-          { emoji: '⛽', label: 'Informations de votre station' },
-          { emoji: '💰', label: 'Prix des carburants' },
-          { emoji: '👤', label: 'Votre premier employé (optionnel)' },
-        ].map(({ emoji, label }) => (
+          { icon: 'pump',  label: 'Informations de votre station' },
+          { icon: 'coin',  label: 'Prix des carburants' },
+          { icon: 'user',  label: 'Votre premier employé (optionnel)' },
+        ].map(({ icon, label }) => (
           <div key={label} style={{
             display: 'flex', alignItems: 'center', gap: 12,
             padding: '12px 16px',
             background: theme.colors.primaryLight,
             borderRadius: theme.radius.md,
           }}>
-            <span style={{ fontSize: 20 }}>{emoji}</span>
+            <div style={{ flexShrink: 0 }}>
+              {icon === 'pump' && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="2" strokeLinecap="round"><path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/><path d="M3 11h12"/><path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/><path d="M6 7h4"/></svg>}
+              {icon === 'coin' && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="2" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>}
+              {icon === 'user' && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
+            </div>
             <span style={{ fontSize: 14, fontWeight: 600, color: theme.colors.primary }}>{label}</span>
           </div>
         ))}

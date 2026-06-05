@@ -95,11 +95,11 @@ function CreateModal({ onConfirm, onCancel, loading, palette }) {
             {label("Seuils d'alerte (litres)")}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div>
-                <div style={{ fontSize: theme.font.size.xs, color: palette.textSub, marginBottom: 6 }}>⛽ Essence</div>
+                <div style={{ fontSize: theme.font.size.xs, color: palette.textSub, marginBottom: 6 }}>Essence</div>
                 <input type="number" min="50" step="50" value={form.seuil_essence} onChange={e => set('seuil_essence')(e.target.value)} onFocus={e => { e.target.style.borderColor = theme.colors.primary }} onBlur={e => { e.target.style.borderColor = palette.cardBorder }} style={{ ...inputStyle(false), height: 40, fontFamily: theme.font.mono, fontWeight: theme.font.weight.bold }} />
               </div>
               <div>
-                <div style={{ fontSize: theme.font.size.xs, color: palette.textSub, marginBottom: 6 }}>🛢️ Gasoil</div>
+                <div style={{ fontSize: theme.font.size.xs, color: palette.textSub, marginBottom: 6 }}>Gasoil</div>
                 <input type="number" min="50" step="50" value={form.seuil_gasoil} onChange={e => set('seuil_gasoil')(e.target.value)} onFocus={e => { e.target.style.borderColor = theme.colors.primary }} onBlur={e => { e.target.style.borderColor = palette.cardBorder }} style={{ ...inputStyle(false), height: 40, fontFamily: theme.font.mono, fontWeight: theme.font.weight.bold }} />
               </div>
             </div>
@@ -134,7 +134,9 @@ function StationCard({ station, onSwitch, switching, palette }) {
     >
       <div style={{ padding: '18px 20px', borderBottom: `1px solid ${palette.cardBorder}`, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-          <div style={{ width: 42, height: 42, borderRadius: theme.radius.md, background: theme.colors.primaryLight, border: `1px solid ${theme.colors.primary}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>⛽</div>
+          <div style={{ width: 42, height: 42, borderRadius: theme.radius.md, background: theme.colors.primaryLight, border: `1px solid ${theme.colors.primary}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="2" strokeLinecap="round"><path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/><path d="M3 11h12"/><path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/><path d="M6 7h4"/></svg>
+          </div>
           <div>
             <div style={{ fontSize: theme.font.size.lg, fontWeight: theme.font.weight.bold, color: palette.text, marginBottom: 4 }}>{station.nom}</div>
             {(station.ville || station.adresse) && (
@@ -154,8 +156,8 @@ function StationCard({ station, onSwitch, switching, palette }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
         {[
-          { label: 'Essence ⛽', qty: station.stock_essence, status: stEssence },
-          { label: 'Gasoil 🛢️',  qty: station.stock_gasoil,  status: stGasoil  },
+          { label: 'Essence', qty: station.stock_essence, status: stEssence },
+          { label: 'Gasoil',  qty: station.stock_gasoil,  status: stGasoil  },
         ].map(({ label, qty, status }, i) => (
           <div key={label} style={{ padding: '14px 18px', borderRight: i === 0 ? `1px solid ${palette.cardBorder}` : 'none', borderBottom: `1px solid ${palette.cardBorder}` }}>
             <div style={{ fontSize: theme.font.size.xs, color: palette.textSub, marginBottom: 6 }}>{label}</div>
@@ -235,7 +237,7 @@ export default function Stations() {
       {!loading && stations.length > 1 && (
         <div style={{ background: `linear-gradient(135deg, rgba(37,99,235,0.08), rgba(37,99,235,0.03))`, border: `1px solid rgba(37,99,235,0.2)`, borderRadius: theme.radius.lg, padding: '20px 24px', marginBottom: 24 }}>
           <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: theme.colors.primary, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 16 }}>
-            📊 Vue consolidée — toutes stations
+            Vue consolidée — toutes stations
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0 }} className="fuelo-grid-3">
             {[

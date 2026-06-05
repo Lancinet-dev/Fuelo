@@ -17,13 +17,24 @@ import theme from '../../config/theme'
 
 const ORANGE = '#F59E0B'
 const TABS   = [
-  { key: 'trajets',      label: 'Trajets',      icon: '🗺️' },
-  { key: 'citernes',     label: 'Citernes',     icon: '🚛' },
-  { key: 'chauffeurs',   label: 'Chauffeurs',   icon: '👤' },
-  { key: 'alertes',      label: 'Alertes',      icon: '🚨' },
-  { key: 'performances', label: 'Primes',       icon: '⭐' },
-  { key: 'rapports',     label: 'Rapports',     icon: '📊' },
+  { key: 'trajets',      label: 'Trajets'  },
+  { key: 'citernes',     label: 'Citernes' },
+  { key: 'chauffeurs',   label: 'Chauffeurs' },
+  { key: 'alertes',      label: 'Alertes'  },
+  { key: 'performances', label: 'Primes'   },
+  { key: 'rapports',     label: 'Rapports' },
 ]
+
+function TabIcon({ tabKey, size = 15, color = 'currentColor' }) {
+  const p = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }
+  if (tabKey === 'trajets')      return <svg {...p}><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+  if (tabKey === 'citernes')     return <svg {...p}><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+  if (tabKey === 'chauffeurs')   return <svg {...p}><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+  if (tabKey === 'alertes')      return <svg {...p}><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+  if (tabKey === 'performances') return <svg {...p}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+  if (tabKey === 'rapports')     return <svg {...p}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+  return null
+}
 
 const STATUT_CFG = {
   en_cours:       { label: 'En cours',    color: theme.colors.success, bg: theme.colors.successLight },
@@ -64,7 +75,7 @@ function MiniMap({ trajetId, isDark }) {
 
   if (points.length === 0) return (
     <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isDark ? 'rgba(255,255,255,0.03)' : '#F9FAFB', borderRadius: 12, border: `1px dashed ${isDark ? 'rgba(255,255,255,0.1)' : '#E5E7EB'}`, flexDirection: 'column', gap: 6 }}>
-      <span style={{ fontSize: 24 }}>📡</span>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="1.8" strokeLinecap="round"><path d="M5.07 4.93a10 10 0 000 14.14M19.07 4.93a10 10 0 010 14.14"/><path d="M7.9 7.9a6 6 0 000 8.2M16.1 7.9a6 6 0 010 8.2"/><circle cx="12" cy="12" r="2"/></svg>
       <span style={{ fontSize: 12, color: '#94A3B8' }}>Pas de données GPS</span>
     </div>
   )
@@ -90,7 +101,9 @@ function ModalQR({ onClose, onConfirm, loading, palette, isDark }) {
         animation: 'slideUp 0.25s ease',
       }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <div style={{ fontSize: 36, marginBottom: 10 }}>🔐</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          </div>
           <div style={{ fontSize: 18, fontWeight: 800, color: palette.text, marginBottom: 6 }}>Valider l'arrivée</div>
           <div style={{ fontSize: 13, color: palette.textSub, lineHeight: 1.6 }}>
             Saisissez le code affiché sur le téléphone du chauffeur
@@ -225,7 +238,14 @@ function TabTrajets({ palette, isDark }) {
               <div key={t.id} style={{ background: palette.card, border: `1px solid ${t.statut === 'alerte' ? theme.colors.danger + '40' : palette.cardBorder}`, borderRadius: 12, overflow: 'hidden', boxShadow: theme.shadow.sm }}>
                 <div onClick={() => setSelected(isOpen ? null : t.id)} style={{ padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 20 }}>{t.statut === 'en_cours' ? '🚚' : t.statut === 'alerte' ? '🚨' : '✅'}</span>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: t.statut === 'alerte' ? theme.colors.dangerLight : t.statut === 'en_cours' ? theme.colors.successLight : theme.colors.infoLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {t.statut === 'en_cours'
+                        ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.colors.success} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                        : t.statut === 'alerte'
+                        ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.colors.danger} strokeWidth="2" strokeLinecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+                        : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.colors.info} strokeWidth="2.5" strokeLinecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+                      }
+                    </div>
                     <div>
                       <div style={{ fontSize: 13, fontWeight: 700, color: palette.text }}>{t.chauffeur_nom} · {t.citerne_code}</div>
                       <div style={{ fontSize: 11, color: palette.textSub }}>{formatRelative(t.started_at)}</div>
@@ -260,7 +280,8 @@ function TabTrajets({ palette, isDark }) {
                           cursor: 'pointer', fontFamily: 'inherit',
                           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                         }}>
-                        🔐 Saisir le code de validation
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                        Saisir le code de validation
                       </button>
                     )}
                   </div>
@@ -339,7 +360,7 @@ function TabCiternes({ palette, isDark }) {
           {citernes.map(c => (
             <div key={c.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 12, gap: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 22 }}>🚛</span>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={palette.textSub} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: palette.text, fontFamily: theme.font.mono }}>{c.code}</div>
                   <div style={{ fontSize: 11, color: palette.textSub }}>{c.capacite.toLocaleString('fr-FR')} L · {c.chauffeur_nom ?? 'Aucun chauffeur'}</div>
@@ -406,8 +427,13 @@ function TabAlertes({ palette }) {
   }
 
   const CFG = {
-    FRAUDE_CITERNE: { icon: '🚛', label: 'Fraude citerne', color: theme.colors.danger },
-    ARRET_SUSPECT:  { icon: '⏸️', label: 'Arrêt suspect',  color: '#D97706' },
+    FRAUDE_CITERNE: { type: 'truck',  label: 'Fraude citerne', color: theme.colors.danger },
+    ARRET_SUSPECT:  { type: 'pause',  label: 'Arrêt suspect',  color: '#D97706' },
+  }
+  const renderCfgIcon = (cfgType, color) => {
+    if (cfgType === 'truck') return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+    if (cfgType === 'pause') return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="10" y1="15" x2="10" y2="9"/><line x1="14" y1="15" x2="14" y2="9"/></svg>
+    return <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
   }
 
   return (
@@ -431,10 +457,10 @@ function TabAlertes({ palette }) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {alertes.map(a => {
-            const cfg = CFG[a.type] ?? { icon: '⚠️', label: a.type, color: theme.colors.warning }
+            const cfg = CFG[a.type] ?? { type: 'warning', label: a.type, color: theme.colors.warning }
             return (
               <div key={a.id} style={{ background: a.lu ? palette.card : `${cfg.color}10`, border: `1px solid ${a.lu ? palette.cardBorder : cfg.color + '30'}`, borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <span style={{ fontSize: 20, flexShrink: 0 }}>{cfg.icon}</span>
+                <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>{renderCfgIcon(cfg.type, a.lu ? palette.textMuted : cfg.color)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                     <span style={{ fontSize: 10, fontWeight: 700, color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{cfg.label}</span>
@@ -534,7 +560,9 @@ function TabChauffeurs({ palette, isDark }) {
       {toDelete && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', padding: 16 }}>
           <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 20, padding: '28px 24px', maxWidth: 380, width: '100%', boxShadow: '0 24px 60px rgba(0,0,0,0.25)' }}>
-            <div style={{ fontSize: 28, textAlign: 'center', marginBottom: 14 }}>⚠️</div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={theme.colors.danger} strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
             <div style={{ fontSize: 15, fontWeight: 700, color: palette.text, textAlign: 'center', marginBottom: 8 }}>Supprimer {toDelete.nom} ?</div>
             <div style={{ fontSize: 12, color: palette.textSub, textAlign: 'center', marginBottom: 22, lineHeight: 1.6 }}>Cette action est irréversible.</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -609,7 +637,9 @@ function TabChauffeurs({ palette, isDark }) {
         </div>
       ) : chauffeurs.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '32px 16px', color: palette.textMuted }}>
-          <div style={{ fontSize: 32, marginBottom: 10 }}>👤</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={palette.textMuted} strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
           <div style={{ fontSize: 14, fontWeight: 600, color: palette.textSub, marginBottom: 6 }}>Aucun chauffeur</div>
           <div style={{ fontSize: 12 }}>Ajoutez des chauffeurs pour gérer vos trajets.</div>
         </div>
@@ -942,7 +972,7 @@ export default function LogistiquePage() {
           <button key={tab.key} onClick={() => setOnglet(tab.key)}
             style={{ flex: 1, minWidth: 80, padding: '12px 8px', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, position: 'relative', transition: 'all 0.15s', borderBottom: `2px solid ${onglet === tab.key ? theme.colors.primary : 'transparent'}` }}>
             <div style={{ position: 'relative' }}>
-              <span style={{ fontSize: 18 }}>{tab.icon}</span>
+              <TabIcon tabKey={tab.key} size={18} color={onglet === tab.key ? theme.colors.primary : palette.textMuted} />
               {tab.key === 'alertes' && nbAlertes > 0 && (
                 <span style={{ position: 'absolute', top: -4, right: -8, background: theme.colors.danger, color: '#fff', fontSize: 8, fontWeight: 700, borderRadius: 99, padding: '1px 4px', minWidth: 14, textAlign: 'center' }}>{nbAlertes}</span>
               )}

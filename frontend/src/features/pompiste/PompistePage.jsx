@@ -253,8 +253,11 @@ function ResumeModal({ data, onClose, isDark, palette }) {
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{ fontSize: 52, lineHeight: 1, marginBottom: 10 }}>
-            {alerte_fraude ? '🚨' : '✅'}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
+            {alerte_fraude
+              ? <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="1.8" strokeLinecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+              : <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="1.8" strokeLinecap="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            }
           </div>
           <div style={{ fontSize: 21, fontWeight: 900, color: alerte_fraude ? RED : GREEN, letterSpacing: '-0.4px' }}>
             {alerte_fraude ? 'Alerte fraude détectée' : 'Service terminé'}
@@ -319,8 +322,12 @@ function ResumeModal({ data, onClose, isDark, palette }) {
                   : (isDark ? 'rgba(16,185,129,0.10)' : 'rgba(16,185,129,0.07)'),
                 border: `1px solid ${ecartColor}25`,
               }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: ecartColor }}>
-                  Écart {aFraudeType ? '🚨' : '✅'}
+                <span style={{ fontSize: 13, fontWeight: 700, color: ecartColor, display: 'flex', alignItems: 'center', gap: 5 }}>
+                  Écart
+                  {aFraudeType
+                    ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={ecartColor} strokeWidth="2" strokeLinecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+                    : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={ecartColor} strokeWidth="2.5" strokeLinecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  }
                 </span>
                 <span style={{ fontSize: 18, fontWeight: 900, color: ecartColor, fontFamily: theme.font.mono }}>
                   {c.ecart > 0 ? '+' : ''}{c.ecart.toFixed(1)} L
@@ -560,16 +567,20 @@ export default function PompistePage() {
           {/* ── Stats du jour ───────────────────────── */}
           <div style={{ width: '100%', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
             {[
-              { label: 'Ventes', value: String(aujourdhui.nb ?? 0), icon: '🛒', color: BLUE },
-              { label: 'Litres',  value: formatLitres(aujourdhui.total_litres), icon: '⛽', color: GREEN },
-              { label: 'Total',   value: formatGNF(aujourdhui.total_gnf), icon: '💰', color: ORANGE },
-            ].map(({ label, value, icon, color }) => (
+              { label: 'Ventes', value: String(aujourdhui.nb ?? 0), iconType: 'cart',  color: BLUE },
+              { label: 'Litres', value: formatLitres(aujourdhui.total_litres), iconType: 'pump', color: GREEN },
+              { label: 'Total',  value: formatGNF(aujourdhui.total_gnf),       iconType: 'coin', color: ORANGE },
+            ].map(({ label, value, iconType, color }) => (
               <div key={label} style={{
                 background: palette.card, border: `1px solid ${palette.cardBorder}`,
                 borderRadius: 18, padding: '14px 10px', textAlign: 'center',
                 boxShadow: theme.shadow.sm,
               }}>
-                <div style={{ fontSize: 20, marginBottom: 5 }}>{icon}</div>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 5 }}>
+                  {iconType === 'cart' && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>}
+                  {iconType === 'pump' && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round"><path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/><path d="M3 11h12"/><path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/><path d="M6 7h4"/></svg>}
+                  {iconType === 'coin' && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v2m0 8v2M9.5 9.5a2.5 2.5 0 015 0c0 3-5 3-5 5a2.5 2.5 0 005 0"/></svg>}
+                </div>
                 <div style={{ fontSize: 15, fontWeight: 900, color, fontFamily: theme.font.mono, lineHeight: 1.2, letterSpacing: '-0.5px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
                 <div style={{ fontSize: 9, color: palette.textMuted, marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{label}</div>
               </div>
@@ -579,9 +590,9 @@ export default function PompistePage() {
           {/* ── Stocks avec jauge ──────────────────── */}
           <div style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {[
-              { label: 'Essence', qty: essence, prix: prixEssence, emoji: '⛽' },
-              { label: 'Gasoil',  qty: gasoil,  prix: prixGasoil,  emoji: '🛢️' },
-            ].map(({ label, qty, prix, emoji }) => {
+              { label: 'Essence', qty: essence, prix: prixEssence, iconType: 'pump' },
+              { label: 'Gasoil',  qty: gasoil,  prix: prixGasoil,  iconType: 'drum' },
+            ].map(({ label, qty, prix, iconType }) => {
               const st  = getStockStatus(qty)
               const pct = Math.min(100, Math.max(0, (qty / 5000) * 100))
               return (
@@ -614,14 +625,17 @@ export default function PompistePage() {
             borderRadius: 22, padding: '22px 20px',
             boxShadow: theme.shadow.md, transition: 'background 0.3s',
           }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: palette.text, marginBottom: 18, textAlign: 'center', letterSpacing: '-0.3px' }}>
-              ⛽ Enregistrer une vente
+            <div style={{ fontSize: 15, fontWeight: 800, color: palette.text, marginBottom: 18, textAlign: 'center', letterSpacing: '-0.3px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={theme.colors.warning} strokeWidth="2" strokeLinecap="round"><path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/><path d="M3 11h12"/><path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/><path d="M6 7h4"/></svg>
+              Enregistrer une vente
             </div>
 
             {/* Message si pas de service */}
             {locked && (
               <div style={{ padding: '14px 16px', borderRadius: 14, background: isDark ? 'rgba(239,68,68,0.08)' : 'rgba(239,68,68,0.05)', border: '1.5px solid rgba(239,68,68,0.2)', marginBottom: 18, textAlign: 'center' }}>
-                <div style={{ fontSize: 24, marginBottom: 6 }}>🔒</div>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                </div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: RED, marginBottom: 4 }}>Vente impossible</div>
                 <div style={{ fontSize: 12, color: palette.textSub }}>Démarrez votre service pour enregistrer des ventes</div>
               </div>
@@ -631,9 +645,9 @@ export default function PompistePage() {
               {/* Sélecteur type */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
                 {[
-                  { val: 'essence', emoji: '⛽', label: 'Essence', qty: essence, prix: prixEssence },
-                  { val: 'gasoil',  emoji: '🛢️', label: 'Gasoil',  qty: gasoil,  prix: prixGasoil  },
-                ].map(({ val, emoji, label, qty, prix }) => {
+                  { val: 'essence', iconType: 'pump', label: 'Essence', qty: essence, prix: prixEssence },
+                  { val: 'gasoil',  iconType: 'drum', label: 'Gasoil',  qty: gasoil,  prix: prixGasoil  },
+                ].map(({ val, iconType, label, qty, prix }) => {
                   const sel = type === val
                   return (
                     <button key={val} type="button"
@@ -650,7 +664,10 @@ export default function PompistePage() {
                         transform: sel ? 'scale(1.02)' : 'scale(1)',
                         boxShadow: sel ? `0 4px 18px rgba(37,99,235,0.2)` : 'none',
                       }}>
-                      <span style={{ fontSize: 28 }}>{emoji}</span>
+                      {iconType === 'pump'
+                        ? <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={sel ? BLUE : theme.colors.warning} strokeWidth="1.8" strokeLinecap="round"><path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/><path d="M3 11h12"/><path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/><path d="M6 7h4"/></svg>
+                        : <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={sel ? BLUE : theme.colors.info} strokeWidth="1.8" strokeLinecap="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.657 3.582 3 8 3s8-1.343 8-3V6"/></svg>
+                      }
                       <span style={{ fontSize: 13, fontWeight: sel ? 800 : 500, color: sel ? BLUE : palette.text }}>{label}</span>
                       <span style={{ fontSize: 11, fontWeight: 700, color: sel ? BLUE : palette.textMuted }}>{formatGNF(prix)} / L</span>
                       <span style={{ fontSize: 10, color: palette.textMuted }}>{formatLitres(qty)} dispo</span>
