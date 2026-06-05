@@ -205,6 +205,9 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token_expires_at TIMESTAMP;
 -- Logo station
 ALTER TABLE stations ADD COLUMN IF NOT EXISTS logo_url VARCHAR(500);
 
+-- Orange Money — référence transaction
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS transaction_id VARCHAR(200);
+
 -- QR code anti-vol transport
 ALTER TABLE trajets ADD COLUMN IF NOT EXISTS qr_code VARCHAR(10);
 ALTER TABLE trajets ADD COLUMN IF NOT EXISTS qr_expires_at TIMESTAMP;
