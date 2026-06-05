@@ -246,6 +246,16 @@ CREATE TABLE IF NOT EXISTS primes (
 
 CREATE INDEX IF NOT EXISTS idx_performances_user ON performances(user_id);
 CREATE INDEX IF NOT EXISTS idx_primes_user ON primes(user_id);
+
+-- Index performances critiques
+CREATE INDEX IF NOT EXISTS idx_ventes_station       ON ventes(station_id, deleted_at);
+CREATE INDEX IF NOT EXISTS idx_ventes_station_date  ON ventes(station_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_alertes_station      ON alertes(station_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_alertes_lu           ON alertes(station_id, lu);
+CREATE INDEX IF NOT EXISTS idx_services_station     ON services(station_id, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_stocks_logs_station  ON stocks_logs(station_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_users_email          ON users(email) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_station_users_user   ON station_users(user_id);
 `
 
 async function migrate() {

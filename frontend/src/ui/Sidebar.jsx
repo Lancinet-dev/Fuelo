@@ -46,7 +46,7 @@ const ALL_NAV = [
   { path: '/abonnements',  label: 'Mon abonnement',  roles: ['owner'], d: 'M3 3h18v18H3zM3 9h18M9 21V9' },
 ]
 
-function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logout, user, role, isDark, toggle }) {
+function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logout, onSearch, user, role, isDark, toggle }) {
   const { plan, colors } = usePlan()
   const { parametres }   = useParametres()
   const { data: badgeData } = usePerformancesBadge()
@@ -87,6 +87,21 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
           </div>
         </div>
       </div>
+
+      {/* Bouton recherche */}
+      <button
+        onClick={onSearch}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, width: 'calc(100% - 24px)', margin: '0 12px 8px', padding: '7px 10px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.32)', fontFamily: 'inherit', fontSize: 12, transition: 'all 0.15s' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = 'rgba(255,255,255,0.55)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.32)' }}
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <span style={{ flex: 1 }}>Rechercher...</span>
+        <kbd style={{ fontSize: 9, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, padding: '1px 4px', fontFamily: 'monospace', color: 'rgba(255,255,255,0.2)' }}>⌘K</kbd>
+      </button>
 
       <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6, paddingLeft: 12 }}>
         Navigation
@@ -203,7 +218,7 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
           onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(239,68,68,0.65)' }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
           </svg>
           Déconnexion
         </button>
@@ -212,22 +227,63 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
   )
 }
 
-export default function Sidebar({ alertesNb = 0 }) {
+// ── Modale confirmation déconnexion ─────────────────
+function LogoutConfirmModal({ onConfirm, onCancel }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+      <div style={{ background: '#0F172A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: '28px 24px', width: '100%', maxWidth: 320, boxShadow: '0 20px 60px rgba(0,0,0,0.5)', animation: 'lgSlide 0.2s ease' }}>
+        <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(239,68,68,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round">
+            <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+          </svg>
+        </div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Déconnexion</div>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginBottom: 24, lineHeight: 1.6 }}>
+          Vous allez être déconnecté de Fuelo. Toutes vos données sont sauvegardées.
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={onCancel}
+            style={{ flex: 1, height: 42, borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, transition: 'all 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(255,255,255,0.8)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }}
+          >
+            Annuler
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{ flex: 1, height: 42, borderRadius: 10, border: 'none', background: '#EF4444', color: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700, transition: 'all 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#DC2626' }}
+            onMouseLeave={e => { e.currentTarget.style.background = '#EF4444' }}
+          >
+            Se déconnecter
+          </button>
+        </div>
+      </div>
+      <style>{`@keyframes lgSlide { from { opacity:0; transform:scale(0.96) } to { opacity:1; transform:scale(1) } }`}</style>
+    </div>
+  )
+}
+
+export default function Sidebar({ alertesNb = 0, onSearch }) {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, role, logout: authLogout } = useAuth()
   const { isDark, toggle } = useTheme()
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const [mobileOpen,     setMobileOpen]     = useState(false)
+  const [confirmLogout,  setConfirmLogout]  = useState(false)
 
   const userRole = normalizeRole(role)
   const navItems = ALL_NAV.filter((item) => item.roles.includes(userRole || 'gerant'))
 
-  const logout = () => { authLogout(); navigate('/login') }
+  const doLogout = () => { authLogout(); navigate('/login') }
 
-  const contentProps = { alertesNb, navItems, location, navigate, setMobileOpen, logout, user, role: userRole, isDark, toggle }
+  const contentProps = { alertesNb, navItems, location, navigate, setMobileOpen, logout: () => setConfirmLogout(true), onSearch, user, role: userRole, isDark, toggle }
 
   return (
     <>
+      {confirmLogout && <LogoutConfirmModal onConfirm={doLogout} onCancel={() => setConfirmLogout(false)} />}
+
       <div
         className="fuelo-sidebar-desktop"
         style={{ width: 220, background: '#0F172A', borderRight: '0.5px solid rgba(255,255,255,0.06)', position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 50, display: 'flex', flexDirection: 'column' }}

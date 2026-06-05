@@ -58,9 +58,9 @@ function NavBtns({ step, totalSteps, onPrev, onNext, onSkip, nextLabel, nextDisa
           boxShadow: nextDisabled ? 'none' : theme.shadow.primary,
           transition: theme.transition.normal,
         }}>
-        {loading
-          ? <div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-          : null}
+        {loading && (
+          <div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        )}
         {loading ? 'Sauvegarde...' : nextLabel ?? 'Continuer →'}
       </button>
       {step < totalSteps - 1 && (
@@ -78,42 +78,91 @@ function NavBtns({ step, totalSteps, onPrev, onNext, onSkip, nextLabel, nextDisa
   )
 }
 
+// ── En-tête d'étape réutilisable ─────────────────
+function StepHeader({ icon, title, subtitle, palette }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 24 }}>
+      <div style={{
+        width: 46, height: 46, borderRadius: 12, flexShrink: 0,
+        background: theme.colors.primaryLight,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        {icon}
+      </div>
+      <div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: palette.text, letterSpacing: '-0.3px' }}>{title}</div>
+        {subtitle && <div style={{ fontSize: 13, color: palette.textSub, marginTop: 3 }}>{subtitle}</div>}
+      </div>
+    </div>
+  )
+}
+
 // ══════════════════════════════════════════════
 // ÉTAPES
 // ══════════════════════════════════════════════
 
 // Étape 0 — Bienvenue
 function StepBienvenue({ nom, palette }) {
+  const steps = [
+    {
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="2" strokeLinecap="round">
+          <path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/>
+          <path d="M3 11h12"/>
+          <path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/>
+          <path d="M6 7h4"/>
+        </svg>
+      ),
+      label: 'Informations de votre station',
+      num: '01',
+    },
+    {
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="2" strokeLinecap="round">
+          <line x1="12" y1="1" x2="12" y2="23"/>
+          <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+        </svg>
+      ),
+      label: 'Prix des carburants',
+      num: '02',
+    },
+    {
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="2" strokeLinecap="round">
+          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      ),
+      label: 'Votre premier employé (optionnel)',
+      num: '03',
+    },
+  ]
+
   return (
     <div style={{ textAlign: 'center' }}>
       <div style={{ marginBottom: 20 }}>
         <FueloLogo size={52} />
       </div>
       <div style={{ fontSize: 26, fontWeight: 900, color: palette.text, marginBottom: 10, letterSpacing: '-0.5px' }}>
-        Bienvenue, {nom?.split(' ')[0]} ! 👋
+        Bienvenue, {nom?.split(' ')[0]}
       </div>
-      <div style={{ fontSize: 15, color: palette.textSub, lineHeight: 1.7, marginBottom: 24 }}>
+      <div style={{ fontSize: 15, color: palette.textSub, lineHeight: 1.7, marginBottom: 28 }}>
         Fuelo va vous aider à gérer vos stations-service depuis votre téléphone.
-        Configurons ensemble votre première station en <strong style={{ color: palette.text }}>3 minutes</strong>.
+        Configurons ensemble votre première station en{' '}
+        <strong style={{ color: palette.text }}>3 minutes</strong>.
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
-        {[
-          { icon: 'pump',  label: 'Informations de votre station' },
-          { icon: 'coin',  label: 'Prix des carburants' },
-          { icon: 'user',  label: 'Votre premier employé (optionnel)' },
-        ].map(({ icon, label }) => (
-          <div key={label} style={{
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, textAlign: 'left' }}>
+        {steps.map(({ icon, label, num }) => (
+          <div key={num} style={{
             display: 'flex', alignItems: 'center', gap: 12,
-            padding: '12px 16px',
+            padding: '13px 16px',
             background: theme.colors.primaryLight,
             borderRadius: theme.radius.md,
           }}>
-            <div style={{ flexShrink: 0 }}>
-              {icon === 'pump' && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="2" strokeLinecap="round"><path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/><path d="M3 11h12"/><path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/><path d="M6 7h4"/></svg>}
-              {icon === 'coin' && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="2" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>}
-              {icon === 'user' && <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
-            </div>
-            <span style={{ fontSize: 14, fontWeight: 600, color: theme.colors.primary }}>{label}</span>
+            <div style={{ flexShrink: 0 }}>{icon}</div>
+            <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: theme.colors.primary }}>{label}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(37,99,235,0.35)', letterSpacing: '0.06em', fontFamily: 'monospace' }}>{num}</span>
           </div>
         ))}
       </div>
@@ -142,18 +191,26 @@ function StepStation({ data, onChange, palette }) {
       {hint && <div style={{ fontSize: 11, color: palette.textMuted, marginTop: 3 }}>{hint}</div>}
     </div>
   )
+
   return (
     <div>
-      <div style={{ fontSize: 20, fontWeight: 800, color: palette.text, marginBottom: 4 }}>⛽ Votre station</div>
-      <div style={{ fontSize: 13, color: palette.textSub, marginBottom: 20 }}>Ces infos apparaîtront sur vos rapports</div>
+      <StepHeader
+        icon={
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="2" strokeLinecap="round">
+            <path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/>
+            <path d="M3 11h12"/>
+            <path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/>
+            <path d="M6 7h4"/>
+          </svg>
+        }
+        title="Votre station"
+        subtitle="Ces informations apparaîtront sur vos rapports"
+        palette={palette}
+      />
       {field('Nom de la station *', 'nom', 'Ex: Station Total Almamya')}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-        <div>
-          {field('Ville', 'ville', 'Conakry')}
-        </div>
-        <div>
-          {field('Pays', 'pays', 'Guinée')}
-        </div>
+        <div>{field('Ville', 'ville', 'Conakry')}</div>
+        <div>{field('Pays', 'pays', 'Guinée')}</div>
       </div>
       {field('Adresse', 'adresse', 'Ex: Rue KA-020, Kaloum', 'Optionnel')}
     </div>
@@ -162,23 +219,55 @@ function StepStation({ data, onChange, palette }) {
 
 // Étape 2 — Prix carburants
 function StepPrix({ data, onChange, palette }) {
-  const previewEss  = (parseInt(data.prix_essence) || 0) * 50
-  const previewGas  = (parseInt(data.prix_gasoil)  || 0) * 50
+  const previewEss = (parseInt(data.prix_essence) || 0) * 50
+  const previewGas = (parseInt(data.prix_gasoil)  || 0) * 50
   const numFmt = (n) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+
+  const fuelInputs = [
+    {
+      key: 'prix_essence',
+      label: 'Essence (GNF / litre)',
+      placeholder: '10000',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/>
+          <path d="M3 11h12"/>
+        </svg>
+      ),
+    },
+    {
+      key: 'prix_gasoil',
+      label: 'Gasoil (GNF / litre)',
+      placeholder: '9000',
+      icon: (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <ellipse cx="12" cy="12" rx="10" ry="7"/>
+          <line x1="12" y1="5" x2="12" y2="19"/>
+        </svg>
+      ),
+    },
+  ]
 
   return (
     <div>
-      <div style={{ fontSize: 20, fontWeight: 800, color: palette.text, marginBottom: 4 }}>💰 Prix des carburants</div>
-      <div style={{ fontSize: 13, color: palette.textSub, marginBottom: 20 }}>
-        Le pompiste utilisera ces prix pour calculer le montant automatiquement
-      </div>
+      <StepHeader
+        icon={
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="2" strokeLinecap="round">
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+          </svg>
+        }
+        title="Prix des carburants"
+        subtitle="Le pompiste utilisera ces prix pour calculer automatiquement"
+        palette={palette}
+      />
 
-      {[
-        { key: 'prix_essence', label: '⛽ Essence (GNF/litre)', placeholder: '10000' },
-        { key: 'prix_gasoil',  label: '🛢️ Gasoil (GNF/litre)',  placeholder: '9000'  },
-      ].map(({ key, label, placeholder }) => (
+      {fuelInputs.map(({ key, label, placeholder, icon }) => (
         <div key={key} style={{ marginBottom: 18 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{label}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+            <span style={{ color: palette.textMuted }}>{icon}</span>
+            {label}
+          </div>
           <div style={{ position: 'relative' }}>
             <input
               type="number" value={data[key] ?? ''}
@@ -204,8 +293,8 @@ function StepPrix({ data, onChange, palette }) {
         background: palette.hover, borderRadius: theme.radius.md, padding: 14, marginTop: 4,
       }}>
         {[
-          { label: '50L essence =', val: previewEss },
-          { label: '50L gasoil =',  val: previewGas  },
+          { label: '50 L essence =', val: previewEss },
+          { label: '50 L gasoil =',  val: previewGas  },
         ].map(({ label, val }) => (
           <div key={label} style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 11, color: palette.textMuted, marginBottom: 2 }}>{label}</div>
@@ -221,25 +310,66 @@ function StepPrix({ data, onChange, palette }) {
 
 // Étape 3 — Premier employé (optionnel)
 function StepEmploye({ data, onChange, palette }) {
+  const roles = [
+    {
+      val: 'gerant',
+      label: 'Gérant',
+      desc: 'Gère les ventes et le stock',
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <rect x="2" y="7" width="20" height="14" rx="2"/>
+          <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
+        </svg>
+      ),
+    },
+    {
+      val: 'pompiste',
+      label: 'Pompiste',
+      desc: 'Enregistre les ventes',
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/>
+          <path d="M3 11h12"/>
+          <path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/>
+        </svg>
+      ),
+    },
+  ]
+
   return (
     <div>
-      <div style={{ fontSize: 20, fontWeight: 800, color: palette.text, marginBottom: 4 }}>👤 Premier employé</div>
-      <div style={{ fontSize: 13, color: palette.textSub, marginBottom: 6 }}>
-        Créez un compte pour votre gérant ou pompiste. Vous pouvez aussi passer cette étape.
-      </div>
+      <StepHeader
+        icon={
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="2" strokeLinecap="round">
+            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+        }
+        title="Premier employé"
+        subtitle="Créez un compte pour votre gérant ou pompiste — optionnel"
+        palette={palette}
+      />
 
       <div style={{
-        background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
+        display: 'flex', alignItems: 'flex-start', gap: 10,
+        background: 'rgba(245,158,11,0.07)', border: '1px solid rgba(245,158,11,0.22)',
         borderRadius: theme.radius.md, padding: '10px 14px',
-        fontSize: 12, color: '#F59E0B', marginBottom: 18, lineHeight: 1.5,
+        marginBottom: 18, lineHeight: 1.5,
       }}>
-        💡 L'employé recevra ses identifiants et pourra se connecter immédiatement.
+        <svg style={{ flexShrink: 0, marginTop: 1 }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span style={{ fontSize: 12, color: '#B45309' }}>
+          L'employé recevra ses identifiants et pourra se connecter immédiatement.
+        </span>
       </div>
 
       {[
-        { key: 'nom',      label: 'Nom complet',     type: 'text',     placeholder: 'Mamadou Diallo' },
-        { key: 'email',    label: 'Email',           type: 'email',    placeholder: 'mamadou@station.com' },
-        { key: 'password', label: 'Mot de passe',    type: 'password', placeholder: 'Minimum 6 caractères' },
+        { key: 'nom',      label: 'Nom complet',  type: 'text',     placeholder: 'Mamadou Diallo' },
+        { key: 'email',    label: 'Email',         type: 'email',    placeholder: 'mamadou@station.com' },
+        { key: 'password', label: 'Mot de passe',  type: 'password', placeholder: 'Minimum 6 caractères' },
       ].map(({ key, label, type, placeholder }) => (
         <div key={key} style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{label}</div>
@@ -260,26 +390,27 @@ function StepEmploye({ data, onChange, palette }) {
         </div>
       ))}
 
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>Rôle</div>
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Rôle</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          {[
-            { val: 'gerant',   label: '👔 Gérant',   desc: 'Gère les ventes et le stock' },
-            { val: 'pompiste', label: '⛽ Pompiste', desc: 'Enregistre les ventes' },
-          ].map(({ val, label, desc }) => (
-            <button key={val} type="button" onClick={() => onChange('role', val)}
-              style={{
-                padding: '10px 12px', textAlign: 'left',
-                borderRadius: theme.radius.md,
-                border: `2px solid ${data.role === val ? theme.colors.primary : palette.cardBorder}`,
-                background: data.role === val ? theme.colors.primaryLight : palette.inputBg,
-                cursor: 'pointer', fontFamily: 'inherit',
-                transition: theme.transition.fast,
-              }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: data.role === val ? theme.colors.primary : palette.text }}>{label}</div>
-              <div style={{ fontSize: 11, color: palette.textMuted, marginTop: 2 }}>{desc}</div>
-            </button>
-          ))}
+          {roles.map(({ val, label, desc, icon }) => {
+            const selected = data.role === val
+            return (
+              <button key={val} type="button" onClick={() => onChange('role', val)}
+                style={{
+                  padding: '12px 14px', textAlign: 'left',
+                  borderRadius: theme.radius.md,
+                  border: `2px solid ${selected ? theme.colors.primary : palette.cardBorder}`,
+                  background: selected ? theme.colors.primaryLight : palette.inputBg,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                  transition: theme.transition.fast,
+                }}>
+                <div style={{ color: selected ? theme.colors.primary : palette.textSub, marginBottom: 6 }}>{icon}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: selected ? theme.colors.primary : palette.text }}>{label}</div>
+                <div style={{ fontSize: 11, color: palette.textMuted, marginTop: 2 }}>{desc}</div>
+              </button>
+            )
+          })}
         </div>
       </div>
     </div>
@@ -288,6 +419,42 @@ function StepEmploye({ data, onChange, palette }) {
 
 // Étape 4 — Terminé
 function StepDone({ palette }) {
+  const items = [
+    {
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="2" strokeLinecap="round">
+          <rect x="2" y="3" width="20" height="14" rx="2"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+      ),
+      label: 'Voir le dashboard',
+      desc: 'Ventes du jour, stock, alertes en temps réel',
+    },
+    {
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="2" strokeLinecap="round">
+          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 00-3-3.87"/>
+          <path d="M16 3.13a4 4 0 010 7.75"/>
+        </svg>
+      ),
+      label: 'Ajouter des employés',
+      desc: 'Gérants et pompistes depuis la page Employés',
+    },
+    {
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="2" strokeLinecap="round">
+          <rect x="5" y="2" width="14" height="20" rx="2"/>
+          <line x1="12" y1="18" x2="12.01" y2="18"/>
+        </svg>
+      ),
+      label: "Partager l'accès pompiste",
+      desc: 'Envoyez le lien /pompiste à vos équipes',
+    },
+  ]
+
   return (
     <div style={{ textAlign: 'center' }}>
       <div style={{
@@ -298,32 +465,28 @@ function StepDone({ palette }) {
         boxShadow: `0 0 0 16px rgba(16,185,129,0.08)`,
       }}>
         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke={theme.colors.success} strokeWidth="2" strokeLinecap="round">
-          <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
-          <polyline points="22 4 12 14.01 9 11.01" />
+          <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
         </svg>
       </div>
       <div style={{ fontSize: 26, fontWeight: 900, color: palette.text, marginBottom: 10, letterSpacing: '-0.5px' }}>
-        Votre station est prête ! 🎉
+        Votre station est prête
       </div>
       <div style={{ fontSize: 14, color: palette.textSub, lineHeight: 1.7, marginBottom: 24 }}>
         Fuelo est configuré. Voici ce que vous pouvez faire maintenant :
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, textAlign: 'left' }}>
-        {[
-          { emoji: '📊', label: 'Voir le dashboard', desc: 'Ventes du jour, stock, alertes en temps réel' },
-          { emoji: '👥', label: 'Ajouter des employés', desc: 'Gérants et pompistes depuis la page Employés' },
-          { emoji: '📱', label: 'Partager l\'accès pompiste', desc: 'Envoyez le lien /pompiste à vos équipes' },
-        ].map(({ emoji, label, desc }) => (
+        {items.map(({ icon, label, desc }) => (
           <div key={label} style={{
-            display: 'flex', gap: 12, padding: '12px 14px',
+            display: 'flex', gap: 14, padding: '14px 16px',
             background: theme.colors.primaryLight,
             borderRadius: theme.radius.md,
             alignItems: 'flex-start',
           }}>
-            <span style={{ fontSize: 22, flexShrink: 0 }}>{emoji}</span>
+            <div style={{ flexShrink: 0, marginTop: 1 }}>{icon}</div>
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, color: theme.colors.primary }}>{label}</div>
-              <div style={{ fontSize: 12, color: palette.textSub, marginTop: 2 }}>{desc}</div>
+              <div style={{ fontSize: 12, color: palette.textSub, marginTop: 3 }}>{desc}</div>
             </div>
           </div>
         ))}
@@ -337,7 +500,7 @@ function StepDone({ palette }) {
 // ══════════════════════════════════════════════
 export default function OnboardingModal({ user, onDone }) {
   const { palette, isDark } = useTheme()
-  const [step,    setStep]    = useState(0)
+  const [step, setStep] = useState(0)
 
   const [station, setStation] = useState({ nom: '', ville: 'Conakry', pays: 'Guinée', adresse: '' })
   const [prix,    setPrix]    = useState({ prix_essence: '', prix_gasoil: '' })

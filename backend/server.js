@@ -85,6 +85,14 @@ pool.query(`
   ALTER TABLE stations ADD COLUMN IF NOT EXISTS seuil_fraude_citerne FLOAT DEFAULT 50;
   ALTER TABLE users    ADD COLUMN IF NOT EXISTS refresh_token VARCHAR(255);
   ALTER TABLE users    ADD COLUMN IF NOT EXISTS refresh_token_expires_at TIMESTAMP;
+  CREATE INDEX IF NOT EXISTS idx_ventes_station      ON ventes(station_id, deleted_at);
+  CREATE INDEX IF NOT EXISTS idx_ventes_station_date ON ventes(station_id, created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_alertes_station     ON alertes(station_id, created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_alertes_lu          ON alertes(station_id, lu);
+  CREATE INDEX IF NOT EXISTS idx_services_station    ON services(station_id, started_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_stocks_logs_station ON stocks_logs(station_id, created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_users_email         ON users(email) WHERE deleted_at IS NULL;
+  CREATE INDEX IF NOT EXISTS idx_station_users_user  ON station_users(user_id);
 `).catch(err => logger.error('Migration startup error:', err.message))
 
 // ── Rate limiting ─────────────────────────────────────
@@ -105,6 +113,7 @@ const citerneRoutes      = require('./routes/citernes')
 const abonnementRoutes      = require('./routes/abonnements')
 const adminRoutes           = require('./routes/admin')
 const performanceRoutes     = require('./routes/performances')
+const searchRoutes          = require('./routes/search')
 
 app.use('/api/auth',      limiterAuth, authRoutes)
 app.use('/api/stock',     stockRoutes)
@@ -117,6 +126,7 @@ app.use('/api/services',      serviceRoutes)
 app.use('/api/trajets',       trajetRoutes)
 app.use('/api/citernes',      citerneRoutes)
 app.use('/api/abonnements',   abonnementRoutes)
+app.use('/api/search',        searchRoutes)
 app.use('/api/admin',         adminRoutes)
 app.use('/api/performances',  performanceRoutes)
 
