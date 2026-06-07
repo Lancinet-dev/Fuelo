@@ -9,10 +9,10 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "https://res.cloudinary.com/de0xeqpj9/image/upload/v1780821117/Capture_vh0qaw.png",
+      "sizes": "843x823",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }
