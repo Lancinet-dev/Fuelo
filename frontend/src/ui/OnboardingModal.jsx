@@ -8,6 +8,7 @@ import api   from '../services/api'
 import toast from 'react-hot-toast'
 import { useTheme } from '../context/ThemeContext'
 import { useParametres } from '../hooks/useParametres'
+import { CREATABLE_ROLES } from '../config/roles'
 import FueloLogo    from '../components/FueloLogo'
 import theme        from '../config/theme'
 
@@ -320,32 +321,24 @@ function StepPrix({ data, onChange, palette }) {
 
 // Étape 3 — Premier employé (optionnel)
 function StepEmploye({ data, onChange, palette }) {
-  const roles = [
-    {
-      val: 'gerant',
-      label: 'Gérant',
-      desc: 'Gère les ventes et le stock',
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <rect x="2" y="7" width="20" height="14" rx="2"/>
-          <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
-        </svg>
-      ),
-    },
-    {
-      val: 'logisticien',
-      label: 'Logisticien',
-      desc: 'Gère le transport et les citernes',
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <rect x="1" y="3" width="15" height="13"/>
-          <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
-          <circle cx="5.5" cy="18.5" r="2.5"/>
-          <circle cx="18.5" cy="18.5" r="2.5"/>
-        </svg>
-      ),
-    },
-  ]
+  const roleIcons = {
+    gerant: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <rect x="2" y="7" width="20" height="14" rx="2"/>
+        <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
+      </svg>
+    ),
+    logisticien: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <rect x="1" y="3" width="15" height="13"/>
+        <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+        <circle cx="5.5" cy="18.5" r="2.5"/>
+        <circle cx="18.5" cy="18.5" r="2.5"/>
+      </svg>
+    ),
+  }
+  // Rôles que l'owner peut créer — alignés avec CREATION_RULES côté backend via config/roles.js
+  const roles = CREATABLE_ROLES.owner.map(r => ({ ...r, icon: roleIcons[r.value] }))
 
   return (
     <div>
@@ -404,10 +397,10 @@ function StepEmploye({ data, onChange, palette }) {
       <div>
         <div style={{ fontSize: 11, fontWeight: 700, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Rôle</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          {roles.map(({ val, label, desc, icon }) => {
-            const selected = data.role === val
+          {roles.map(({ value, label, desc, icon }) => {
+            const selected = data.role === value
             return (
-              <button key={val} type="button" onClick={() => onChange('role', val)}
+              <button key={value} type="button" onClick={() => onChange('role', value)}
                 style={{
                   padding: '12px 14px', textAlign: 'left',
                   borderRadius: theme.radius.md,

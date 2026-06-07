@@ -12,6 +12,7 @@ import { useAuth }     from '../../context/AuthContext'
 import EmptyState      from '../../ui/EmptyState'
 import { SkeletonRow, SkeletonStyle } from '../../ui/Skeleton'
 import { formatGNF }   from '../../utils/format'
+import { CREATABLE_ROLES } from '../../config/roles'
 import theme from '../../config/theme'
 
 const normalizeRole = (value = '') => {
@@ -26,31 +27,24 @@ const ROLE_CONFIG = {
     subtitle:    (n) => `${n} membre${n > 1 ? 's' : ''} dans votre équipe de gestion`,
     btnLabel:    'Ajouter un membre',
     formTitle:   'Nouveau membre',
-    rolesDispos: [
-      { value: 'gerant',      label: 'Gérant',      desc: 'Dashboard, ventes, stock, alertes, services, pompistes' },
-      { value: 'logisticien', label: 'Logisticien', desc: 'Citernes, trajets GPS, alertes transport, chauffeurs' },
-    ],
-    showVentes: false,
+    rolesDispos: CREATABLE_ROLES.owner,
+    showVentes:  false,
   },
   gerant: {
     title:       'Mes Pompistes',
     subtitle:    (n) => `${n} pompiste${n > 1 ? 's' : ''} sous votre gestion`,
     btnLabel:    'Ajouter un pompiste',
     formTitle:   'Nouveau pompiste',
-    rolesDispos: [
-      { value: 'pompiste', label: 'Pompiste', desc: 'Enregistrement des ventes et gestion de service' },
-    ],
-    showVentes: true,
+    rolesDispos: CREATABLE_ROLES.gerant,
+    showVentes:  true,
   },
   logisticien: {
     title:       'Mes Chauffeurs',
     subtitle:    (n) => `${n} chauffeur${n > 1 ? 's' : ''} sous votre gestion`,
     btnLabel:    'Ajouter un chauffeur',
     formTitle:   'Nouveau chauffeur',
-    rolesDispos: [
-      { value: 'chauffeur', label: 'Chauffeur', desc: 'Transport de citernes et trajets GPS' },
-    ],
-    showVentes: false,
+    rolesDispos: CREATABLE_ROLES.logisticien,
+    showVentes:  false,
   },
 }
 

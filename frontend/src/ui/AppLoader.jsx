@@ -5,8 +5,7 @@
 // ================================================
 
 import { motion, useReducedMotion } from 'framer-motion'
-
-const LOGO_URL = 'https://res.cloudinary.com/de0xeqpj9/image/upload/e_background_removal/v1780821117/Capture_vh0qaw.png'
+import { LOGO_URL } from '../components/FueloLogo'
 
 export default function AppLoader() {
   const reduced = useReducedMotion()
