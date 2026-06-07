@@ -64,7 +64,10 @@ function buildSandboxPaymentUrl({ orderId, montant }) {
 async function initiatePayment({ montant, orderId, description }) {
 
   // Mode sandbox : simulation sans appel Orange
-  if (process.env.ORANGE_MONEY_SANDBOX === 'true') {
+  const isSandbox = ['true', '1', 'yes'].includes(
+    (process.env.ORANGE_MONEY_SANDBOX ?? '').toLowerCase().trim()
+  )
+  if (isSandbox) {
     logger.info(`[SANDBOX] Orange Money — ${orderId} — ${montant} ${CURRENCY}`)
     return {
       payment_url: buildSandboxPaymentUrl({ orderId, montant }),

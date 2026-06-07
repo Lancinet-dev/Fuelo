@@ -142,7 +142,10 @@ const handleCallback = async (req, res) => {
 // ── GET /abonnements/sandbox/simulate ────────────
 // Page HTML de simulation paiement Orange Money (sandbox uniquement)
 const sandboxSimulate = (req, res) => {
-  if (process.env.ORANGE_MONEY_SANDBOX !== 'true') {
+  const isSandbox = ['true', '1', 'yes'].includes(
+    (process.env.ORANGE_MONEY_SANDBOX ?? '').toLowerCase().trim()
+  )
+  if (!isSandbox) {
     return res.status(404).json({ error: 'Non disponible en production' })
   }
 
