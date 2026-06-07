@@ -129,6 +129,10 @@ Comptes test prod :
 - **Icônes SVG professionnelles** — remplacement complet des emojis par des SVG inline
 - **Sidebar responsive mobile** — hamburger menu + drawer mobile
 - **Skeleton loading** — états de chargement sur toutes les pages principales
+- **Landing page V2 "agence internationale"** (2026-06-07) — refonte complète de `features/auth/Landing.jsx` avec **Framer Motion** (déjà en dépendance, `^12.40.0`)
+  - 11 sections : Navbar glass au scroll → Hero (grille de points + orbes lumineux + titre "fraude" barré animé + mockup app 3D au survol) → Preuve sociale (marquee infini) → Problème/Solution (2 colonnes animées) → Features (6 cards 3×2) → Démo interactive (tabs Dashboard/Anti-fraude/GPS avec mockups SVG animés) → Pricing (toggle mensuel/annuel -20% + convertisseur USD/EUR/GNF/FCFA) → Témoignages → FAQ accordion → CTA gradient bleu→violet → Footer 4 colonnes
+  - Palette : fond `#020817`, texte `#FFFFFF`, sous-texte `#94A3B8`, glassmorphism (`backdropFilter: blur`)
+  - Respecte `prefers-reduced-motion` (orbes/particules désactivés, animations CSS raccourcies)
 
 ---
 
