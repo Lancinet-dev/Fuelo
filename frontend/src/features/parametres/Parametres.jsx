@@ -5,12 +5,12 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useParametres } from '../../hooks/useParametres'
+import { useLogoUpload } from '../../hooks/useLogoUpload'
 import { useAuth }  from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import api          from '../../services/api'
 import toast        from 'react-hot-toast'
 import theme        from '../../config/theme'
-import { useQueryClient } from '@tanstack/react-query'
 
 const ICONS = {
   station: 'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2zM9 22V12h6v10',
@@ -75,48 +75,28 @@ function SaveBtn({ loading, saved, label = 'Sauvegarder' }) {
 
 // ── Section logo station ──────────────────────────────
 function LogoSection({ palette }) {
-  const fileRef      = useRef()
-  const queryClient  = useQueryClient()
-  const [preview,    setPreview]    = useState(null)
-  const [uploading,  setUploading]  = useState(false)
-  const [deleting,   setDeleting]   = useState(false)
+  const fileRef = useRef()
+  const [preview, setPreview] = useState(null)
 
   // Source unique de vérité — même cache que la sidebar
   const { parametres } = useParametres()
   const logoUrl = parametres?.logo_url ?? null
 
+  const { uploadLogo, uploading, deleteLogo, deleting } = useLogoUpload()
+
   const handleFile = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     setPreview(URL.createObjectURL(file))
-    setUploading(true)
     try {
-      const fd = new FormData()
-      fd.append('logo', file)
-      await api.post('/station/logo', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-      setPreview(null)
-      toast.success('Logo mis à jour')
-      queryClient.invalidateQueries({ queryKey: ['parametres'] })
-    } catch (err) {
-      toast.error(err?.response?.data?.error ?? 'Erreur upload')
-      setPreview(null)
-    } finally {
-      setUploading(false)
-      e.target.value = ''
-    }
+      await uploadLogo(file)
+    } catch { /* erreur déjà affichée par useLogoUpload */ }
+    setPreview(null)
+    e.target.value = ''
   }
 
   const handleDelete = async () => {
-    setDeleting(true)
-    try {
-      await api.delete('/station/logo')
-      toast.success('Logo supprimé')
-      queryClient.invalidateQueries({ queryKey: ['parametres'] })
-    } catch (err) {
-      toast.error(err?.response?.data?.error ?? 'Erreur')
-    } finally {
-      setDeleting(false)
-    }
+    try { await deleteLogo() } catch { /* erreur déjà affichée par useLogoUpload */ }
   }
 
   const displayUrl = preview ?? logoUrl

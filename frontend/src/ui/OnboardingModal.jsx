@@ -8,6 +8,7 @@ import api   from '../services/api'
 import toast from 'react-hot-toast'
 import { useTheme } from '../context/ThemeContext'
 import { useParametres } from '../hooks/useParametres'
+import { useLogoUpload } from '../hooks/useLogoUpload'
 import { CREATABLE_ROLES } from '../config/roles'
 import FueloLogo    from '../components/FueloLogo'
 import theme        from '../config/theme'
@@ -572,8 +573,8 @@ export default function OnboardingModal({ user, onDone }) {
   const [prix,    setPrix]    = useState({ prix_essence: '', prix_gasoil: '' })
   const [employe, setEmploye] = useState({ nom: '', email: '', password: '', role: 'gerant' })
 
-  const { parametres }       = useParametres()
-  const logoUrl              = parametres?.logo_url ?? null
+  const { parametres, loading: parametresLoading } = useParametres()
+  const logoUrl = parametres?.logo_url ?? null
 
   const { mutateAsync: saveStation, isPending: savingStation } = useMutation({
     mutationFn: (data) => api.put('/station', data).then(r => r.data),
@@ -589,18 +590,7 @@ export default function OnboardingModal({ user, onDone }) {
     onError: (err) => toast.error(err.response?.data?.error ?? 'Erreur création employé'),
   })
 
-  const { mutateAsync: uploaderLogo, isPending: uploadingLogo } = useMutation({
-    mutationFn: (file) => {
-      const fd = new FormData()
-      fd.append('logo', file)
-      return api.post('/station/logo', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
-    },
-    onSuccess: () => {
-      toast.success('Logo mis à jour')
-      queryClient.invalidateQueries({ queryKey: ['parametres'] })
-    },
-    onError: (err) => toast.error(err.response?.data?.error ?? 'Erreur upload du logo'),
-  })
+  const { uploadLogo: uploaderLogo, uploading: uploadingLogo } = useLogoUpload()
 
   const loading = savingStation || creatingEmploye || uploadingLogo
 
@@ -650,7 +640,7 @@ export default function OnboardingModal({ user, onDone }) {
 
   const nextLabel = step === TOTAL_STEPS - 1
     ? 'Accéder à mon dashboard →'
-    : (step === 3 && !employe.nom.trim()) || (step === 4 && !logoUrl)
+    : (step === 3 && !employe.nom.trim()) || (step === 4 && !parametresLoading && !logoUrl)
     ? 'Passer cette étape →'
     : 'Continuer →'
 
