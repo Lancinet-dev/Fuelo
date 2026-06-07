@@ -1,18 +1,21 @@
 {
-  "name": "Fuelo — Gestion stations-service",
+  "name": "Fuelo",
   "short_name": "Fuelo",
-  "description": "Gérez votre station-service depuis votre téléphone",
+  "description": "Gestion de stations-service en Afrique",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0A0F1E",
-  "theme_color": "#F59E0B",
-  "orientation": "portrait",
+  "background_color": "#020817",
+  "theme_color": "#2563EB",
   "icons": [
     {
       "src": "https://res.cloudinary.com/de0xeqpj9/image/upload/v1780821117/Capture_vh0qaw.png",
-      "sizes": "843x823",
-      "type": "image/png",
-      "purpose": "any"
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://res.cloudinary.com/de0xeqpj9/image/upload/v1780821117/Capture_vh0qaw.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ]
 }
