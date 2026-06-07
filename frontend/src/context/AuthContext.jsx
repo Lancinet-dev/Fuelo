@@ -89,6 +89,27 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
+  // Connexion via un token déjà émis (callback OAuth Google) — recharge
+  // l'utilisateur via /auth/me pour que isAuthenticated reflète l'état réel
+  const loginWithToken = useCallback(async (token, stationId) => {
+    setLoading(true)
+    try {
+      storage.set(token, stationId)
+      const { data } = await api.get('/auth/me')
+      const normalized = normalizeUser(data.user)
+      setUser(normalized)
+      setStationId(storage.getStation())
+      return normalized
+    } catch (err) {
+      storage.clear()
+      setUser(null)
+      setStationId(null)
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
   const register = useCallback(async (payload) => {
     setLoading(true)
     try {
