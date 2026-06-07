@@ -513,7 +513,7 @@ function StepDone({ palette }) {
         </svg>
       ),
       label: 'Ajouter des employés',
-      desc: 'Gérants et pompistes depuis la page Employés',
+      desc: 'Gérants et logisticiens depuis la page Employés',
     },
     {
       icon: (
@@ -584,6 +584,10 @@ export default function OnboardingModal({ user, onDone }) {
 
   const { mutateAsync: saveStation, isPending: savingStation } = useMutation({
     mutationFn: (data) => api.put('/station', data).then(r => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['parametres'] })
+      queryClient.invalidateQueries({ queryKey: ['stations'] })
+    },
     onError: () => toast.error('Erreur sauvegarde station'),
   })
 
@@ -605,7 +609,7 @@ export default function OnboardingModal({ user, onDone }) {
     onError: (err) => toast.error(err.response?.data?.error ?? 'Erreur upload du logo'),
   })
 
-  const loading = savingStation || creatingEmploye
+  const loading = savingStation || creatingEmploye || uploadingLogo
 
   const handleNext = async () => {
     if (step === 1) {
