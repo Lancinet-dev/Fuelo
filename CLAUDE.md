@@ -136,6 +136,11 @@ Comptes test prod :
 
 1. **Crons + Socket.IO peu fiables** — Render tier gratuit s'endort après 15 min. Cron rapports mensuels et vérif stock horaire non fiables → nécessite plan payant (~7$/mois).
 2. **EMAIL_PASS et GOOGLE_CLIENT_SECRET** à régénérer sur Render (JWT_SECRET déjà régénéré).
+3. **Google OAuth cassé en prod — `BACKEND_URL` mal configuré sur Render** (diagnostiqué 2026-06-07 en interceptant le flow réel) :
+   - La var d'env `BACKEND_URL` sur Render vaut encore `https://fuelo-backend.onrender.com` (ancien nom de service, renvoie 404) au lieu de `https://fuelo.onrender.com`.
+   - `passport.js` construit `callbackURL` à partir de `BACKEND_URL` → Google reçoit un `redirect_uri` qui ne correspond pas à celui enregistré dans la Google Cloud Console → **Erreur 400 : redirect_uri_mismatch** affichée immédiatement (avant l'écran de consentement Google).
+   - **Fix** : sur Render → Environment, changer `BACKEND_URL` → `https://fuelo.onrender.com`, sauvegarder (redéploiement auto).
+   - `FRONTEND_URL` et `GOOGLE_CLIENT_ID` ont été vérifiés corrects en prod (test direct du flow + préflight CORS). Une fois `BACKEND_URL` corrigé, si une nouvelle erreur `?error=server_error` apparaît, ce sera le `GOOGLE_CLIENT_SECRET` (point 2 ci-dessus) à régénérer.
 
 ---
 
