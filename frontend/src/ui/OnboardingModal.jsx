@@ -2,15 +2,16 @@
 // FUELO — Onboarding première connexion owner
 // ================================================
 
-import { useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useState, useRef } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import api   from '../services/api'
 import toast from 'react-hot-toast'
 import { useTheme } from '../context/ThemeContext'
+import { useParametres } from '../hooks/useParametres'
 import FueloLogo    from '../components/FueloLogo'
 import theme        from '../config/theme'
 
-const TOTAL_STEPS = 5
+const TOTAL_STEPS = 6
 
 // ── Barre de progression ─────────────────────────
 function ProgressBar({ step }) {
@@ -135,6 +136,15 @@ function StepBienvenue({ nom, palette }) {
       ),
       label: 'Votre premier employé (optionnel)',
       num: '03',
+    },
+    {
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="2" strokeLinecap="round">
+          <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+        </svg>
+      ),
+      label: 'Logo de votre station (optionnel)',
+      num: '04',
     },
   ]
 
@@ -323,14 +333,15 @@ function StepEmploye({ data, onChange, palette }) {
       ),
     },
     {
-      val: 'pompiste',
-      label: 'Pompiste',
-      desc: 'Enregistre les ventes',
+      val: 'logisticien',
+      label: 'Logisticien',
+      desc: 'Gère le transport et les citernes',
       icon: (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/>
-          <path d="M3 11h12"/>
-          <path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/>
+          <rect x="1" y="3" width="15" height="13"/>
+          <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+          <circle cx="5.5" cy="18.5" r="2.5"/>
+          <circle cx="18.5" cy="18.5" r="2.5"/>
         </svg>
       ),
     },
@@ -346,7 +357,7 @@ function StepEmploye({ data, onChange, palette }) {
           </svg>
         }
         title="Premier employé"
-        subtitle="Créez un compte pour votre gérant ou pompiste — optionnel"
+        subtitle="Créez un compte pour votre gérant ou logisticien — optionnel"
         palette={palette}
       />
 
@@ -417,7 +428,68 @@ function StepEmploye({ data, onChange, palette }) {
   )
 }
 
-// Étape 4 — Terminé
+// Étape 4 — Logo de la station
+function StepLogo({ logoUrl, uploading, onUpload, palette }) {
+  const fileRef = useRef()
+
+  const handleFile = (e) => {
+    const file = e.target.files?.[0]
+    if (file) onUpload(file)
+    e.target.value = ''
+  }
+
+  return (
+    <div>
+      <StepHeader
+        icon={
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="2" strokeLinecap="round">
+            <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+        }
+        title="Logo de votre station"
+        subtitle="Affiché dans la sidebar, les rapports PDF et Excel — optionnel"
+        palette={palette}
+      />
+
+      <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
+
+      <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: 16,
+          padding: 16, textAlign: 'left',
+          borderRadius: theme.radius.md,
+          border: `1.5px dashed ${palette.cardBorder}`,
+          background: palette.inputBg,
+          cursor: uploading ? 'not-allowed' : 'pointer',
+          fontFamily: 'inherit',
+        }}>
+        <div style={{
+          width: 64, height: 64, borderRadius: 14, overflow: 'hidden', flexShrink: 0,
+          background: palette.hover,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          border: `1px solid ${palette.cardBorder}`,
+        }}>
+          {logoUrl ? (
+            <img src={logoUrl} alt="logo station" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={palette.textMuted} strokeWidth="1.5" strokeLinecap="round">
+              <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+          )}
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: theme.colors.primary, display: 'flex', alignItems: 'center', gap: 8 }}>
+            {uploading && <div style={{ width: 14, height: 14, border: '2px solid rgba(37,99,235,0.25)', borderTopColor: theme.colors.primary, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />}
+            {uploading ? 'Envoi en cours...' : logoUrl ? 'Changer le logo' : 'Ajouter le logo de votre station'}
+          </div>
+          <div style={{ fontSize: 12, color: palette.textMuted, marginTop: 3 }}>JPG, PNG · Max 5 Mo · Carré recommandé</div>
+        </div>
+      </button>
+    </div>
+  )
+}
+
+// Étape 5 — Terminé
 function StepDone({ palette }) {
   const items = [
     {
@@ -500,11 +572,15 @@ function StepDone({ palette }) {
 // ══════════════════════════════════════════════
 export default function OnboardingModal({ user, onDone }) {
   const { palette, isDark } = useTheme()
+  const queryClient = useQueryClient()
   const [step, setStep] = useState(0)
 
   const [station, setStation] = useState({ nom: '', ville: 'Conakry', pays: 'Guinée', adresse: '' })
   const [prix,    setPrix]    = useState({ prix_essence: '', prix_gasoil: '' })
   const [employe, setEmploye] = useState({ nom: '', email: '', password: '', role: 'gerant' })
+
+  const { parametres }       = useParametres()
+  const logoUrl              = parametres?.logo_url ?? null
 
   const { mutateAsync: saveStation, isPending: savingStation } = useMutation({
     mutationFn: (data) => api.put('/station', data).then(r => r.data),
@@ -514,6 +590,19 @@ export default function OnboardingModal({ user, onDone }) {
   const { mutateAsync: creerEmploye, isPending: creatingEmploye } = useMutation({
     mutationFn: (data) => api.post('/employes', data).then(r => r.data),
     onError: (err) => toast.error(err.response?.data?.error ?? 'Erreur création employé'),
+  })
+
+  const { mutateAsync: uploaderLogo, isPending: uploadingLogo } = useMutation({
+    mutationFn: (file) => {
+      const fd = new FormData()
+      fd.append('logo', file)
+      return api.post('/station/logo', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+    },
+    onSuccess: () => {
+      toast.success('Logo mis à jour')
+      queryClient.invalidateQueries({ queryKey: ['parametres'] })
+    },
+    onError: (err) => toast.error(err.response?.data?.error ?? 'Erreur upload du logo'),
   })
 
   const loading = savingStation || creatingEmploye
@@ -564,7 +653,7 @@ export default function OnboardingModal({ user, onDone }) {
 
   const nextLabel = step === TOTAL_STEPS - 1
     ? 'Accéder à mon dashboard →'
-    : step === 3 && !employe.nom.trim()
+    : (step === 3 && !employe.nom.trim()) || (step === 4 && !logoUrl)
     ? 'Passer cette étape →'
     : 'Continuer →'
 
@@ -592,7 +681,8 @@ export default function OnboardingModal({ user, onDone }) {
         {step === 1 && <StepStation  data={station} onChange={(k, v) => setStation(p => ({ ...p, [k]: v }))} palette={palette} />}
         {step === 2 && <StepPrix     data={prix}    onChange={(k, v) => setPrix(p => ({ ...p, [k]: v }))}    palette={palette} />}
         {step === 3 && <StepEmploye  data={employe} onChange={(k, v) => setEmploye(p => ({ ...p, [k]: v }))} palette={palette} />}
-        {step === 4 && <StepDone palette={palette} />}
+        {step === 4 && <StepLogo logoUrl={logoUrl} uploading={uploadingLogo} onUpload={uploaderLogo} palette={palette} />}
+        {step === 5 && <StepDone palette={palette} />}
 
         <NavBtns
           step={step} totalSteps={TOTAL_STEPS}
