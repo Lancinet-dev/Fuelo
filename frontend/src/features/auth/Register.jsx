@@ -136,7 +136,7 @@ export default function Register() {
 
         {/* Logo */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
-          <FueloLogo size={34} forceTextColor="#fff" />
+          <FueloLogo size={80} forceTextColor="#fff" />
         </div>
 
         {/* Stepper */}

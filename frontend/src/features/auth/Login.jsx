@@ -119,7 +119,7 @@ export default function Login() {
 
         {/* Logo */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
-          <FueloLogo size={36} forceTextColor="#fff" />
+          <FueloLogo size={80} forceTextColor="#fff" />
         </div>
 
         {/* Badge */}

@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion'
 
-const LOGO_URL = 'https://res.cloudinary.com/de0xeqpj9/image/upload/v1780821117/Capture_vh0qaw.png'
+const LOGO_URL = 'https://res.cloudinary.com/de0xeqpj9/image/upload/e_background_removal/v1780821117/Capture_vh0qaw.png'
 
 export default function SplashScreen({ onDone }) {
   const [visible, setVisible] = useState(true)
@@ -61,28 +61,21 @@ export default function SplashScreen({ onDone }) {
             }}
           />
 
-          {/* Carte logo — fond blanc (le PNG a un fond clair) */}
-          <motion.div
+          {/* Logo — fond transparent (e_background_removal) */}
+          <motion.img
+            src={LOGO_URL}
+            alt="Fuelo"
             initial={{ scale: 0.3, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 220, damping: 15, mass: 0.7 }}
             style={{
               position: 'relative',
-              width: 220, height: 220,
-              borderRadius: 32,
-              background: '#FFFFFF',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 0 0 1px rgba(255,255,255,0.08), 0 25px 70px -15px rgba(0,0,0,0.6), 0 0 60px rgba(37,99,235,0.35), 0 0 90px rgba(245,158,11,0.18)',
+              width: 160, height: 160,
+              objectFit: 'contain',
               marginBottom: 36,
-              overflow: 'hidden',
+              filter: 'drop-shadow(0 0 50px rgba(37,99,235,0.45)) drop-shadow(0 0 80px rgba(245,158,11,0.18))',
             }}
-          >
-            <img
-              src={LOGO_URL}
-              alt="Fuelo"
-              style={{ width: '78%', height: '78%', objectFit: 'contain', display: 'block' }}
-            />
-          </motion.div>
+          />
 
           {/* Slogan */}
           <motion.div

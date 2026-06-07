@@ -141,7 +141,7 @@ function StepBienvenue({ nom, palette }) {
   return (
     <div style={{ textAlign: 'center' }}>
       <div style={{ marginBottom: 20 }}>
-        <FueloLogo size={52} />
+        <FueloLogo size={64} />
       </div>
       <div style={{ fontSize: 26, fontWeight: 900, color: palette.text, marginBottom: 10, letterSpacing: '-0.5px' }}>
         Bienvenue, {nom?.split(' ')[0]}

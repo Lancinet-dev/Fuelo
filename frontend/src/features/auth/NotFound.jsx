@@ -36,7 +36,7 @@ export default function NotFound() {
 
       {/* Logo */}
       <div style={{ marginBottom: 40 }}>
-        <FueloLogo size={44} />
+        <FueloLogo size={56} />
       </div>
 
       {/* Illustration 404 */}

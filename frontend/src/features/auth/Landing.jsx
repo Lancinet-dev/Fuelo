@@ -220,7 +220,7 @@ function Navbar({ solid, mobile }) {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
       <Link to="/" style={{ textDecoration: 'none', display: 'flex' }}>
-        <FueloLogo size={32} forceTextColor="#fff" />
+        <FueloLogo size={52} forceTextColor="#fff" />
       </Link>
 
       {mobile ? (
@@ -987,7 +987,7 @@ export default function Landing() {
         <div style={{ maxWidth: 1220, margin: '0 auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: mobile ? '1fr' : tablet ? '1.4fr 1fr 1fr' : '1.6fr 1fr 1fr 1fr', gap: mobile ? 36 : 32, marginBottom: 44 }}>
             <div>
-              <FueloLogo size={32} forceTextColor="#fff" />
+              <FueloLogo size={40} forceTextColor="#fff" />
               <p style={{ fontSize: 13.5, color: C.sub, lineHeight: 1.7, marginTop: 16, maxWidth: 280 }}>
                 Le SaaS de gestion de stations-service pensé pour l'Afrique de l'Ouest. Stock, ventes, alertes et anti-fraude — en temps réel.
               </p>

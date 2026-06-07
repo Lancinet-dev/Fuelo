@@ -79,7 +79,7 @@ export default function ResetPassword() {
     <div style={{ minHeight: '100vh', background: '#0A0F1E', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, fontFamily: theme.font.family }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
 
-        <FueloLogo size={36} forceTextColor="#fff" />
+        <FueloLogo size={80} forceTextColor="#fff" />
 
       
 
