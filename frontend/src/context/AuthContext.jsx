@@ -12,6 +12,7 @@ import {
   useMemo,
 } from 'react'
 import api from '../services/api'
+import AppLoader from '../ui/AppLoader'
 
 const AuthContext = createContext(null)
 
@@ -43,45 +44,6 @@ const storage = {
     localStorage.removeItem('fuelo_station')
     delete api.defaults.headers.common.Authorization
   },
-}
-
-function LoadingScreen() {
-  return (
-    <div style={{
-      height: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: '#F5F7FA',
-      gap: 16,
-    }}>
-      <div style={{
-        width: 40,
-        height: 40,
-        background: '#F59E0B',
-        borderRadius: 11,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        boxShadow: '0 0 20px rgba(245,158,11,0.3)',
-      }}>
-        <svg width="20" height="20" viewBox="0 0 48 48">
-          <path d="M24 4C24 4 10 20 10 30C10 39.5 16.5 45 24 45C31.5 45 38 39.5 38 30C38 20 24 4 24 4Z" fill="#0F172A" />
-          <ellipse cx="18" cy="36" rx="4" ry="6" fill="#F59E0B" opacity="0.6" />
-        </svg>
-      </div>
-      <div style={{
-        width: 32,
-        height: 32,
-        border: '3px solid #E5E7EB',
-        borderTopColor: '#F59E0B',
-        borderRadius: '50%',
-        animation: 'spin 0.8s linear infinite',
-      }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  )
 }
 
 export function AuthProvider({ children }) {
@@ -180,7 +142,7 @@ export function AuthProvider({ children }) {
     changerStation,
   }), [user, stationId, loading, role, login, register, logout, changerStation])
 
-  if (loading) return <LoadingScreen />
+  if (loading) return <AppLoader />
 
   return (
     <AuthContext.Provider value={value}>
