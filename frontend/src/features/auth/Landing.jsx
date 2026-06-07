@@ -96,6 +96,66 @@ function Particles({ count = 30 }) {
   )
 }
 
+// ── Illustration station-service (SVG, scène stylisée) ──
+function StationIllustration({ scale = 1 }) {
+  return (
+    <svg width={640 * scale} height={360 * scale} viewBox="0 0 640 360" fill="none" style={{ display: 'block' }}>
+      <defs>
+        <linearGradient id="ilCanopy" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={C.soft} stopOpacity="0.5" />
+          <stop offset="100%" stopColor={C.blue} stopOpacity="0.32" />
+        </linearGradient>
+        <linearGradient id="ilPump" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgba(255,255,255,0.09)" />
+          <stop offset="100%" stopColor="rgba(255,255,255,0.02)" />
+        </linearGradient>
+        <linearGradient id="ilGlow" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%"   stopColor={C.orange} stopOpacity="0" />
+          <stop offset="50%"  stopColor={C.orange} stopOpacity="0.9" />
+          <stop offset="100%" stopColor={C.orange} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      {/* Ombre au sol */}
+      <ellipse cx="320" cy="340" rx="260" ry="16" fill="rgba(37,99,235,0.10)" />
+
+      {/* Piliers de l'auvent */}
+      <rect x="150" y="118" width="11" height="140" rx="5" fill={C.blue} opacity="0.30" />
+      <rect x="470" y="118" width="11" height="140" rx="5" fill={C.blue} opacity="0.30" />
+
+      {/* Auvent + liseré lumineux animé */}
+      <rect x="96" y="76" width="448" height="44" rx="16" fill="url(#ilCanopy)" />
+      <motion.rect x="114" y="118" width="412" height="4" rx="2" fill="url(#ilGlow)"
+        animate={{ opacity: [0.35, 1, 0.35] }} transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }} />
+
+      {/* Borne 1 — écran orange animé + pistolet qui goutte */}
+      <rect x="232" y="192" width="62" height="116" rx="14" fill="url(#ilPump)" stroke={C.border} />
+      <rect x="244" y="210" width="38" height="26" rx="6" fill="rgba(245,158,11,0.08)" stroke="rgba(245,158,11,0.30)" />
+      <motion.rect x="250" y="220" width="24" height="7" rx="3" fill={C.orange} style={{ originX: 0 }}
+        animate={{ scaleX: [0.5, 1, 0.5] }} transition={{ duration: 2.1, repeat: Infinity }} />
+      <path d="M294 232 C 322 238, 326 268, 306 282" stroke={C.soft} strokeWidth="4" fill="none" strokeLinecap="round" opacity="0.45" />
+      <motion.circle cx="306" cy="282" r="5" fill={C.orange}
+        animate={{ scale: [1, 1.5, 1], opacity: [0.9, 0.4, 0.9] }} transition={{ duration: 1.6, repeat: Infinity }} />
+      <motion.circle cx="306" cy="290" r="2.2" fill={C.orange}
+        animate={{ y: [0, 28], opacity: [1, 0] }} transition={{ duration: 1.3, repeat: Infinity, ease: 'easeIn' }} />
+
+      {/* Borne 2 — écran bleu animé */}
+      <rect x="346" y="192" width="62" height="116" rx="14" fill="url(#ilPump)" stroke={C.border} />
+      <rect x="358" y="210" width="38" height="26" rx="6" fill="rgba(96,165,250,0.08)" stroke="rgba(96,165,250,0.28)" />
+      <motion.rect x="364" y="220" width="28" height="7" rx="3" fill={C.soft} style={{ originX: 0 }}
+        animate={{ scaleX: [0.6, 1, 0.6] }} transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }} />
+
+      {/* Voiture stylisée */}
+      <g opacity="0.8">
+        <rect x="58" y="278" width="146" height="38" rx="16" fill={C.soft} opacity="0.16" />
+        <rect x="82" y="258" width="96"  height="30" rx="14" fill={C.soft} opacity="0.20" />
+        <circle cx="94"  cy="318" r="12" fill={C.bg2} stroke={C.border} />
+        <circle cx="186" cy="318" r="12" fill={C.bg2} stroke={C.border} />
+      </g>
+    </svg>
+  )
+}
+
 // ── Navbar ─────────────────────────────────────────────
 function Navbar({ solid, mobile }) {
   const [open, setOpen] = useState(false)
@@ -198,10 +258,19 @@ function PricingCard({ plan, price, features, highlighted, delay }) {
           <span style={{ fontSize: 14, color: C.sub }}>{f}</span>
         </div>
       ))}
-      <Link to="/register" style={{ display: 'block', marginTop: 28, padding: '13px 0', textAlign: 'center', borderRadius: 12, textDecoration: 'none', fontSize: 14, fontWeight: 700, color: highlighted ? '#fff' : C.text, background: highlighted ? `linear-gradient(135deg, ${C.blue}, ${C.dark})` : 'rgba(255,255,255,0.04)', border: highlighted ? 'none' : `1px solid ${C.border}`, boxShadow: highlighted ? '0 4px 20px rgba(37,99,235,0.4)' : 'none', transition: 'all 0.2s' }}
-        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; if(highlighted) e.currentTarget.style.boxShadow = '0 8px 30px rgba(37,99,235,0.5)' }}
-        onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; if(highlighted) e.currentTarget.style.boxShadow = '0 4px 20px rgba(37,99,235,0.4)' }}>
-        Commencer gratuitement
+      <Link to="/register" style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          marginTop: 28, padding: '13px 0', textAlign: 'center', borderRadius: 12, textDecoration: 'none',
+          fontSize: 14, fontWeight: 700,
+          color:      highlighted ? '#fff' : '#FF6B00',
+          background: highlighted ? 'linear-gradient(135deg, #FF6B00, #E65100)' : 'rgba(255,107,0,0.08)',
+          border:     highlighted ? 'none' : '1px solid rgba(255,107,0,0.28)',
+          boxShadow:  highlighted ? '0 4px 20px rgba(255,107,0,0.40)' : 'none',
+          transition: 'all 0.2s',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px)'; if(highlighted) e.currentTarget.style.boxShadow = '0 8px 30px rgba(255,107,0,0.5)' }}
+        onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; if(highlighted) e.currentTarget.style.boxShadow = '0 4px 20px rgba(255,107,0,0.4)' }}>
+        Payer avec Orange Money 🟠
       </Link>
     </motion.div>
   )
@@ -216,6 +285,7 @@ export default function Landing() {
   const { scrollY } = useScroll()
   const heroY  = useTransform(scrollY, [0, 600], [0, 180])
   const heroOp = useTransform(scrollY, [0, 400], [1, 0])
+  const illusY = useTransform(scrollY, [0, 700], [0, -110])
 
   useEffect(() => {
     const unsub = scrollY.on('change', v => setNavSolid(v > 60))
@@ -316,6 +386,18 @@ export default function Landing() {
         <div style={{ position: 'absolute', bottom: '-10%', right: '-5%', width: '50vw', height: '50vw', background: 'radial-gradient(circle, rgba(245,158,11,0.08) 0%, transparent 65%)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', inset: 0, backgroundImage: `linear-gradient(rgba(37,99,235,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(37,99,235,0.04) 1px, transparent 1px)`, backgroundSize: '80px 80px', pointerEvents: 'none' }} />
         <Particles count={25} />
+
+        {/* Illustration station-service en parallax (desktop large) */}
+        {!tablet && (
+          <motion.div
+            initial={{ opacity: 0, x: 80 }}
+            animate={{ opacity: 0.55, x: 0 }}
+            transition={{ delay: 0.5, duration: 1.1, ease: 'easeOut' }}
+            style={{ y: illusY, position: 'absolute', bottom: '-6%', right: '-4%', zIndex: 1, pointerEvents: 'none', filter: 'drop-shadow(0 30px 70px rgba(37,99,235,0.25))' }}
+          >
+            <StationIllustration scale={w >= 1440 ? 1.1 : 0.85} />
+          </motion.div>
+        )}
 
         {/* Contenu hero en parallax */}
         <motion.div style={{ y: heroY, opacity: heroOp, position: 'relative', zIndex: 2, textAlign: 'center', padding: mobile ? '120px 24px 60px' : '0 24px', maxWidth: 860, margin: '0 auto' }}>

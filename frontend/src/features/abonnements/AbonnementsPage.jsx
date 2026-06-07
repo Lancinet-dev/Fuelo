@@ -218,7 +218,7 @@ function ModalPaiement({ planKey, planLabel, prix, prixGnf, onClose, onConfirm, 
             }}
           >
             {loading && <Spinner />}
-            {loading ? 'Envoi...' : 'Payer via Orange Money →'}
+            {loading ? 'Envoi...' : 'Payer avec Orange Money →'}
           </button>
         </div>
       </div>
@@ -337,7 +337,7 @@ export default function AbonnementsPage() {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
             </svg>
-            Paiement en attente · activation automatique
+            En attente de validation Orange Money
           </div>
         )}
         {abonnement?.statut === 'actif' && abonnement?.expires_at && (
