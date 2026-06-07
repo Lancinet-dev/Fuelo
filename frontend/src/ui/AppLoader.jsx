@@ -45,7 +45,7 @@ export default function AppLoader() {
         src={LOGO_URL}
         alt="Fuelo"
         animate={reduced ? undefined : { scale: [0.8, 1.1, 1] }}
-        transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
         style={{
           position: 'relative',
           width: 90, height: 90, objectFit: 'contain',
@@ -72,7 +72,7 @@ export default function AppLoader() {
         <motion.div
           initial={{ width: '0%' }}
           animate={{ width: ['0%', '100%'] }}
-          transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
           style={{
             height: '100%', borderRadius: 3,
             background: '#2563EB',
