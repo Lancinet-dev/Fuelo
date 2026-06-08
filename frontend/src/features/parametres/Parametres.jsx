@@ -359,7 +359,7 @@ const handlePwdSave = async (e) => {
       <SectionCard icon={ICONS.station} title="Informations de la station" desc="Ces informations apparaissent sur vos rapports PDF" palette={palette} isDark={isDark} delay={dStation} color={theme.colors.primary}>
         <form onSubmit={handleStationSave}>
           <Field label="Nom de la station" value={station.nom} onChange={setS('nom')} placeholder="Ex: Station Almamya" error={stationErrors.nom} {...fieldProps} />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div className="fuelo-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <Field label="Ville" value={station.ville} onChange={setS('ville')} placeholder="Conakry" {...fieldProps} />
             <Field label="Pays"  value={station.pays}  onChange={setS('pays')}  placeholder="Guinée"  {...fieldProps} />
           </div>
@@ -375,11 +375,11 @@ const handlePwdSave = async (e) => {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.colors.info} strokeWidth="2" strokeLinecap="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0018 8 6 6 0 006 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 018.91 14"/></svg>
             <span>Ces prix sont utilisés pour calculer automatiquement le montant quand le pompiste entre les litres.</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div className="fuelo-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <Field label="Prix Essence" type="number" value={prix.prix_essence} onChange={setP('prix_essence')} placeholder="10000" suffix="GNF/L" error={prixErrors.prix_essence} hint="Prix par litre d'essence" {...fieldProps} />
             <Field label="Prix Gasoil"  type="number" value={prix.prix_gasoil}  onChange={setP('prix_gasoil')}  placeholder="9000"  suffix="GNF/L" error={prixErrors.prix_gasoil}  hint="Prix par litre de gasoil"  {...fieldProps} />
           </div>
-          <div style={{ background: palette.hover, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.md, padding: '12px 16px', marginBottom: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div className="fuelo-grid-2" style={{ background: palette.hover, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.md, padding: '12px 16px', marginBottom: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 11, color: palette.textMuted, marginBottom: 4 }}>50L d'essence =</div>
               <div style={{ fontSize: 16, fontWeight: 800, color: theme.colors.primary, fontFamily: theme.font.mono }}>{(parseInt(prix.prix_essence) * 50).toLocaleString('fr-FR')} GNF</div>
@@ -400,7 +400,7 @@ const handlePwdSave = async (e) => {
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.colors.warning} strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             <span>En dessous de ces seuils, une alerte est déclenchée automatiquement.</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          <div className="fuelo-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
             <Field label="Seuil Essence" type="number" value={seuils.seuil_essence} onChange={setQ('seuil_essence')} placeholder="300" suffix="Litres" hint="Recommandé : 300 L" {...fieldProps} />
             <Field label="Seuil Gasoil"  type="number" value={seuils.seuil_gasoil}  onChange={setQ('seuil_gasoil')}  placeholder="300" suffix="Litres" hint="Recommandé : 300 L" {...fieldProps} />
           </div>
@@ -425,7 +425,7 @@ const handlePwdSave = async (e) => {
             {pwdErrors.actuel && <div style={{ fontSize: theme.font.size.xs, color: theme.colors.danger, marginTop: 4 }}>{pwdErrors.actuel}</div>}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 20 }}>
+          <div className="fuelo-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 20 }}>
             {[{ k: 'nouveau', label: 'Nouveau mot de passe' }, { k: 'confirm', label: 'Confirmer' }].map(({ k, label }) => (
               <div key={k}>
                 <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{label}</div>
@@ -479,7 +479,10 @@ const handlePwdSave = async (e) => {
         @keyframes spin { to { transform: rotate(360deg); } }
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
-        @media (max-width: 768px) { .fuelo-params { padding: 20px 16px !important; } }
+        @media (max-width: 640px) {
+          .fuelo-params  { padding: 20px 16px !important; }
+          .fuelo-grid-2  { grid-template-columns: 1fr !important; }
+        }
       `}</style>
     </div>
   )
