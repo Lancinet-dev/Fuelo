@@ -13,6 +13,7 @@ import { useNotifications } from '../hooks/useNotifications'
 import SplashScreen         from './SplashScreen'
 import OnboardingModal      from './OnboardingModal'
 import SearchModal          from './SearchModal'
+import AssistantFuelo       from './AssistantFuelo'
 
 const AppLayout = memo(function AppLayout() {
   const { nonLues } = useAlertes()
@@ -53,6 +54,7 @@ const AppLayout = memo(function AppLayout() {
         <OnboardingModal user={user} onDone={() => setShowOnboarding(false)} />
       )}
       {searchOpen && <SearchModal onClose={closeSearch} />}
+      <AssistantFuelo />
 
       <div style={{
         display:    'flex',

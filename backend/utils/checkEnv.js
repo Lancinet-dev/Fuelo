@@ -22,6 +22,11 @@ const checkEnv = () => {
     process.exit(1)
   }
 
+  // Optionnelle — sans elle, l'Assistant IA répond avec une erreur 503 mais le reste de l'app fonctionne
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.warn('⚠️  ANTHROPIC_API_KEY absente — l\'Assistant IA Fuelo sera indisponible.')
+  }
+
   console.log('✅ Variables d\'environnement OK')
 }
 
