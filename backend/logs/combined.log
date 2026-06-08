@@ -223,3 +223,36 @@
 {"timestamp":"2026-06-08 01:54:26","level":"info","message":"✅ Cron jobs initialisés"}
 {"timestamp":"2026-06-08 01:54:29","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
 {"timestamp":"2026-06-08 01:54:29","level":"info","message":"✅ Cron jobs initialisés"}
+{"timestamp":"2026-06-08 02:00:00","level":"info","message":"🕐 Cron: Vérification stocks..."}
+{"timestamp":"2026-06-08 02:00:00","level":"info","message":"🕐 Cron: Backup quotidien DB..."}
+{"timestamp":"2026-06-08 02:00:00","level":"info","message":"🗄️  Backup: Démarrage export DB..."}
+{"timestamp":"2026-06-08 02:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 02:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 02:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 02:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 02:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 02:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 02:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 02:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 02:00:00","level":"info","message":"Alerte créée: Stock essence faible: 68.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 02:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 02:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 02:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 1300L)"}
+{"timestamp":"2026-06-08 02:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 02:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 02:00:02","level":"info","message":"✅ Backup OK — 16 tables, 353 lignes, 8 Ko, 2s"}
+{"timestamp":"2026-06-08 07:00:00","level":"info","message":"🕐 Cron: Vérification stocks..."}
+{"timestamp":"2026-06-08 07:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 07:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 07:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 07:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 07:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 07:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 07:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 07:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 07:00:00","level":"info","message":"Alerte créée: Stock essence faible: 68.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 07:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 07:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 07:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 1300L)"}
+{"timestamp":"2026-06-08 07:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 07:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
