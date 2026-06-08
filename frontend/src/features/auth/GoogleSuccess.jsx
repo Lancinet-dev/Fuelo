@@ -6,7 +6,7 @@
 
 import { useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import api         from '../../services/api'
+import { useAuth } from '../../context/AuthContext'
 import toast       from 'react-hot-toast'
 import AppLoader   from '../../ui/AppLoader'
 
@@ -20,12 +20,14 @@ const getHomePathByRole = (role) => {
   if (normalizedRole === 'pompiste') return '/pompiste'
   if (normalizedRole === 'chauffeur') return '/chauffeur'
   if (normalizedRole === 'logisticien') return '/logistique'
+  if (normalizedRole === 'superadmin') return '/admin'
   return '/dashboard'
 }
 
 export default function GoogleSuccess() {
   const navigate       = useNavigate()
   const [params]       = useSearchParams()
+  const { loginWithToken } = useAuth()
 
   useEffect(() => {
     const token     = params.get('token')
@@ -36,24 +38,27 @@ export default function GoogleSuccess() {
 
     if (error) {
       toast.error('Connexion Google échouée')
-      navigate('/login')
+      navigate('/login', { replace: true })
       return
     }
 
     if (!token) {
-      navigate('/login')
+      navigate('/login', { replace: true })
       return
     }
 
-    // Stocker le token
-    localStorage.setItem('fuelo_token', token)
-    localStorage.setItem('fuelo_station', String(stationId))
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-
-    toast.success(`Bienvenue ${decodeURIComponent(nom)} ⛽`)
-
-    // Rediriger selon rôle
-    navigate(getHomePathByRole(role))
+    // Recharger la session via le contexte (met à jour isAuthenticated/role
+    // — sans ça, PrivateRoute renvoie vers /login car le contexte ignore
+    // un token écrit directement dans localStorage)
+    loginWithToken(token, stationId)
+      .then((user) => {
+        toast.success(`Bienvenue ${decodeURIComponent(nom)} ⛽`)
+        navigate(getHomePathByRole(user?.role ?? role), { replace: true })
+      })
+      .catch(() => {
+        toast.error('Connexion Google échouée')
+        navigate('/login', { replace: true })
+      })
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

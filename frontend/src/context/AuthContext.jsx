@@ -158,10 +158,11 @@ export function AuthProvider({ children }) {
     isLogisticien: role === 'logisticien',
     isSuperAdmin: role === 'superadmin',
     login,
+    loginWithToken,
     register,
     logout,
     changerStation,
-  }), [user, stationId, loading, role, login, register, logout, changerStation])
+  }), [user, stationId, loading, role, login, loginWithToken, register, logout, changerStation])
 
   if (loading) return <AppLoader />
 
