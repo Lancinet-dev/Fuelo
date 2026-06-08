@@ -148,12 +148,13 @@ Comptes test prod :
 ## 🔴 PROBLÈMES CONNUS
 
 1. **Crons + Socket.IO peu fiables** — Render tier gratuit s'endort après 15 min. Cron rapports mensuels et vérif stock horaire non fiables → nécessite plan payant (~7$/mois).
-2. **EMAIL_PASS et GOOGLE_CLIENT_SECRET** à régénérer sur Render (JWT_SECRET déjà régénéré).
-3. ~~**Google OAuth cassé en prod — `BACKEND_URL` mal configuré sur Render**~~ — **RÉSOLU le 2026-06-07** :
+2. ~~**EMAIL_PASS expiré — emails non envoyés**~~ — **RÉSOLU le 2026-06-08** : nouveau mot de passe d'application Gmail régénéré par l'utilisateur, mis à jour dans `.env` local ET sur Render. Connexion SMTP vérifiée avec succès (`transporter.verify()` via Nodemailer, config utilisée dans `forgotPasswordController.js` / `backupService.js` / `reportService.js`). Les emails (reset password, notifs backup) fonctionnent à nouveau.
+3. ~~**GOOGLE_CLIENT_SECRET à régénérer sur Render**~~ — **RÉSOLU le 2026-06-08** : régénéré et mis à jour sur Render par l'utilisateur. `JWT_SECRET`, `EMAIL_PASS` et `GOOGLE_CLIENT_SECRET` sont désormais tous régénérés.
+4. ~~**Google OAuth cassé en prod — `BACKEND_URL` mal configuré sur Render**~~ — **RÉSOLU le 2026-06-07** :
    - Diagnostic : `BACKEND_URL` sur Render valait `https://fuelo-backend.onrender.com` (ancien nom de service, 404) au lieu de `https://fuelo.onrender.com` → `passport.js` construisait un `callbackURL`/`redirect_uri` ne correspondant pas à celui enregistré dans Google Cloud Console → **Erreur 400 : redirect_uri_mismatch**.
    - Fix appliqué par l'utilisateur sur Render → Environment (`BACKEND_URL` → `https://fuelo.onrender.com`), redéploiement auto effectué.
    - **Vérifié en reproduction** (`curl -sv https://fuelo.onrender.com/api/auth/google`) : le `redirect_uri` envoyé à Google est désormais `https%3A%2F%2Ffuelo.onrender.com%2Fapi%2Fauth%2Fgoogle%2Fcallback` (correct). `FRONTEND_URL` et `GOOGLE_CLIENT_ID` confirmés corrects également.
-   - ⚠️ Si un test réel du bouton "Se connecter avec Google" affiche `?error=server_error` au retour, ce sera `GOOGLE_CLIENT_SECRET` (point 2 ci-dessus) à régénérer — non vérifiable par `curl` seul (intervient à l'échange du code, après le redirect).
+   - `GOOGLE_CLIENT_SECRET` régénéré depuis (point 3 ci-dessus) — si `?error=server_error` réapparaît au retour du bouton "Se connecter avec Google", revérifier ce secret en premier (intervient à l'échange du code, après le redirect, non testable par `curl` seul).
 
 ---
 
