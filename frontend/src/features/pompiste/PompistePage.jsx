@@ -2,7 +2,7 @@
 // FUELO — PompistePage (anti-fraude renforcé)
 // ================================================
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useAuth }       from '../../context/AuthContext'
 import { useStock }      from '../../hooks/useStock'
 import { useVentes }     from '../../hooks/useVentes'
@@ -38,7 +38,6 @@ function useElapsed(startedAt) {
 // ── Modal service (démarrer / terminer) ──────────
 function ServiceModal({ mode, onClose, onSubmit, loading, isDark, palette }) {
   const [photo,           setPhoto]           = useState(null)
-  const [preview,         setPreview]         = useState(null)
   const [compteurEssence, setCompteurEssence] = useState('')
   const [compteurGasoil,  setCompteurGasoil]  = useState('')
   const [errors,          setErrors]          = useState({})
@@ -46,11 +45,15 @@ function ServiceModal({ mode, onClose, onSubmit, loading, isDark, palette }) {
 
   const isDemarrer = mode === 'demarrer'
 
+  // Mémoïsée sur `photo` — et révoquée au changement/démontage (sinon fuite
+  // mémoire à chaque nouvelle prise de photo)
+  const preview = useMemo(() => (photo ? URL.createObjectURL(photo) : null), [photo])
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview) }, [preview])
+
   const handlePhoto = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     setPhoto(file)
-    setPreview(URL.createObjectURL(file))
     setErrors(p => ({ ...p, photo: null }))
   }
 

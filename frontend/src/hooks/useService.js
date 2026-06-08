@@ -18,7 +18,11 @@ export function useService() {
 
   const { mutateAsync: demarrer, isPending: demarrerLoading } = useMutation({
     mutationFn: (formData) =>
-      api.post('/services', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+      // Content-Type à `undefined` : laisse le navigateur poser
+      // `multipart/form-data; boundary=...` lui-même — un override manuel
+      // (ou l'`application/json` par défaut de l'instance axios) casse le
+      // parsing multer côté backend (boundary manquant / FormData sérialisée en JSON)
+      api.post('/services', formData, { headers: { 'Content-Type': undefined } })
         .then(r => r.data),
     onSuccess: () => {
       toast.success('Service démarré')
@@ -29,7 +33,7 @@ export function useService() {
 
   const { mutateAsync: terminer, isPending: terminerLoading } = useMutation({
     mutationFn: ({ id, formData }) =>
-      api.post(`/services/${id}/terminer`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+      api.post(`/services/${id}/terminer`, formData, { headers: { 'Content-Type': undefined } })
         .then(r => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['service-actif'] })

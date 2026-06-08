@@ -21,7 +21,10 @@ export function useTrajet() {
       const fd = new FormData()
       Object.entries(fields).forEach(([k, v]) => fd.append(k, String(v)))
       if (photoFile) fd.append('photo', photoFile)
-      return api.post('/trajets', fd).then(r => r.data)
+      // Content-Type à `undefined` : sans ça, l'instance axios applique son
+      // défaut `application/json` et sérialise la FormData en JSON (photo perdue) —
+      // laisser le navigateur poser `multipart/form-data; boundary=...`
+      return api.post('/trajets', fd, { headers: { 'Content-Type': undefined } }).then(r => r.data)
     },
     onSuccess: () => {
       toast.success('Trajet démarré — GPS activé')
@@ -45,7 +48,7 @@ export function useTrajet() {
       const fd = new FormData()
       Object.entries(fields).forEach(([k, v]) => fd.append(k, String(v)))
       if (photoFile) fd.append('photo', photoFile)
-      return api.post(`/trajets/${id}/arriver`, fd).then(r => r.data)
+      return api.post(`/trajets/${id}/arriver`, fd, { headers: { 'Content-Type': undefined } }).then(r => r.data)
     },
     onSuccess: () => {
       toast.success('Arrivée déclarée — Montrez votre code au logisticien')

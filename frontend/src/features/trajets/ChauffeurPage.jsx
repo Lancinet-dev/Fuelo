@@ -2,7 +2,7 @@
 // FUELO — Interface Chauffeur GPS (premium mobile)
 // ================================================
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useAuth }        from '../../context/AuthContext'
 import { useTheme }       from '../../context/ThemeContext'
 import { useTrajet }      from '../../hooks/useTrajet'
@@ -113,7 +113,12 @@ function LiveMap({ lastPos, isDark }) {
 // ── Sélecteur photo (caméra) ──────────────────────
 function PhotoInput({ label, btnLabel, photoFile, onChange, palette, isDark }) {
   const inputRef = useRef(null)
-  const preview  = photoFile ? URL.createObjectURL(photoFile) : null
+
+  // Mémoïsée sur `photoFile` — sinon chaque re-render (ex: mise à jour GPS
+  // pendant un trajet actif) crée une nouvelle blob URL, fait recharger
+  // l'<img> en boucle et fuit la mémoire
+  const preview = useMemo(() => (photoFile ? URL.createObjectURL(photoFile) : null), [photoFile])
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview) }, [preview])
 
   return (
     <div>
