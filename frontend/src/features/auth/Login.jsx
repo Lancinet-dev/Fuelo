@@ -70,14 +70,29 @@ export default function Login() {
   const handleSubmit = async (ev) => {
     ev.preventDefault()
     if (!validate()) return
+
+    // Trim systématique — évite les faux rejets "identifiants incorrects"
+    // causés par un espace collé au copier-coller (email ou mot de passe)
+    const cleanEmail    = email.trim()
+    const cleanPassword = password.trim()
+
     setLoading(true)
     try {
-      const user = await login(email, password)
+      const user = await login(cleanEmail, cleanPassword)
       toast.success(`Bienvenue ${user.nom}`)
       sessionStorage.setItem('fuelo_just_logged_in', '1')
       navigate(getHomePath(user.role))
     } catch (err) {
-      const msg = err?.response?.data?.error ?? 'Email ou mot de passe incorrect'
+      let msg
+      if (!err?.response) {
+        msg = 'Connexion au serveur impossible. Vérifiez votre connexion internet.'
+      } else if (err.response.status === 429) {
+        msg = err.response.data?.error ?? 'Trop de tentatives. Réessayez dans quelques minutes.'
+      } else if (err.response.status === 403) {
+        msg = err.response.data?.error ?? 'Compte désactivé. Contactez votre gérant.'
+      } else {
+        msg = err.response.data?.error ?? 'Email ou mot de passe incorrect'
+      }
       toast.error(msg)
       setErrors({ global: msg })
     } finally {

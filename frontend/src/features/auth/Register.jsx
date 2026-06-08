@@ -105,7 +105,12 @@ export default function Register() {
   const handleSubmit = async () => {
     setLoading(true)
     try {
-      const user = await register({ nom: form.nom, email: form.email, password: form.password, nom_station: form.nom_station })
+      const user = await register({
+        nom:         form.nom.trim(),
+        email:       form.email.trim(),
+        password:    form.password.trim(),
+        nom_station: form.nom_station.trim(),
+      })
       toast.success(`Bienvenue sur Fuelo, ${user.nom} !`)
       navigate('/dashboard')
     } catch (err) {

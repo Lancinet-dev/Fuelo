@@ -6,6 +6,12 @@ const pool   = require('../config/database')
 const bcrypt = require('bcryptjs')
 const jwt    = require('jsonwebtoken')
 const crypto = require('crypto')
+const logger = require('../utils/logger')
+
+// Email stocké et comparé en minuscules + sans espaces — évite les faux
+// rejets "identifiants incorrects" quand la casse diffère entre l'inscription
+// et la connexion (ex: "Jean@Gmail.com" saisi puis "jean@gmail.com" au login)
+const normalizeEmail = (email) => String(email ?? '').trim().toLowerCase()
 
 const REFRESH_EXPIRES_MS = 30 * 24 * 60 * 60 * 1000 // 30 jours
 
@@ -33,10 +39,15 @@ const storeRefreshToken = async (userId, token) => {
 // ── REGISTER ─────────────────────────────────────────
 const register = async (req, res) => {
   try {
-    const { nom, email, password, nom_station } = req.body
+    const { nom, password, nom_station } = req.body
+    const email = normalizeEmail(req.body.email)
 
-    const existe = await pool.query('SELECT id FROM users WHERE email = $1', [email])
+    const existe = await pool.query(
+      'SELECT id FROM users WHERE LOWER(email) = LOWER($1) AND deleted_at IS NULL',
+      [email]
+    )
     if (existe.rows.length > 0) {
+      logger.warn(`Register refusé — email déjà utilisé : ${email}`)
       return res.status(400).json({ error: 'Email déjà utilisé' })
     }
 
@@ -72,8 +83,10 @@ const register = async (req, res) => {
     await storeRefreshToken(user.rows[0].id, refreshToken)
 
     res.cookie('fuelo_refresh', refreshToken, cookieOptions())
+    logger.info(`Register réussi — ${email} (id ${user.rows[0].id})`)
     res.status(201).json({ token: accessToken, user: user.rows[0], station_id })
   } catch (err) {
+    logger.error(`Register erreur — ${err.message}`)
     res.status(500).json({ error: err.message })
   }
 }
@@ -81,23 +94,43 @@ const register = async (req, res) => {
 // ── LOGIN ─────────────────────────────────────────────
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body
+    const email = normalizeEmail(req.body.email)
+    const { password } = req.body
 
-    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email])
+    // Comparaison insensible à la casse + espaces, et on ignore les comptes
+    // soft-deleted — sinon un email "Jean@Test.com" enregistré ne matche plus
+    // "jean@test.com" saisi au login → faux rejet "identifiants incorrects"
+    const result = await pool.query(
+      'SELECT * FROM users WHERE LOWER(email) = LOWER($1) AND deleted_at IS NULL',
+      [email]
+    )
     if (result.rows.length === 0) {
+      logger.warn(`Login échoué — email introuvable : ${email}`)
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' })
     }
 
     const user = result.rows[0]
 
     if (!user.actif) {
+      logger.warn(`Login échoué — compte désactivé : ${email} (id ${user.id})`)
       return res.status(403).json({ error: 'Compte désactivé. Contactez votre gérant.' })
+    }
+
+    // Compte créé via Google OAuth → pas de mot de passe local.
+    // bcrypt.compare() lève une exception si le hash est null (→ 500 confus),
+    // donc on renvoie un message clair plutôt que de laisser planter la requête.
+    if (!user.password) {
+      logger.warn(`Login échoué — compte Google sans mot de passe : ${email} (id ${user.id})`)
+      return res.status(401).json({ error: 'Ce compte utilise la connexion Google. Cliquez sur "Continuer avec Google".' })
     }
 
     const valid = await bcrypt.compare(password, user.password)
     if (!valid) {
+      logger.warn(`Login échoué — mot de passe invalide : ${email} (id ${user.id})`)
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' })
     }
+
+    logger.info(`Login réussi — ${email} (id ${user.id}, rôle ${user.role})`)
 
     const station = await pool.query(
       `SELECT s.id FROM stations s
@@ -127,6 +160,7 @@ const login = async (req, res) => {
       role: user.role
     })
   } catch (err) {
+    logger.error(`Login erreur — ${err.message}`)
     res.status(500).json({ error: err.message })
   }
 }

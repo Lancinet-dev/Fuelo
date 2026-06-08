@@ -21,14 +21,14 @@ const transporter = nodemailer.createTransport({
 // ── POST /auth/forgot-password ───────────────────────
 const forgotPassword = async (req, res) => {
   try {
-    const { email } = req.body
+    const email = String(req.body.email ?? '').trim().toLowerCase()
 
     if (!email) {
       return res.status(400).json({ error: 'Email obligatoire' })
     }
 
     const result = await pool.query(
-      'SELECT id, nom, email FROM users WHERE email = $1 AND deleted_at IS NULL',
+      'SELECT id, nom, email FROM users WHERE LOWER(email) = LOWER($1) AND deleted_at IS NULL',
       [email]
     )
 

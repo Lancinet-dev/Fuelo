@@ -15,16 +15,17 @@ passport.use(new GoogleStrategy({
 },
 async (accessToken, refreshToken, profile, done) => {
   try {
-    const email  = profile.emails?.[0]?.value
+    const email  = String(profile.emails?.[0]?.value ?? '').trim().toLowerCase()
     const nom    = profile.displayName
     const avatar = profile.photos?.[0]?.value
     const googleId = profile.id
 
     if (!email) return done(null, false)
 
-    // Vérifier si user existe déjà
+    // Comparaison insensible à la casse — un compte créé en local avec
+    // "Jean@Gmail.com" doit être retrouvé même si Google renvoie "jean@gmail.com"
     let result = await pool.query(
-      'SELECT * FROM users WHERE email = $1 AND deleted_at IS NULL',
+      'SELECT * FROM users WHERE LOWER(email) = LOWER($1) AND deleted_at IS NULL',
       [email]
     )
 
