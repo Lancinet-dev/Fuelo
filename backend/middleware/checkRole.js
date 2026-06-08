@@ -116,6 +116,7 @@ const canManageEmployes = (req, res, next) => {
 
 module.exports = {
   checkRole,
+  checkExactRole,
   isPompiste,
   isManager,
   isOwner,

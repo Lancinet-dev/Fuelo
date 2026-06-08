@@ -18,6 +18,28 @@ const transporter = nodemailer.createTransport({
   },
 })
 
+// Diagnostic au démarrage — confirme que les variables sont bien lues
+// SANS jamais loguer leur valeur (uniquement présence/longueur)
+logger.info(
+  `[email] Config transporter — service=${process.env.EMAIL_SERVICE || 'gmail (défaut)'} ` +
+  `EMAIL_USER=${process.env.EMAIL_USER ? `défini (${process.env.EMAIL_USER})` : '❌ MANQUANT'} ` +
+  `EMAIL_PASS=${process.env.EMAIL_PASS ? `défini (${process.env.EMAIL_PASS.length} caractères)` : '❌ MANQUANT'}`
+)
+
+// Vérifie la connexion/authentification SMTP dès le démarrage du serveur —
+// permet de voir l'échec dans les logs Render sans attendre qu'un utilisateur
+// déclenche /forgot-password
+transporter.verify((err) => {
+  if (err) {
+    logger.error(
+      `[email] Échec vérification SMTP au démarrage — code=${err.code ?? '?'} ` +
+      `responseCode=${err.responseCode ?? '?'} command=${err.command ?? '?'} message=${err.message}`
+    )
+  } else {
+    logger.info('[email] Connexion SMTP vérifiée avec succès — transporter prêt')
+  }
+})
+
 // ── POST /auth/forgot-password ───────────────────────
 const forgotPassword = async (req, res) => {
   try {
@@ -48,6 +70,8 @@ const forgotPassword = async (req, res) => {
     )
 
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`
+
+    logger.info(`[email] Envoi du lien de réinitialisation à ${user.email} via ${process.env.EMAIL_SERVICE || 'gmail'}...`)
 
     // Envoyer email
     await transporter.sendMail({
@@ -86,10 +110,16 @@ const forgotPassword = async (req, res) => {
       `,
     })
 
-    logger.info(`Reset password envoyé à ${user.email}`)
+    logger.info(`[email] ✅ Reset password envoyé à ${user.email}`)
     res.json({ message: 'Si cet email existe, un lien a été envoyé.' })
   } catch (err) {
-    logger.error('forgotPassword', err)
+    // Détail complet de l'erreur SMTP côté logs serveur (jamais renvoyé au client —
+    // pourrait exposer des infos internes, cf. audit sécurité CWE-209)
+    logger.error(
+      `[email] ❌ Échec envoi forgotPassword — code=${err.code ?? '?'} ` +
+      `responseCode=${err.responseCode ?? '?'} command=${err.command ?? '?'} ` +
+      `response=${err.response ?? '?'} message=${err.message}`
+    )
     res.status(500).json({ error: 'Erreur lors de l\'envoi' })
   }
 }
