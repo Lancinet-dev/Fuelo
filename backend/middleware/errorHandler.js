@@ -21,6 +21,20 @@ const errorHandler = (err, req, res, next) => {
     })
   }
 
+  // Erreur Multer — upload de photo (pompiste/chauffeur/livraisons...)
+  // Sans ce bloc, "fichier trop lourd" ou "mauvais format" remontaient en
+  // 500 "Erreur serveur interne" sans aucune indication pour l'utilisateur
+  if (err.name === 'MulterError') {
+    const messages = {
+      LIMIT_FILE_SIZE:       'Photo trop volumineuse (maximum 8 Mo). Réduisez la qualité de l\'appareil photo et réessayez.',
+      LIMIT_UNEXPECTED_FILE: 'Champ de fichier invalide.',
+    }
+    return res.status(400).json({
+      status: 'fail',
+      error:  messages[err.code] ?? err.message,
+    })
+  }
+
   // Erreur PostgreSQL — doublon
   if (err.code === '23505') {
     return res.status(400).json({
