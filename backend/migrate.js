@@ -214,6 +214,15 @@ ALTER TABLE trajets ADD COLUMN IF NOT EXISTS qr_expires_at TIMESTAMP;
 ALTER TABLE trajets ADD COLUMN IF NOT EXISTS photo_depart_url VARCHAR(500);
 ALTER TABLE trajets ADD COLUMN IF NOT EXISTS photo_arrivee_url VARCHAR(500);
 
+-- Centre Anti-Fraude — résolution des cas de fraude détectés
+ALTER TABLE services ADD COLUMN IF NOT EXISTS resolu BOOLEAN DEFAULT FALSE;
+ALTER TABLE services ADD COLUMN IF NOT EXISTS resolu_par INT REFERENCES users(id);
+ALTER TABLE services ADD COLUMN IF NOT EXISTS resolu_at TIMESTAMP;
+
+ALTER TABLE trajets ADD COLUMN IF NOT EXISTS resolu BOOLEAN DEFAULT FALSE;
+ALTER TABLE trajets ADD COLUMN IF NOT EXISTS resolu_par INT REFERENCES users(id);
+ALTER TABLE trajets ADD COLUMN IF NOT EXISTS resolu_at TIMESTAMP;
+
 -- Performances et primes employés
 CREATE TABLE IF NOT EXISTS performances (
   id                  SERIAL PRIMARY KEY,

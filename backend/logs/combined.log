@@ -256,3 +256,22 @@
 {"timestamp":"2026-06-08 07:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 1300L)"}
 {"timestamp":"2026-06-08 07:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
 {"timestamp":"2026-06-08 07:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 07:43:19","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-06-08 07:43:20","level":"info","message":"✅ Cron jobs initialisés"}
+{"timestamp":"2026-06-08 07:44:34","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-06-08 07:44:34","level":"info","message":"✅ Cron jobs initialisés"}
+{"timestamp":"2026-06-08 07:47:23","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-06-08 07:47:23","level":"info","message":"✅ Cron jobs initialisés"}
+{"timestamp":"2026-06-08 07:47:32","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-06-08 07:47:33","level":"info","message":"✅ Cron jobs initialisés"}
+{"timestamp":"2026-06-08 07:47:43","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-06-08 07:47:43","level":"info","message":"✅ Cron jobs initialisés"}
+{"timestamp":"2026-06-08 07:47:47","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-06-08 07:47:48","level":"info","message":"✅ Cron jobs initialisés"}
+{"timestamp":"2026-06-08 07:47:53","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-06-08 07:47:53","level":"info","message":"✅ Cron jobs initialisés"}
+{"timestamp":"2026-06-08 08:00:00","level":"info","message":"🕐 Cron: Vérification stocks..."}
+{"timestamp":"2026-06-08 08:10:26","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-06-08 08:10:26","level":"info","message":"✅ Cron jobs initialisés"}
+{"timestamp":"2026-06-08 08:10:32","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-06-08 08:10:32","level":"info","message":"✅ Cron jobs initialisés"}

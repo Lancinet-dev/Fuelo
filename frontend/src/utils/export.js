@@ -775,3 +775,362 @@ export const exportTrajetsExcel = async (trajets = [], stats = {}, options = {})
 
   await downloadBuffer(wb, `Fuelo_Logistique_${stamp()}.xlsx`)
 }
+
+// ── EXPORT PDF — CENTRE ANTI-FRAUDE ────────────────────
+const fmtEcartPdf = (v) => {
+  const n = toNum(v)
+  return `${n > 0 ? '+' : ''}${n.toFixed(1)} L`
+}
+
+export const exportAntiFraudePDF = async (data, nomStation = 'Station', logoUrl = null) => {
+  if (!data) return
+  const name = cleanName(nomStation)
+  const { stats = {}, classementPompistes = [], alertesFraude = [], alertesTransport = [] } = data
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+  const W   = doc.internal.pageSize.getWidth()
+  const logoBase64 = logoUrl ? await urlToBase64(logoUrl) : null
+
+  const drawAFHeader = () => {
+    doc.setFillColor(...C.navy); doc.rect(0, 0, W, 34, 'F')
+    doc.setFillColor(...C.red);  doc.rect(0, 0, 5, 34, 'F')
+
+    if (logoBase64) {
+      try { doc.addImage(logoBase64, 'JPEG', 9, 5, 24, 24) } catch {}
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...C.white)
+      doc.text(name, 37, 16)
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(200, 210, 225)
+      doc.text('Centre Anti-Fraude - Rapport complet', 37, 23)
+    } else {
+      doc.setTextColor(...C.white); doc.setFont('helvetica', 'bold'); doc.setFontSize(22)
+      doc.text('FUELO', 14, 14)
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(200, 210, 225)
+      doc.text('Centre Anti-Fraude - Rapport complet', 14, 21)
+    }
+
+    doc.setTextColor(...C.white); doc.setFont('helvetica', 'bold'); doc.setFontSize(9)
+    doc.text(`Station : ${name}`, W - 14, 14, { align: 'right' })
+    doc.setFont('helvetica', 'normal'); doc.setTextColor(200, 210, 225)
+    doc.text(`Genere le : ${fmtNow()}`, W - 14, 20, { align: 'right' })
+    doc.text(`${stats.totalFraudes ?? 0} cas de fraude detectes`, W - 14, 26, { align: 'right' })
+  }
+
+  const onDrawPage = (hookData) => {
+    if (hookData.pageNumber > 1) drawAFHeader()
+    drawFooter(doc)
+  }
+
+  // ── Page 1 — vue d'ensemble + classement ──────────
+  drawAFHeader()
+
+  const gap   = 4
+  const total = W - 28 - gap * 3
+  const cw    = total / 4
+  metricCard(doc, 14,                  38, cw, 'Fraudes detectees',     String(stats.totalFraudes ?? 0),        C.red)
+  metricCard(doc, 14 + cw + gap,       38, cw, 'Montant recupere',      fmtGNF(stats.montantRecupere ?? 0),     C.orange)
+  metricCard(doc, 14 + (cw + gap) * 2, 38, cw, 'Pompistes surveilles',  String(stats.pompistesSurveilles ?? 0), C.blue)
+  metricCard(doc, 14 + (cw + gap) * 3, 38, cw, 'Taux de fraude',        `${stats.tauxFraude ?? 0} %`,           C.green)
+
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...C.text)
+  doc.text('Classement fiabilite des pompistes', 14, 70)
+
+  autoTable(doc, {
+    startY: 74,
+    margin: { top: 40, right: 14, bottom: 16, left: 14 },
+    head: [['Pompiste', 'Score / 100', 'Badge', 'Fraudes detectees', 'Montant fraude estime']],
+    body: classementPompistes.length
+      ? classementPompistes.map(p => [p.nom, String(p.score), p.badge, String(p.fraudes), p.montantFraude > 0 ? fmtGNF(p.montantFraude) : '-'])
+      : [['-', '-', '-', '-', 'Aucun pompiste surveille pour le moment']],
+    styles: {
+      font: 'helvetica', fontSize: 8, cellPadding: { top: 3, right: 4, bottom: 3, left: 4 },
+      textColor: C.text, lineColor: C.line, lineWidth: 0.1, valign: 'middle',
+    },
+    headStyles: { fillColor: C.navy, textColor: C.white, fontStyle: 'bold', fontSize: 8 },
+    alternateRowStyles: { fillColor: C.soft },
+    columnStyles: {
+      0: { cellWidth: 90 },
+      1: { cellWidth: 36, halign: 'center' },
+      2: { cellWidth: 46, halign: 'center', fontStyle: 'bold' },
+      3: { cellWidth: 46, halign: 'center' },
+      4: { cellWidth: 60, halign: 'right' },
+    },
+    didParseCell: (hookData) => {
+      if (hookData.section === 'body' && hookData.column.index === 2) {
+        const badge = hookData.cell.raw
+        hookData.cell.styles.textColor = badge === 'Fiable' ? C.green : badge === 'Surveillé' ? C.orange : badge === 'Dangereux' ? C.red : C.text
+      }
+    },
+    didDrawPage: onDrawPage,
+  })
+
+  // ── Page 2 — alertes fraude pompistes ──────────────
+  doc.addPage()
+  drawAFHeader()
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...C.text)
+  doc.text('Alertes fraude - pompistes (anti-fraude compteur)', 14, 42)
+
+  autoTable(doc, {
+    startY: 46,
+    margin: { top: 40, right: 14, bottom: 16, left: 14 },
+    head: [['#', 'Pompiste', 'Ecart essence', 'Ecart gasoil', 'Montant perdu estime', 'Statut', 'Detecte le']],
+    body: alertesFraude.length
+      ? alertesFraude.map(a => [
+          String(a.id),
+          a.pompisteNom ?? '-',
+          fmtEcartPdf(a.ecartEssence),
+          fmtEcartPdf(a.ecartGasoil),
+          fmtGNF(a.montantPerdu),
+          a.statut === 'resolu' ? 'Resolu' : 'En cours',
+          fmtDate(a.date),
+        ])
+      : [['-', 'Aucune alerte fraude pompiste detectee', '-', '-', '-', '-', '-']],
+    styles: {
+      font: 'helvetica', fontSize: 8, cellPadding: { top: 3, right: 4, bottom: 3, left: 4 },
+      textColor: C.text, lineColor: C.line, lineWidth: 0.1, valign: 'middle',
+    },
+    headStyles: { fillColor: C.red, textColor: C.white, fontStyle: 'bold', fontSize: 8 },
+    alternateRowStyles: { fillColor: C.soft },
+    columnStyles: {
+      0: { cellWidth: 14, halign: 'center' },
+      1: { cellWidth: 60 },
+      2: { cellWidth: 36, halign: 'right' },
+      3: { cellWidth: 36, halign: 'right' },
+      4: { cellWidth: 50, halign: 'right' },
+      5: { cellWidth: 30, halign: 'center' },
+      6: { cellWidth: 42 },
+    },
+    didParseCell: (hookData) => {
+      if (hookData.section === 'body' && hookData.column.index === 5) {
+        hookData.cell.styles.textColor  = hookData.cell.raw === 'Resolu' ? C.green : C.red
+        hookData.cell.styles.fontStyle  = 'bold'
+      }
+    },
+    didDrawPage: onDrawPage,
+  })
+
+  // ── Page 3 — alertes fraude transport (citernes) ───
+  doc.addPage()
+  drawAFHeader()
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...C.text)
+  doc.text('Alertes fraude - transport (citernes)', 14, 42)
+
+  autoTable(doc, {
+    startY: 46,
+    margin: { top: 40, right: 14, bottom: 16, left: 14 },
+    head: [['#', 'Chauffeur', 'Citerne', 'Depart (L)', 'Arrivee (L)', 'Ecart', 'Montant perdu estime', 'QR code', 'Statut', 'Detecte le']],
+    body: alertesTransport.length
+      ? alertesTransport.map(t => [
+          String(t.id),
+          t.chauffeurNom ?? '-',
+          t.citerneCode ?? '-',
+          fmtL(t.qtyDepart),
+          t.qtyArrivee != null ? fmtL(t.qtyArrivee) : '-',
+          fmtEcartPdf(t.ecart),
+          fmtGNF(t.montantPerdu),
+          t.qrCode ?? '-',
+          t.statut === 'resolu' ? 'Resolu' : 'En cours',
+          fmtDate(t.date),
+        ])
+      : [['-', 'Aucune alerte fraude transport detectee', '-', '-', '-', '-', '-', '-', '-', '-']],
+    styles: {
+      font: 'helvetica', fontSize: 7.5, cellPadding: { top: 3, right: 3, bottom: 3, left: 3 },
+      textColor: C.text, lineColor: C.line, lineWidth: 0.1, valign: 'middle',
+    },
+    headStyles: { fillColor: C.orange, textColor: C.white, fontStyle: 'bold', fontSize: 7.5 },
+    alternateRowStyles: { fillColor: C.soft },
+    columnStyles: {
+      0: { cellWidth: 12, halign: 'center' },
+      1: { cellWidth: 42 },
+      2: { cellWidth: 26, halign: 'center' },
+      3: { cellWidth: 28, halign: 'right' },
+      4: { cellWidth: 28, halign: 'right' },
+      5: { cellWidth: 26, halign: 'right' },
+      6: { cellWidth: 44, halign: 'right' },
+      7: { cellWidth: 38, halign: 'center' },
+      8: { cellWidth: 26, halign: 'center' },
+      9: { cellWidth: 38 },
+    },
+    didParseCell: (hookData) => {
+      if (hookData.section === 'body' && hookData.column.index === 8) {
+        hookData.cell.styles.textColor = hookData.cell.raw === 'Resolu' ? C.green : C.red
+        hookData.cell.styles.fontStyle = 'bold'
+      }
+    },
+    didDrawPage: onDrawPage,
+  })
+
+  drawFooter(doc)
+  doc.save(`Fuelo_AntiFraude_${fileSlug(name)}_${stamp()}.pdf`)
+}
+
+// ── EXPORT EXCEL — CENTRE ANTI-FRAUDE (multi-feuilles) ─
+export const exportAntiFraudeExcel = async (data, nomStation = 'Station') => {
+  if (!data) return
+  const name = cleanName(nomStation)
+  const { stats = {}, fraudesParMois = [], classementPompistes = [], alertesFraude = [], alertesTransport = [] } = data
+
+  const wb = new ExcelJS.Workbook()
+  wb.creator = 'Fuelo'; wb.created = new Date(); wb.modified = new Date()
+  wb.subject = 'Rapport Centre Anti-Fraude'
+  wb.title   = 'Fuelo - Centre Anti-Fraude'
+
+  const fmtStatutCas = (s) => (s === 'resolu' ? 'Resolu' : 'En cours')
+
+  // ── Feuille 1 : Resume ─────────────────────────────
+  const ws1 = wb.addWorksheet('Résumé')
+  styleCols(ws1, [{ width: 34 }, { width: 22 }, { width: 16 }, { width: 16 }])
+
+  addTitleBand(ws1, 'FUELO — CENTRE ANTI-FRAUDE — RAPPORT COMPLET', 'A1:D1', XL.red)
+  addMetaRow(ws1, `Station : ${name}  ·  Généré le : ${fmtDateXL(new Date())}`, 'A2:D2')
+  ws1.addRow([]).height = 8
+
+  addSectionHeader(ws1, '▸  INDICATEURS CLÉS', 'A4:D4', XL.orange)
+  addColHeaders(ws1, ['INDICATEUR', 'VALEUR', '', ''], ['left', 'right', 'left', 'left'])
+
+  const kpis = [
+    ['Total fraudes détectées',        stats.totalFraudes ?? 0,        '#,##0'],
+    ['Montant récupéré estimé (GNF)',  stats.montantRecupere ?? 0,     '#,##0'],
+    ['Pompistes surveillés',           stats.pompistesSurveilles ?? 0, '#,##0'],
+    ['Taux de fraude (%)',             stats.tauxFraude ?? 0,          '0.0'],
+    ['Alertes fraude pompistes',       alertesFraude.length,           '#,##0'],
+    ['Alertes fraude transport',       alertesTransport.length,        '#,##0'],
+  ]
+  kpis.forEach(([label, val, fmtCode], i) => {
+    const row = addDataRow(ws1, [label, val, '', ''], ['left', 'right', 'left', 'left'], i % 2 === 1, ['', fmtCode, '', ''])
+    if (val > 0 && (label.startsWith('Total fraudes') || label.startsWith('Alertes')))
+      row.getCell(2).font = { name: 'Calibri', size: 10, bold: true, color: { argb: XL.red } }
+  })
+
+  // ── Feuille 2 : Fraudes par mois ───────────────────
+  const ws2 = wb.addWorksheet('Fraudes par mois')
+  styleCols(ws2, [{ width: 18 }, { width: 16 }, { width: 16 }, { width: 14 }])
+  ws2.views = [{ state: 'frozen', ySplit: 5 }]
+
+  addTitleBand(ws2, 'FUELO — FRAUDES PAR MOIS (12 DERNIERS MOIS)', 'A1:D1', XL.red)
+  addMetaRow(ws2, `Généré le : ${fmtDateXL(new Date())}`, 'A2:D2')
+  addMetaRow(ws2, `${fraudesParMois.reduce((s, m) => s + (m.total ?? 0), 0)} cas de fraude au total sur la période`, 'A3:D3')
+  ws2.addRow([]).height = 8
+
+  const h2 = addColHeaders(ws2, ['MOIS', 'POMPISTES', 'CHAUFFEURS', 'TOTAL'], ['left', 'right', 'right', 'right'])
+  ws2.autoFilter = { from: { row: h2.number, column: 1 }, to: { row: h2.number, column: 4 } }
+
+  const moisRows = fraudesParMois.length ? fraudesParMois : [{ mois: '-', pompistes: 0, chauffeurs: 0, total: 0 }]
+  moisRows.forEach((m, i) => {
+    const row = addDataRow(ws2, [m.mois, m.pompistes ?? 0, m.chauffeurs ?? 0, m.total ?? 0],
+      ['left', 'right', 'right', 'right'], i % 2 === 1, ['', '#,##0', '#,##0', '#,##0'])
+    if ((m.total ?? 0) > 0) row.getCell(4).font = { name: 'Calibri', size: 10, bold: true, color: { argb: XL.red } }
+  })
+
+  // ── Feuille 3 : Classement pompistes ───────────────
+  const ws3 = wb.addWorksheet('Classement pompistes')
+  styleCols(ws3, [
+    { width: 8 }, { width: 28 }, { width: 32 }, { width: 14 },
+    { width: 12 }, { width: 12 }, { width: 16 }, { width: 22 },
+  ])
+  ws3.views = [{ state: 'frozen', ySplit: 5 }]
+  ws3.properties.tabColor = { argb: XL.blue }
+
+  addTitleBand(ws3, 'FUELO — CLASSEMENT FIABILITÉ POMPISTES', 'A1:H1', XL.blue)
+  addMetaRow(ws3, `Généré le : ${fmtDateXL(new Date())}`, 'A2:H2')
+  addMetaRow(ws3, `${classementPompistes.length} pompiste(s) classé(s) — score basé sur le taux et le nombre de fraudes`, 'A3:H3')
+  ws3.addRow([]).height = 8
+
+  const h3 = addColHeaders(ws3,
+    ['ID', 'POMPISTE', 'EMAIL', 'SERVICES', 'FRAUDES', 'SCORE / 100', 'BADGE', 'MONTANT FRAUDÉ ESTIMÉ'],
+    ['center', 'left', 'left', 'right', 'right', 'right', 'center', 'right']
+  )
+  ws3.autoFilter = { from: { row: h3.number, column: 1 }, to: { row: h3.number, column: 8 } }
+
+  const classementRows = classementPompistes.length
+    ? classementPompistes
+    : [{ id: '-', nom: 'Aucun pompiste', email: '-', totalServices: 0, fraudes: 0, score: 0, badge: '-', montantFraude: 0 }]
+
+  const badgeColor = (badge) => badge === 'Fiable' ? XL.green : badge === 'Surveillé' ? XL.orange : badge === 'Dangereux' ? XL.red : XL.text
+
+  classementRows.forEach((p, i) => {
+    const row = addDataRow(ws3,
+      [p.id, p.nom, p.email ?? '-', p.totalServices ?? 0, p.fraudes ?? 0, p.score ?? 0, p.badge ?? '-', p.montantFraude ?? 0],
+      ['center', 'left', 'left', 'right', 'right', 'right', 'center', 'right'],
+      i % 2 === 1,
+      ['', '', '', '#,##0', '#,##0', '#,##0', '', '#,##0']
+    )
+    row.getCell(6).font = { name: 'Calibri', size: 10, bold: true, color: { argb: badgeColor(p.badge) } }
+    row.getCell(7).font = { name: 'Calibri', size: 10, bold: true, color: { argb: badgeColor(p.badge) } }
+    if ((p.fraudes ?? 0) > 0) row.getCell(5).font = { name: 'Calibri', size: 10, bold: true, color: { argb: XL.red } }
+  })
+
+  // ── Feuille 4 : Alertes pompistes ──────────────────
+  const ws4 = wb.addWorksheet('Alertes pompistes')
+  styleCols(ws4, [
+    { width: 8 }, { width: 28 }, { width: 16 }, { width: 16 },
+    { width: 22 }, { width: 14 }, { width: 20 }, { width: 20 },
+  ])
+  ws4.views = [{ state: 'frozen', ySplit: 5 }]
+  ws4.properties.tabColor = { argb: XL.red }
+
+  addTitleBand(ws4, 'FUELO — ALERTES FRAUDE POMPISTES (ANTI-FRAUDE COMPTEUR)', 'A1:H1', XL.red)
+  addMetaRow(ws4, `Généré le : ${fmtDateXL(new Date())}`, 'A2:H2')
+  addMetaRow(ws4, `${alertesFraude.length} alerte(s) — écarts compteur essence/gasoil détectés en fin de service`, 'A3:H3')
+  ws4.addRow([]).height = 8
+
+  const h4 = addColHeaders(ws4,
+    ['ID', 'POMPISTE', 'ÉCART ESSENCE (L)', 'ÉCART GASOIL (L)', 'MONTANT PERDU ESTIMÉ', 'STATUT', 'DÉTECTÉ LE', 'TERMINÉ LE'],
+    ['center', 'left', 'right', 'right', 'right', 'center', 'center', 'center']
+  )
+  ws4.autoFilter = { from: { row: h4.number, column: 1 }, to: { row: h4.number, column: 8 } }
+
+  const alertesFraudeRows = alertesFraude.length
+    ? alertesFraude
+    : [{ id: '-', pompisteNom: 'Aucune alerte', ecartEssence: 0, ecartGasoil: 0, montantPerdu: 0, statut: '-', date: null, dateFin: null }]
+
+  alertesFraudeRows.forEach((a, i) => {
+    const row = addDataRow(ws4,
+      [a.id, a.pompisteNom ?? '-', a.ecartEssence ?? 0, a.ecartGasoil ?? 0, a.montantPerdu ?? 0,
+       fmtStatutCas(a.statut), a.date ? fmtDateXL(a.date) : '-', a.dateFin ? fmtDateXL(a.dateFin) : '-'],
+      ['center', 'left', 'right', 'right', 'right', 'center', 'center', 'center'],
+      i % 2 === 1,
+      ['', '', '+#,##0.0;-#,##0.0;0.0', '+#,##0.0;-#,##0.0;0.0', '#,##0', '', '', '']
+    )
+    row.getCell(6).font = { name: 'Calibri', size: 10, bold: true, color: { argb: a.statut === 'resolu' ? XL.green : XL.red } }
+    if (Math.abs(a.ecartEssence ?? 0) >= 0.05) row.getCell(3).font = { name: 'Calibri', size: 10, bold: true, color: { argb: XL.red } }
+    if (Math.abs(a.ecartGasoil  ?? 0) >= 0.05) row.getCell(4).font = { name: 'Calibri', size: 10, bold: true, color: { argb: XL.red } }
+  })
+
+  // ── Feuille 5 : Alertes transport ──────────────────
+  const ws5 = wb.addWorksheet('Alertes transport')
+  styleCols(ws5, [
+    { width: 8 }, { width: 26 }, { width: 14 }, { width: 14 }, { width: 14 },
+    { width: 12 }, { width: 22 }, { width: 18 }, { width: 14 }, { width: 20 },
+  ])
+  ws5.views = [{ state: 'frozen', ySplit: 5 }]
+  ws5.properties.tabColor = { argb: XL.orange }
+
+  addTitleBand(ws5, 'FUELO — ALERTES FRAUDE TRANSPORT (CITERNES)', 'A1:J1', XL.orange)
+  addMetaRow(ws5, `Généré le : ${fmtDateXL(new Date())}`, 'A2:J2')
+  addMetaRow(ws5, `${alertesTransport.length} alerte(s) — écarts jauge départ/arrivée détectés sur trajet`, 'A3:J3')
+  ws5.addRow([]).height = 8
+
+  const h5 = addColHeaders(ws5,
+    ['ID', 'CHAUFFEUR', 'CITERNE', 'DÉPART (L)', 'ARRIVÉE (L)', 'ÉCART (L)', 'MONTANT PERDU ESTIMÉ', 'QR CODE', 'STATUT', 'DÉTECTÉ LE'],
+    ['center', 'left', 'center', 'right', 'right', 'right', 'right', 'center', 'center', 'center']
+  )
+  ws5.autoFilter = { from: { row: h5.number, column: 1 }, to: { row: h5.number, column: 10 } }
+
+  const alertesTransportRows = alertesTransport.length
+    ? alertesTransport
+    : [{ id: '-', chauffeurNom: 'Aucune alerte', citerneCode: '-', qtyDepart: 0, qtyArrivee: null, ecart: 0, montantPerdu: 0, qrCode: '-', statut: '-', date: null }]
+
+  alertesTransportRows.forEach((t, i) => {
+    const row = addDataRow(ws5,
+      [t.id, t.chauffeurNom ?? '-', t.citerneCode ?? '-', t.qtyDepart ?? 0,
+       t.qtyArrivee != null ? t.qtyArrivee : '—', t.ecart ?? 0, t.montantPerdu ?? 0,
+       t.qrCode ?? '-', fmtStatutCas(t.statut), t.date ? fmtDateXL(t.date) : '-'],
+      ['center', 'left', 'center', 'right', 'right', 'right', 'right', 'center', 'center', 'center'],
+      i % 2 === 1,
+      ['', '', '', '#,##0.0', '#,##0.0', '+#,##0.0;-#,##0.0;0.0', '#,##0', '', '', '']
+    )
+    row.getCell(9).font = { name: 'Calibri', size: 10, bold: true, color: { argb: t.statut === 'resolu' ? XL.green : XL.red } }
+    if (Math.abs(t.ecart ?? 0) > 0) row.getCell(6).font = { name: 'Calibri', size: 10, bold: true, color: { argb: XL.red } }
+  })
+
+  await downloadBuffer(wb, `Fuelo_AntiFraude_${fileSlug(name)}_${stamp()}.xlsx`)
+}

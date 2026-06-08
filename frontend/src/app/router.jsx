@@ -38,6 +38,7 @@ const NotFound           = lazy(() => import('../features/auth/NotFound'))
 const AbonnementsPage        = lazy(() => import('../features/abonnements/AbonnementsPage'))
 const SuperadminDashboard    = lazy(() => import('../features/dashboard/SuperadminDashboard'))
 const PerformancesPage       = lazy(() => import('../features/performances/PerformancesPage'))
+const AntiFraudePage         = lazy(() => import('../features/anti-fraude/AntiFraudePage'))
 
 // ── Garde routes protégées ────────────────────────────
 function PrivateRoute({ children, allowedRoles }) {
@@ -135,6 +136,7 @@ export default function Router() {
             <Route path="/profile"     element={<Profile />} />
             <Route path="/abonnements"   element={<AbonnementsPage />} />
             <Route path="/performances" element={<PerformancesPage />} />
+            <Route path="/anti-fraude"  element={<AntiFraudePage />} />
             <Route path="/admin"        element={
               <PrivateRoute allowedRoles={['superadmin']}>
                 <SuperadminDashboard />

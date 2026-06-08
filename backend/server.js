@@ -114,6 +114,7 @@ const abonnementRoutes      = require('./routes/abonnements')
 const adminRoutes           = require('./routes/admin')
 const performanceRoutes     = require('./routes/performances')
 const searchRoutes          = require('./routes/search')
+const antiFraudeRoutes      = require('./routes/antiFraude')
 
 app.use('/api/auth',      limiterAuth, authRoutes)
 app.use('/api/stock',     stockRoutes)
@@ -129,6 +130,7 @@ app.use('/api/abonnements',   abonnementRoutes)
 app.use('/api/search',        searchRoutes)
 app.use('/api/admin',         adminRoutes)
 app.use('/api/performances',  performanceRoutes)
+app.use('/api/anti-fraude',   antiFraudeRoutes)
 
 // ── Route test ────────────────────────────────────────
 app.get('/', (req, res) => {
