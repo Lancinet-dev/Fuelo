@@ -2,18 +2,20 @@
 // FUELO V2.3 — Dashboard (owner premium + gérant)
 // ================================================
 
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useAuth }      from '../../context/AuthContext'
 import { useTheme }     from '../../context/ThemeContext'
-import { useDashboard } from '../../hooks/useDashboard'
+import { useDashboard, useGraphique, calcTrend } from '../../hooks/useDashboard'
 import { useVentes }    from '../../hooks/useVentes'
 import { useEmployes }  from '../../hooks/useEmployes'
-import { usePlan, PLAN_COLORS } from '../../hooks/usePlan'
-import StockGauge       from '../../ui/StockGauge'
+import { useNotifications } from '../../hooks/useNotifications'
+import { usePlan } from '../../hooks/usePlan'
 import EmptyState       from '../../ui/EmptyState'
 import { SkeletonDashboard, SkeletonStyle } from '../../ui/Skeleton'
-import { formatGNF, formatLitres, formatRelative } from '../../utils/format'
+import { formatGNF, formatLitres, formatRelative, getStockStatus } from '../../utils/format'
 import theme from '../../config/theme'
 
 const ICONS = {
@@ -40,6 +42,173 @@ function Icon({ d, size = 14, color = 'currentColor', strokeWidth = 2 }) {
   )
 }
 
+// ── Compteur animé (count-up à l'affichage) ───────
+function useCountUp(target, duration = 1100) {
+  const [value, setValue] = useState(0)
+  const targetRef = useRef(0)
+  useEffect(() => {
+    targetRef.current = Number(target) || 0
+    const start = performance.now()
+    let raf
+    const tick = (now) => {
+      const progress = Math.min((now - start) / duration, 1)
+      const eased = 1 - Math.pow(1 - progress, 3) // ease-out cubic
+      setValue(targetRef.current * eased)
+      if (progress < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [target, duration])
+  return value
+}
+
+// ── Horloge temps réel ────────────────────────────
+function LiveClock({ palette }) {
+  const [now, setNow] = useState(new Date())
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(id)
+  }, [])
+  return (
+    <span style={{ fontFamily: theme.font.mono, fontSize: 12, fontWeight: 700, color: palette.textSub, fontVariantNumeric: 'tabular-nums', letterSpacing: '0.03em' }}>
+      {now.toLocaleTimeString('fr-FR')}
+    </span>
+  )
+}
+
+// ── Avatar (initiales) ────────────────────────────
+function Avatar({ nom, color = theme.colors.primary, size = 38 }) {
+  const initial = nom?.trim()?.charAt(0)?.toUpperCase() ?? '?'
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%', flexShrink: 0,
+      background: color + '20', border: `1px solid ${color}40`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: Math.round(size * 0.42), fontWeight: 800, color,
+    }}>
+      {initial}
+    </div>
+  )
+}
+
+// ── Bouton notifications + badge rouge ────────────
+function NotifBell({ count, onClick, palette }) {
+  return (
+    <button onClick={onClick} title="Notifications" style={{
+      position: 'relative', width: 38, height: 38, borderRadius: 12, flexShrink: 0,
+      border: `1px solid ${palette.cardBorder}`, background: palette.card,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      cursor: 'pointer', transition: theme.transition.hover, boxShadow: theme.shadow.sm,
+    }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = theme.colors.primary + '60'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = palette.cardBorder; e.currentTarget.style.transform = 'translateY(0)' }}>
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={palette.textSub} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 8a6 6 0 00-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+        <path d="M13.73 21a2 2 0 01-3.46 0" />
+      </svg>
+      {count > 0 && (
+        <span style={{
+          position: 'absolute', top: -3, right: -3, minWidth: 17, height: 17, borderRadius: 99,
+          background: theme.colors.danger, color: '#fff', fontSize: 9, fontWeight: 800,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px',
+          boxShadow: `0 0 0 2px ${palette.bg}, 0 0 8px ${theme.colors.danger}80`,
+          animation: 'pulse 1.8s infinite',
+        }}>
+          {count > 9 ? '9+' : count}
+        </span>
+      )}
+    </button>
+  )
+}
+
+// ── Badge de tendance (↑/↓ pourcentage) ───────────
+function TrendBadge({ trend }) {
+  if (!trend) return null
+  const color = trend.up ? theme.colors.success : theme.colors.danger
+  const bg    = trend.up ? theme.colors.successLight : theme.colors.dangerLight
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 3,
+      fontSize: 11, fontWeight: 800, color, background: bg,
+      padding: '2px 8px', borderRadius: 99, fontFamily: theme.font.mono,
+    }}>
+      {trend.up ? '↑' : '↓'} {trend.pct}%
+    </span>
+  )
+}
+
+// ── Toggle période graphique (7j / 30j / 3 mois) ──
+function PeriodToggle({ value, onChange, palette, isDark }) {
+  const options = [{ key: '7j', label: '7 jours' }, { key: '30j', label: '30 jours' }, { key: '3m', label: '3 mois' }]
+  return (
+    <div style={{ display: 'inline-flex', background: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)', borderRadius: 10, padding: 3, gap: 2 }}>
+      {options.map(opt => (
+        <button key={opt.key} onClick={() => onChange(opt.key)} style={{
+          padding: '5px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
+          fontSize: 11, fontWeight: 700, fontFamily: 'inherit', transition: theme.transition.hover,
+          background: value === opt.key ? theme.colors.primary : 'transparent',
+          color: value === opt.key ? '#fff' : palette.textSub,
+          boxShadow: value === opt.key ? theme.shadow.primary : 'none',
+        }}>
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ── Jauge circulaire animée (stock) ───────────────
+function CircularGauge({ label, quantite, seuil = 300, onAction, actionLabel, palette, isDark }) {
+  const qty    = parseFloat(quantite) || 0
+  const max    = Math.max(qty * 1.5, seuil * 2, 1000)
+  const pct    = max > 0 ? Math.min((qty / max) * 100, 100) : 0
+  const status = getStockStatus(qty, seuil)
+  const animatedPct = useCountUp(pct, 1400)
+
+  const size = 116, stroke = 11
+  const radius = (size - stroke) / 2
+  const circumference = 2 * Math.PI * radius
+  const offset = circumference - (Math.min(animatedPct, 100) / 100) * circumference
+
+  return (
+    <div style={{
+      background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 16,
+      padding: '20px 22px', boxShadow: theme.shadow.sm,
+      display: 'flex', alignItems: 'center', gap: 18,
+    }}>
+      <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'} strokeWidth={stroke} />
+          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={status.color} strokeWidth={stroke}
+            strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
+            style={{ transition: 'stroke 0.4s ease' }} />
+        </svg>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontSize: 22, fontWeight: 900, color: palette.text, fontFamily: theme.font.mono, letterSpacing: '-0.5px' }}>{Math.round(animatedPct)}%</span>
+          <span style={{ fontSize: 9, fontWeight: 700, color: status.color, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>{status.label}</span>
+        </div>
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>{label}</div>
+        <div style={{ fontSize: 20, fontWeight: 900, color: palette.text, fontFamily: theme.font.mono, letterSpacing: '-0.5px', marginBottom: 10 }}>
+          {formatLitres(qty)}
+        </div>
+        {onAction && (
+          <button onClick={onAction} style={{
+            fontSize: 11, fontWeight: 700, color: theme.colors.primary, background: theme.colors.primaryLight,
+            border: `1px solid ${theme.colors.primary}30`, borderRadius: 99, padding: '5px 14px',
+            cursor: 'pointer', fontFamily: 'inherit', transition: theme.transition.hover,
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = theme.colors.primary; e.currentTarget.style.color = '#fff' }}
+            onMouseLeave={e => { e.currentTarget.style.background = theme.colors.primaryLight; e.currentTarget.style.color = theme.colors.primary }}>
+            {actionLabel}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Tooltip graphique ─────────────────────────────
 function ChartTooltip({ active, payload, label, palette }) {
   if (!active || !payload?.length) return null
@@ -54,27 +223,29 @@ function ChartTooltip({ active, payload, label, palette }) {
 }
 
 // ── Carte KPI ─────────────────────────────────────
-function StatCard({ label, value, sub, iconD, color, onClick, pulse }) {
+function StatCard({ label, value, numericValue, formatFn, sub, iconD, color, onClick, pulse, trend }) {
   const { palette } = useTheme()
+  const animated = useCountUp(numericValue ?? 0)
+  const display  = (numericValue != null && formatFn) ? formatFn(animated) : value
   return (
     <div onClick={onClick} style={{
       background: palette.card, border: `1px solid ${palette.cardBorder}`,
       borderRadius: 16, padding: '18px 20px',
       cursor: onClick ? 'pointer' : 'default',
-      boxShadow: theme.shadow.sm, transition: 'all 0.2s',
+      boxShadow: theme.shadow.sm, transition: theme.transition.hover,
       position: 'relative', overflow: 'hidden',
     }}
-      onMouseEnter={e => { if (onClick) { e.currentTarget.style.boxShadow = theme.shadow.md; e.currentTarget.style.borderColor = color + '60' }}}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = theme.shadow.sm; e.currentTarget.style.borderColor = palette.cardBorder }}>
+      onMouseEnter={e => { if (onClick) { e.currentTarget.style.boxShadow = `${theme.shadow.md}, 0 0 0 1px ${color}35, 0 0 26px ${color}26`; e.currentTarget.style.borderColor = color + '60'; e.currentTarget.style.transform = 'translateY(-2px)' }}}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = theme.shadow.sm; e.currentTarget.style.borderColor = palette.cardBorder; e.currentTarget.style.transform = 'translateY(0)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-        <div style={{ width: 38, height: 38, borderRadius: 12, background: color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          {pulse && <div style={{ position: 'absolute', width: 8, height: 8, borderRadius: '50%', background: color, top: 14, right: 14, boxShadow: `0 0 8px ${color}`, animation: 'pulse 1.5s infinite' }} />}
+        <div style={{ width: 38, height: 38, borderRadius: 12, position: 'relative', background: color + '15', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: `1px solid ${color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          {pulse && <div style={{ position: 'absolute', width: 8, height: 8, borderRadius: '50%', background: color, top: -3, right: -3, boxShadow: `0 0 8px ${color}`, animation: 'pulse 1.5s infinite' }} />}
           <Icon d={iconD} size={18} color={color} />
         </div>
-        {onClick && <Icon d={ICONS.chevron} size={13} color={palette.textMuted} />}
+        {trend ? <TrendBadge trend={trend} /> : (onClick && <Icon d={ICONS.chevron} size={13} color={palette.textMuted} />)}
       </div>
       <div style={{ fontSize: 22, fontWeight: 900, color: palette.text, fontFamily: theme.font.mono, letterSpacing: '-0.5px', marginBottom: 4, lineHeight: 1 }}>
-        {value}
+        {display}
       </div>
       <div style={{ fontSize: 11, color: palette.textSub, lineHeight: 1.4 }}>{label}</div>
       {sub && <div style={{ fontSize: 10, color: palette.textMuted, marginTop: 3 }}>{sub}</div>}
@@ -84,21 +255,28 @@ function StatCard({ label, value, sub, iconD, color, onClick, pulse }) {
 
 // ── Ligne vente (desktop) ─────────────────────────
 function VenteRow({ vente, isLast, palette }) {
+  const isEssence = vente.type === 'essence'
+  const color     = isEssence ? theme.colors.warning : theme.colors.info
+  const initial   = vente.employe_nom?.trim()?.charAt(0)?.toUpperCase() ?? 'P'
   return (
     <div className="vente-row"
-      style={{ display: 'grid', gridTemplateColumns: '32px 1fr 80px 110px 85px', alignItems: 'center', padding: '11px 20px', borderBottom: isLast ? 'none' : `1px solid ${palette.cardBorder}`, gap: 10, transition: 'background 0.15s' }}
+      style={{ display: 'grid', gridTemplateColumns: '34px 1fr 80px 110px 85px', alignItems: 'center', padding: '11px 20px', borderBottom: isLast ? 'none' : `1px solid ${palette.cardBorder}`, gap: 10, transition: 'background 0.15s' }}
       onMouseEnter={e => e.currentTarget.style.background = palette.hover}
       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
     >
-      <div style={{ width: 30, height: 30, borderRadius: 8, background: vente.type === 'essence' ? theme.colors.warningLight : theme.colors.infoLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        {vente.type === 'essence'
-          ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.colors.warning} strokeWidth="2" strokeLinecap="round"><path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/><path d="M3 11h12"/><path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/><path d="M6 7h4"/></svg>
-          : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.colors.info} strokeWidth="2" strokeLinecap="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.657 3.582 3 8 3s8-1.343 8-3V6"/></svg>
-        }
+      {/* Avatar pompiste (initiale, coloré selon le type de carburant) */}
+      <div style={{ width: 30, height: 30, borderRadius: '50%', background: color + '18', border: `1px solid ${color}35`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 12, fontWeight: 800, color }}>
+        {initial}
       </div>
-      <div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: palette.text, textTransform: 'capitalize' }}>{vente.type}</div>
-        <div style={{ fontSize: 11, color: palette.textMuted }}>{vente.employe_nom ?? 'Pompiste'}</div>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: palette.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{vente.employe_nom ?? 'Pompiste'}</div>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, color, background: color + '15', borderRadius: 99, padding: '1px 7px', marginTop: 3, textTransform: 'capitalize' }}>
+          {isEssence
+            ? <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round"><path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/><path d="M3 11h12"/><path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/><path d="M6 7h4"/></svg>
+            : <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.657 3.582 3 8 3s8-1.343 8-3V6"/></svg>
+          }
+          {vente.type}
+        </span>
       </div>
       <div style={{ fontSize: 12, fontWeight: 600, color: theme.colors.success, fontFamily: theme.font.mono }}>{formatLitres(vente.litres)}</div>
       <div style={{ fontSize: 12, fontWeight: 700, color: theme.colors.primary, fontFamily: theme.font.mono }}>{formatGNF(vente.montant_gnf)}</div>
@@ -372,22 +550,24 @@ export default function Dashboard() {
   const isGerant = userRole === 'gerant' || userRole === 'manager'
   const isOwner  = userRole === 'owner'
 
-  const { stocks, aujourdhui, cemois, graphique7j, alertesNonLues, loading, refetch } = useDashboard()
+  const { stocks, aujourdhui, veille, cemois, alertesNonLues, loading, refetch } = useDashboard()
   const { recentes } = useVentes()
-  const { employes }  = useEmployes()
   const { plan, colors: planColors, loading: planLoading } = usePlan()
+  const { nonLues: notifsNonLues } = useNotifications()
+
+  const [periode, setPeriode] = useState('7j')
+  const { donnees: graphiqueData } = useGraphique(periode)
 
   const stockEssence = parseFloat(stocks.find(s => s.type === 'essence')?.quantite ?? 0)
   const stockGasoil  = parseFloat(stocks.find(s => s.type === 'gasoil')?.quantite  ?? 0)
 
-  const chartData = graphique7j.map(d => ({
-    jour:    new Date(d.jour).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric' }),
+  const chartData = graphiqueData.map(d => ({
+    jour:    d.label,
     montant: parseFloat(d.montant) / 1_000_000,
   }))
 
-  // Dérive données owner
-  const membresEquipe = isOwner ? employes.filter(e => e.role === 'gerant' || e.role === 'logisticien') : []
-  const membresActifs  = membresEquipe.filter(e => e.actif !== false).length
+  const periodeLabel = { '7j': '7 derniers jours', '30j': '30 derniers jours', '3m': '3 derniers mois' }[periode]
+  const trendVentesJour = calcTrend(aujourdhui.montant, veille.montant)
 
   if (loading) return (<><SkeletonStyle /><SkeletonDashboard /></>)
 
@@ -431,13 +611,17 @@ export default function Dashboard() {
           <h1 style={{ fontSize: 26, fontWeight: 900, color: palette.text, letterSpacing: '-0.6px', margin: 0, marginBottom: 5, lineHeight: 1.1 }}>
             Bonjour, {prenom} 👋
           </h1>
-          <p style={{ fontSize: 13, color: palette.textSub, margin: 0 }}>
-            {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <p style={{ fontSize: 13, color: palette.textSub, margin: 0, textTransform: 'capitalize' }}>
+              {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </p>
+            <span style={{ width: 3, height: 3, borderRadius: '50%', background: palette.textMuted }} />
+            <LiveClock palette={palette} />
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <button onClick={refetch}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: 10, border: `1px solid ${palette.cardBorder}`, background: palette.card, color: palette.textSub, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', boxShadow: theme.shadow.sm, transition: 'all 0.15s' }}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: 10, border: `1px solid ${palette.cardBorder}`, background: palette.card, color: palette.textSub, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', boxShadow: theme.shadow.sm, transition: theme.transition.hover }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = theme.colors.primary + '60'; e.currentTarget.style.color = theme.colors.primary }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = palette.cardBorder; e.currentTarget.style.color = palette.textSub }}>
             <Icon d={ICONS.refresh} size={13} />
@@ -448,75 +632,93 @@ export default function Dashboard() {
             <Icon d={ICONS.eye} size={13} color="#fff" />
             Voir les ventes
           </button>
+          <NotifBell count={notifsNonLues || alertesNonLues} onClick={() => navigate('/alertes')} palette={palette} />
+          <Avatar nom={user?.nom} color={theme.colors.primary} />
         </div>
       </div>
 
-      {/* ── Bannière alertes ─────────────────────── */}
+      {/* ── Bannière alertes (glassmorphism) ──────── */}
       {alertesNonLues > 0 && (
         <div onClick={() => navigate('/alertes')}
-          style={{ display: 'flex', alignItems: 'center', gap: 12, background: theme.colors.dangerLight, border: `1px solid ${theme.colors.danger}35`, borderRadius: 14, padding: '13px 18px', marginBottom: 24, cursor: 'pointer', transition: 'all 0.15s' }}
-          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.12)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = theme.colors.dangerLight }}>
+          style={{
+            display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, cursor: 'pointer',
+            background: isDark ? 'rgba(239,68,68,0.08)' : theme.colors.dangerLight,
+            backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+            border: `1px solid ${theme.colors.danger}35`, borderRadius: 16, padding: '13px 18px',
+            boxShadow: '0 0 0 1px rgba(255,255,255,0.04), 0 8px 24px rgba(239,68,68,0.12)',
+            transition: theme.transition.hover,
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = isDark ? 'rgba(239,68,68,0.14)' : 'rgba(239,68,68,0.16)' }}
+          onMouseLeave={e => { e.currentTarget.style.background = isDark ? 'rgba(239,68,68,0.08)' : theme.colors.dangerLight }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: theme.colors.danger, animation: 'alertPulse 1.5s infinite', flexShrink: 0 }} />
           <span style={{ fontSize: 13, color: theme.colors.danger, fontWeight: 600, flex: 1 }}>
             {alertesNonLues} alerte{alertesNonLues > 1 ? 's' : ''} active{alertesNonLues > 1 ? 's' : ''} — Cliquez pour voir
           </span>
-          <Icon d={ICONS.chevron} size={14} color={theme.colors.danger} />
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: theme.colors.danger, background: isDark ? 'rgba(239,68,68,0.15)' : 'rgba(239,68,68,0.12)', borderRadius: 99, padding: '5px 14px' }}>
+            Voir toutes les alertes <Icon d={ICONS.chevron} size={12} color={theme.colors.danger} />
+          </span>
         </div>
       )}
 
-      {/* ── Stocks ───────────────────────────────── */}
+      {/* ── Stocks (jauges circulaires animées) ──── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }} className="fuelo-grid-2">
-        <StockGauge label="Essence" quantite={stockEssence} onAction={() => navigate('/stock')} actionLabel={isGerant ? 'Commander' : 'Voir'} />
-        <StockGauge label="Gasoil"  quantite={stockGasoil}  onAction={() => navigate('/stock')} actionLabel={isGerant ? 'Commander' : 'Voir'} />
+        <CircularGauge label="Essence" quantite={stockEssence} onAction={() => navigate('/stock')} actionLabel={isGerant ? 'Commander' : 'Voir'} palette={palette} isDark={isDark} />
+        <CircularGauge label="Gasoil"  quantite={stockGasoil}  onAction={() => navigate('/stock')} actionLabel={isGerant ? 'Commander' : 'Voir'} palette={palette} isDark={isDark} />
       </div>
 
-      {/* ── Stat cards ────────────────────────────── */}
-      {/* Owner : 4 cartes | Gérant : 3 cartes */}
-      <div style={{ display: 'grid', gridTemplateColumns: isOwner ? 'repeat(4, 1fr)' : 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }} className={isOwner ? 'fuelo-grid-4' : 'fuelo-grid-3'}>
+      {/* ── Stat cards (compteur animé + tendance) ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }} className="fuelo-grid-4">
         <StatCard
           label="Ventes aujourd'hui"
-          value={formatGNF(aujourdhui.montant)}
+          numericValue={Number(aujourdhui.montant) || 0}
+          formatFn={formatGNF}
           sub={`${aujourdhui.nb} transaction${aujourdhui.nb > 1 ? 's' : ''} · ${formatLitres(aujourdhui.litres)}`}
           iconD={ICONS.ventes} color={theme.colors.primary}
           onClick={() => navigate('/ventes')}
+          trend={trendVentesJour}
         />
         <StatCard
-          label="Ventes ce mois"
-          value={formatGNF(cemois.montant)}
-          sub={`${cemois.nb} transaction${cemois.nb > 1 ? 's' : ''} · ${formatLitres(cemois.litres)}`}
+          label="Litres vendus aujourd'hui"
+          numericValue={Number(aujourdhui.litres) || 0}
+          formatFn={formatLitres}
+          sub={`${aujourdhui.nb} transaction${aujourdhui.nb > 1 ? 's' : ''} · Ce mois : ${formatLitres(cemois.litres)}`}
           iconD={ICONS.trend} color={theme.colors.success}
           onClick={() => navigate('/ventes')}
+          trend={calcTrend(aujourdhui.litres, veille.litres)}
         />
         <StatCard
-          label="Alertes actives"
-          value={String(alertesNonLues)}
-          sub={alertesNonLues === 0 ? 'Tout est normal ✓' : 'Action requise'}
-          iconD={ICONS.alertes}
-          color={alertesNonLues > 0 ? theme.colors.danger : theme.colors.success}
-          onClick={() => navigate('/alertes')}
-          pulse={alertesNonLues > 0}
+          label="Stock essence"
+          numericValue={stockEssence}
+          formatFn={formatLitres}
+          sub={getStockStatus(stockEssence).label === 'Critique' || getStockStatus(stockEssence).label === 'Vide' ? 'Niveau critique — à commander' : 'Niveau correct'}
+          iconD={ICONS.essence}
+          color={getStockStatus(stockEssence).color}
+          onClick={() => navigate('/stock')}
+          pulse={stockEssence > 0 && stockEssence <= 300}
         />
-        {isOwner && (
-          <StatCard
-            label="Mon équipe"
-            value={String(membresActifs)}
-            sub={`${membresEquipe.length} membre${membresEquipe.length > 1 ? 's' : ''} · ${membresEquipe.filter(e => e.role === 'gerant').length} gérant${membresEquipe.filter(e => e.role === 'gerant').length > 1 ? 's' : ''}`}
-            iconD={ICONS.equipe}
-            color={theme.colors.info}
-            onClick={() => navigate('/employes')}
-          />
-        )}
+        <StatCard
+          label="Stock gasoil"
+          numericValue={stockGasoil}
+          formatFn={formatLitres}
+          sub={getStockStatus(stockGasoil).label === 'Critique' || getStockStatus(stockGasoil).label === 'Vide' ? 'Niveau critique — à commander' : 'Niveau correct'}
+          iconD={ICONS.stock}
+          color={getStockStatus(stockGasoil).color}
+          onClick={() => navigate('/stock')}
+          pulse={stockGasoil > 0 && stockGasoil <= 300}
+        />
       </div>
 
       {/* ── Graphique + Ventes récentes ──────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 14, marginBottom: 20 }} className="fuelo-grid-chart">
 
-        {/* Graphique 7j */}
+        {/* Graphique avec toggle de période */}
         <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 16, padding: '22px 24px', boxShadow: theme.shadow.sm }}>
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: palette.text, marginBottom: 3 }}>Ventes — 7 derniers jours</div>
-            <div style={{ fontSize: 11, color: palette.textSub }}>En millions GNF</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20, gap: 12, flexWrap: 'wrap' }}>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: palette.text, marginBottom: 3 }}>Ventes — {periodeLabel}</div>
+              <div style={{ fontSize: 11, color: palette.textSub }}>En millions GNF</div>
+            </div>
+            <PeriodToggle value={periode} onChange={setPeriode} palette={palette} isDark={isDark} />
           </div>
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
@@ -548,7 +750,7 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <div className="vente-header" style={{ display: 'grid', gridTemplateColumns: '32px 1fr 80px 110px 85px', padding: '8px 20px', background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', borderBottom: `1px solid ${palette.cardBorder}`, gap: 10, flexShrink: 0 }}>
+          <div className="vente-header" style={{ display: 'grid', gridTemplateColumns: '34px 1fr 80px 110px 85px', padding: '8px 20px', background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', borderBottom: `1px solid ${palette.cardBorder}`, gap: 10, flexShrink: 0 }}>
             {['', 'Type', 'Litres', 'Montant', 'Quand'].map(h => (
               <div key={h} style={{ fontSize: 10, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{h}</div>
             ))}
@@ -556,7 +758,14 @@ export default function Dashboard() {
 
           <div style={{ flex: 1, overflowY: 'auto' }}>
             {recentes.length > 0
-              ? recentes.map((v, i) => <VenteRow key={v.id} vente={v} isLast={i === recentes.length - 1} palette={palette} />)
+              ? recentes.map((v, i) => (
+                  <motion.div key={v.id}
+                    initial={{ opacity: 0, x: -14 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.06, duration: 0.35, ease: 'easeOut' }}>
+                    <VenteRow vente={v} isLast={i === recentes.length - 1} palette={palette} />
+                  </motion.div>
+                ))
               : <EmptyState type="ventes" message="Aucune vente aujourd'hui" />
             }
           </div>
@@ -586,21 +795,27 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Actions rapides ──────────────────────── */}
+      {/* ── Actions rapides (hover glow + scale) ──── */}
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Actions rapides</div>
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${actions.length}, 1fr)`, gap: 14 }} className={`fuelo-actions fuelo-grid-${actions.length}`}>
         {actions.map(({ label, sub, icon, path, color }) => (
-          <button key={path} onClick={() => navigate(path)}
-            style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px', borderRadius: 14, border: `1px solid ${palette.cardBorder}`, background: palette.card, cursor: 'pointer', fontFamily: 'inherit', boxShadow: theme.shadow.sm, transition: 'all 0.2s', textAlign: 'left', width: '100%' }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = color + '60'; e.currentTarget.style.boxShadow = theme.shadow.md; e.currentTarget.style.transform = 'translateY(-1px)' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = palette.cardBorder; e.currentTarget.style.boxShadow = theme.shadow.sm; e.currentTarget.style.transform = 'translateY(0)' }}>
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <motion.button key={path} onClick={() => navigate(path)}
+            whileHover={{ scale: 1.025, y: -3 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 22 }}
+            style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px', borderRadius: 14, border: `1px solid ${palette.cardBorder}`, background: palette.card, cursor: 'pointer', fontFamily: 'inherit', boxShadow: theme.shadow.sm, textAlign: 'left', width: '100%' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = color + '60'; e.currentTarget.style.boxShadow = `${theme.shadow.md}, 0 0 28px ${color}30` }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = palette.cardBorder; e.currentTarget.style.boxShadow = theme.shadow.sm }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: color + '15', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: `1px solid ${color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Icon d={icon} size={18} color={color} />
             </div>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: palette.text, marginBottom: 2 }}>{label}</div>
               <div style={{ fontSize: 11, color: palette.textMuted }}>{sub}</div>
             </div>
-          </button>
+          </motion.button>
         ))}
       </div>
 

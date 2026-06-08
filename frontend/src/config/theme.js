@@ -39,11 +39,13 @@ const theme = {
 
   // ── Border radius ─────────────────────────────────
   radius: {
-    sm:   '6px',
-    md:   '10px',
-    lg:   '14px',
-    xl:   '18px',
-    full: '9999px',
+    sm:     '6px',
+    md:     '10px',
+    lg:     '14px',
+    xl:     '18px',
+    card:   '16px',
+    button: '12px',
+    full:   '9999px',
   },
 
   // ── Shadows ───────────────────────────────────────
@@ -52,6 +54,16 @@ const theme = {
     md:      '0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04)',
     lg:      '0 8px 24px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.04)',
     primary: '0 4px 14px rgba(37,99,235,0.30)',
+    // Premium glassmorphism — bordure fine + ombre profonde (style Linear/Stripe)
+    premium: '0 0 0 1px rgba(255,255,255,0.05), 0 8px 32px rgba(0,0,0,0.4)',
+    glow:    (color) => `0 0 0 1px ${color}40, 0 8px 28px ${color}25`,
+  },
+
+  // ── Glassmorphism ─────────────────────────────────
+  glass: {
+    blur:       'blur(20px)',
+    background: 'rgba(13,27,42,0.6)',
+    border:     '1px solid rgba(255,255,255,0.06)',
   },
 
   // ── Typographie ───────────────────────────────────
@@ -94,6 +106,7 @@ const theme = {
   // ── Transitions ───────────────────────────────────
   transition: {
     fast:   'all 0.15s ease',
+    hover:  'all 0.2s ease',
     normal: 'all 0.25s ease',
     slow:   'all 0.35s ease',
   },

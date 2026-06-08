@@ -9,7 +9,7 @@ const getResume = async (req, res) => {
   try {
     const station_id = req.user.station_id
 
-    const [stocks, ventesJour, ventesMois, ventes7j, alertes] = await Promise.all([
+    const [stocks, ventesJour, ventesVeille, ventesMois, ventes7j, alertes] = await Promise.all([
       pool.query(
         'SELECT type, quantite FROM stocks WHERE station_id = $1',
         [station_id]
@@ -20,6 +20,15 @@ const getResume = async (req, res) => {
          COALESCE(SUM(montant_gnf), 0) as montant
          FROM ventes WHERE station_id = $1
          AND DATE(created_at) = CURRENT_DATE`,
+        [station_id]
+      ),
+      // Hier — sert de référence pour calculer la tendance (↑/↓ %) des cartes du dashboard
+      pool.query(
+        `SELECT COUNT(*) as nb,
+         COALESCE(SUM(litres), 0) as litres,
+         COALESCE(SUM(montant_gnf), 0) as montant
+         FROM ventes WHERE station_id = $1
+         AND DATE(created_at) = CURRENT_DATE - INTERVAL '1 day'`,
         [station_id]
       ),
       pool.query(
@@ -51,10 +60,45 @@ const getResume = async (req, res) => {
     res.json({
       stocks:            stocks.rows,
       aujourd_hui:       ventesJour.rows[0],
+      veille:            ventesVeille.rows[0],
       ce_mois:           ventesMois.rows[0],
       graphique_7j:      ventes7j.rows,
       alertes_non_lues:  alertes.rows[0].nb
     })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+}
+
+// ── Graphique dashboard — période sélectionnable ─────
+// 7j  : groupé par jour (7 derniers jours)
+// 30j : groupé par jour (30 derniers jours)
+// 3m  : groupé par semaine (3 derniers mois) — sinon ~90 points illisibles sur le graphique
+const PERIODES = {
+  '7j':  { interval: '7 days',   group: `DATE(created_at)`,                    label: `TO_CHAR(created_at, 'DD/MM')` },
+  '30j': { interval: '30 days',  group: `DATE(created_at)`,                    label: `TO_CHAR(created_at, 'DD/MM')` },
+  '3m':  { interval: '3 months', group: `DATE_TRUNC('week', created_at)`,      label: `'Sem. ' || TO_CHAR(DATE_TRUNC('week', created_at), 'DD/MM')` },
+}
+
+const getGraphique = async (req, res) => {
+  try {
+    const station_id = req.user.station_id
+    const periode = PERIODES[req.query.periode] ? req.query.periode : '7j'
+    const { interval, group, label } = PERIODES[periode]
+
+    const result = await pool.query(
+      `SELECT ${group} as periode,
+       ${label} as label,
+       COALESCE(SUM(montant_gnf), 0) as montant,
+       COALESCE(SUM(litres), 0) as litres
+       FROM ventes WHERE station_id = $1
+       AND created_at >= NOW() - INTERVAL '${interval}'
+       GROUP BY ${group}
+       ORDER BY periode ASC`,
+      [station_id]
+    )
+
+    res.json({ periode, donnees: result.rows })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
@@ -209,6 +253,7 @@ const getStatsEmploye = async (req, res) => {
 
 module.exports = {
   getResume,
+  getGraphique,
   getStatsSemaine,
   getStatsMois,
   getActivite,
