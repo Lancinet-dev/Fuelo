@@ -283,3 +283,22 @@
 {"timestamp":"2026-06-08 11:58:57","level":"info","message":"✅ Cron jobs initialisés"}
 {"timestamp":"2026-06-08 11:59:29","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
 {"timestamp":"2026-06-08 11:59:29","level":"info","message":"✅ Cron jobs initialisés"}
+{"timestamp":"2026-06-08 11:59:42","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-06-08 11:59:42","level":"info","message":"✅ Cron jobs initialisés"}
+{"timestamp":"2026-06-08 12:00:00","level":"info","message":"🕐 Cron: Vérification stocks..."}
+{"timestamp":"2026-06-08 12:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 12:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 12:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 12:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 12:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 12:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 12:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 12:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 12:00:00","level":"info","message":"Alerte créée: Stock essence faible: 68.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 12:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 12:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 12:00:00","level":"info","message":"Alerte créée: Stock gasoil faible: 0.0L (seuil: 1300L)"}
+{"timestamp":"2026-06-08 12:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 12:00:00","level":"info","message":"Alerte créée: Stock essence faible: 0.0L (seuil: 300L)"}
+{"timestamp":"2026-06-08 12:44:50","level":"info","message":"⛽ Fuelo V2.1 démarré sur le port 5000"}
+{"timestamp":"2026-06-08 12:44:50","level":"info","message":"✅ Cron jobs initialisés"}

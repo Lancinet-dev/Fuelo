@@ -13,6 +13,7 @@ const { forgotPassword, resetPassword }         = require('../controllers/forgot
 const { googleCallback }                        = require('../controllers/googleAuthController')
 const pool   = require('../config/database')
 const logger = require('../utils/logger')
+const erreurServeur = require('../utils/erreurServeur')
 
 // ── Auth classique ────────────────────────────────────
 router.post('/register',        validate(registerSchema), register)
@@ -46,7 +47,7 @@ router.put('/profile', verifyToken, async (req, res) => {
     logger.info(`Profil mis à jour — user ${req.user.id}`)
     res.json({ message: 'Profil mis à jour' })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 })
 

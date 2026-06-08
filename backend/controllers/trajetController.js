@@ -5,6 +5,7 @@
 const trajetService = require('../services/trajetService')
 const cloudinary    = require('../config/cloudinary')
 const logger        = require('../utils/logger')
+const erreurServeur = require('../utils/erreurServeur')
 
 const uploadPhoto = async (buffer, folder, publicId) => {
   const b64     = buffer.toString('base64')
@@ -77,7 +78,7 @@ const getTrajetActif = async (req, res) => {
     res.json({ trajet })
   } catch (err) {
     logger.error('getTrajetActif', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -87,7 +88,7 @@ const getTrajets = async (req, res) => {
     res.json({ trajets })
   } catch (err) {
     logger.error('getTrajets', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -120,7 +121,7 @@ const exportCSV = async (req, res) => {
     res.send('﻿' + csv)
   } catch (err) {
     logger.error('exportCSV', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 

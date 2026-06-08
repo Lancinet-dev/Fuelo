@@ -9,6 +9,7 @@ const { isTransport } = require('../middleware/checkRole')
 const { checkPlan }   = require('../middleware/checkPlan')
 const pool   = require('../config/database')
 const logger = require('../utils/logger')
+const erreurServeur = require('../utils/erreurServeur')
 
 // GET /api/citernes
 router.get('/', verifyToken, isTransport, async (req, res) => {
@@ -26,7 +27,7 @@ router.get('/', verifyToken, isTransport, async (req, res) => {
     res.json({ citernes: result.rows })
   } catch (err) {
     logger.error('getCiternes', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 })
 
@@ -49,7 +50,7 @@ router.post('/', verifyToken, isTransport, checkPlan('citernes'), async (req, re
   } catch (err) {
     if (err.code === '23505') return res.status(400).json({ error: `Code "${req.body.code}" déjà utilisé` })
     logger.error('createCiterne', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 })
 
@@ -69,7 +70,7 @@ router.put('/:id', verifyToken, isTransport, checkPlan('citernes'), async (req, 
     res.json({ citerne: result.rows[0] })
   } catch (err) {
     logger.error('updateCiterne', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 })
 
@@ -87,7 +88,7 @@ router.delete('/:id', verifyToken, isTransport, async (req, res) => {
     res.json({ message: 'Citerne supprimée' })
   } catch (err) {
     logger.error('deleteCiterne', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 })
 

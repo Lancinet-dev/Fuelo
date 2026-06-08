@@ -1,5 +1,6 @@
 
 const pool = require('../config/database')
+const erreurServeur = require('../utils/erreurServeur')
 
 // ── Voir toutes les alertes ───────────────
 const getAlertes = async (req, res) => {
@@ -20,7 +21,7 @@ const getAlertes = async (req, res) => {
       non_lues: nonLues
     })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -38,7 +39,7 @@ const marquerLue = async (req, res) => {
 
     res.json({ message: 'Alerte marquée comme lue' })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -54,7 +55,7 @@ const marquerToutesLues = async (req, res) => {
 
     res.json({ message: 'Toutes les alertes marquées comme lues' })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -72,7 +73,7 @@ const getAlertesTransport = async (req, res) => {
     )
     res.json({ alertes: result.rows, non_lues: result.rows.filter(a => !a.lu).length })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 

@@ -1,4 +1,5 @@
 const pool = require('../config/database')
+const erreurServeur = require('../utils/erreurServeur')
 
 // ── Voir stock actuel ─────────────────────
 const getStock = async (req, res) => {
@@ -20,7 +21,7 @@ const getStock = async (req, res) => {
 
     res.json({ stock: stocks })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 // ── Ajouter une livraison ─────────────────
@@ -48,7 +49,7 @@ const ajouterLivraison = async (req, res) => {
       nouveau_stock: result.rows[0].quantite
     })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 module.exports = { getStock, ajouterLivraison }

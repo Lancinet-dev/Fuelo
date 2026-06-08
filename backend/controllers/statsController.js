@@ -3,6 +3,7 @@
 // ================================================
 
 const pool = require('../config/database')
+const erreurServeur = require('../utils/erreurServeur')
 
 // ── Résumé dashboard ─────────────────────────────────
 const getResume = async (req, res) => {
@@ -66,7 +67,7 @@ const getResume = async (req, res) => {
       alertes_non_lues:  alertes.rows[0].nb
     })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -100,7 +101,7 @@ const getGraphique = async (req, res) => {
 
     res.json({ periode, donnees: result.rows })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -128,7 +129,7 @@ const getStatsSemaine = async (req, res) => {
 
     res.json({ semaine: result.rows })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -171,7 +172,7 @@ const getStatsMois = async (req, res) => {
       total: total.rows[0]
     })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -223,7 +224,7 @@ const getActivite = async (req, res) => {
 
     res.json({ activite: feed })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -247,7 +248,7 @@ const getStatsEmploye = async (req, res) => {
 
     res.json({ stats: result.rows[0] })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 

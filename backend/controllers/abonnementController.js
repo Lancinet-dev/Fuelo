@@ -4,6 +4,7 @@
 
 const pool   = require('../config/database')
 const logger = require('../utils/logger')
+const erreurServeur = require('../utils/erreurServeur')
 const { PLANS, getPlanOwner } = require('../middleware/checkPlan')
 const OM = require('../services/orangeMoneyService')
 
@@ -33,7 +34,7 @@ const getMonPlan = async (req, res) => {
     })
   } catch (err) {
     logger.error('getMonPlan', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -99,7 +100,7 @@ const souscrire = async (req, res) => {
     })
   } catch (err) {
     logger.error('souscrire', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -135,7 +136,7 @@ const handleCallback = async (req, res) => {
     res.json({ status: 'received' })
   } catch (err) {
     logger.error('handleCallback', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -150,6 +151,15 @@ const sandboxSimulate = (req, res) => {
   }
 
   const { order_id, amount, currency, return_url, cancel_url } = req.query
+
+  // Échappement HTML — order_id/currency viennent de req.query (entrée utilisateur)
+  // et sont affichés tels quels dans la page : sans échappement, une requête du
+  // type ?order_id=<script>...</script> s'exécuterait dans le navigateur (XSS reflété)
+  const echapperHTML = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  }[c]))
+  const orderIdAffiche  = echapperHTML(order_id)
+  const currencyAffiche = echapperHTML(currency)
 
   // Valeurs sérialisées en JSON pour injection sécurisée dans le JS
   const jsOrderId    = JSON.stringify(order_id   || '')
@@ -247,15 +257,15 @@ const sandboxSimulate = (req, res) => {
     <div class="info-box">
       <div class="info-row">
         <span class="info-label">Référence</span>
-        <span class="info-value ref">${order_id || 'N/A'}</span>
+        <span class="info-value ref">${orderIdAffiche || 'N/A'}</span>
       </div>
       <div class="info-row">
         <span class="info-label">Devise</span>
-        <span class="info-value">${currency || 'GNF'}</span>
+        <span class="info-value">${currencyAffiche || 'GNF'}</span>
       </div>
     </div>
 
-    <div class="montant">${montantFormate} <span>${currency || 'GNF'}</span></div>
+    <div class="montant">${montantFormate} <span>${currencyAffiche || 'GNF'}</span></div>
 
     <button class="btn btn-confirm" id="btnConfirm" onclick="confirmerPaiement()">
       <div class="loader" id="loader"></div>
@@ -326,7 +336,7 @@ const getTousAbonnements = async (req, res) => {
     res.json({ abonnements: result.rows })
   } catch (err) {
     logger.error('getTousAbonnements', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -347,7 +357,7 @@ const validerAbonnement = async (req, res) => {
     res.json({ message: 'Abonnement activé', abonnement: result.rows[0] })
   } catch (err) {
     logger.error('validerAbonnement', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 

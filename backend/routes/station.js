@@ -4,12 +4,12 @@
 
 const express     = require('express')
 const router      = express.Router()
-const multer      = require('multer')
 const cloudinary  = require('../config/cloudinary')
 const verifyToken = require('../middleware/auth')
 const { checkRole, isPompiste, isManager, isOwner } = require('../middleware/checkRole')
 const { checkMaxStations } = require('../middleware/checkPlan')
 const pool        = require('../config/database')
+const erreurServeur = require('../utils/erreurServeur')
 const {
   getStation,
   getMesStations,
@@ -19,7 +19,8 @@ const {
   getConsolide
 } = require('../controllers/stationController')
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } })
+// Upload partagé : memoryStorage + fileFilter "images uniquement" + limite 8 Mo
+const upload = require('../middleware/upload')
 
 // Station actuelle — accessible par tous les rôles (pompiste lit les prix, owner/gerant gèrent)
 router.get('/',  verifyToken, checkRole(['pompiste']), getStation)
@@ -43,7 +44,7 @@ router.post('/logo', verifyToken, isOwner, upload.single('logo'), async (req, re
 
     res.json({ logo_url: result.secure_url })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 })
 
@@ -52,7 +53,7 @@ router.delete('/logo', verifyToken, isOwner, async (req, res) => {
     await pool.query('UPDATE stations SET logo_url = NULL WHERE id = $1', [req.user.station_id])
     res.json({ message: 'Logo supprimé' })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 })
 

@@ -10,6 +10,7 @@ const {
   getAnneesDisponibles,
 } = require('../services/performanceService')
 const logger = require('../utils/logger')
+const erreurServeur = require('../utils/erreurServeur')
 
 const now = () => {
   const d = new Date()
@@ -58,7 +59,7 @@ const badgeCount = async (req, res) => {
     res.json({ count })
   } catch (err) {
     logger.error('badgeCount', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -68,7 +69,7 @@ const anneesDisponiblesHandler = async (req, res) => {
     res.json({ annees })
   } catch (err) {
     logger.error('anneesDisponibles', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 

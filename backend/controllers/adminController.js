@@ -4,6 +4,7 @@
 
 const pool   = require('../config/database')
 const logger = require('../utils/logger')
+const erreurServeur = require('../utils/erreurServeur')
 
 // ── GET /api/admin/stats ─────────────────────────
 const getStats = async (req, res) => {
@@ -28,7 +29,7 @@ const getStats = async (req, res) => {
     })
   } catch (err) {
     logger.error('admin.getStats', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -57,7 +58,7 @@ const getClients = async (req, res) => {
     res.json({ clients: result.rows })
   } catch (err) {
     logger.error('admin.getClients', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -77,7 +78,7 @@ const validerAbonnement = async (req, res) => {
     res.json({ message: 'Abonnement activé', abonnement: result.rows[0] })
   } catch (err) {
     logger.error('admin.valider', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -95,7 +96,7 @@ const suspendreAbonnement = async (req, res) => {
     res.json({ message: 'Abonnement suspendu', abonnement: result.rows[0] })
   } catch (err) {
     logger.error('admin.suspendre', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 

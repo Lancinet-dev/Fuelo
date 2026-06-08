@@ -5,6 +5,7 @@
 const serviceService = require('../services/serviceService')
 const cloudinary     = require('../config/cloudinary')
 const logger         = require('../utils/logger')
+const erreurServeur  = require('../utils/erreurServeur')
 
 const uploadPhoto = async (buffer, folder, publicId) => {
   const b64    = buffer.toString('base64')
@@ -66,7 +67,7 @@ const getServiceActif = async (req, res) => {
     res.json({ service })
   } catch (err) {
     logger.error('getServiceActif', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -76,7 +77,7 @@ const getServices = async (req, res) => {
     res.json({ services })
   } catch (err) {
     logger.error('getServices', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 

@@ -7,6 +7,7 @@ const bcrypt = require('bcryptjs')
 const jwt    = require('jsonwebtoken')
 const crypto = require('crypto')
 const logger = require('../utils/logger')
+const erreurServeur = require('../utils/erreurServeur')
 
 // Email stocké et comparé en minuscules + sans espaces — évite les faux
 // rejets "identifiants incorrects" quand la casse diffère entre l'inscription
@@ -87,7 +88,7 @@ const register = async (req, res) => {
     res.status(201).json({ token: accessToken, user: user.rows[0], station_id })
   } catch (err) {
     logger.error(`Register erreur — ${err.message}`)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -161,7 +162,7 @@ const login = async (req, res) => {
     })
   } catch (err) {
     logger.error(`Login erreur — ${err.message}`)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -215,7 +216,7 @@ const refresh = async (req, res) => {
       station_id,
     })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -232,7 +233,7 @@ const logout = async (req, res) => {
     res.clearCookie('fuelo_refresh', cookieOptions())
     res.json({ message: 'Déconnecté' })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -245,7 +246,7 @@ const me = async (req, res) => {
     )
     res.json({ user: result.rows[0] })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -267,7 +268,7 @@ const changePassword = async (req, res) => {
 
     res.json({ message: 'Mot de passe modifié avec succès' })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 

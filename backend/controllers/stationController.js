@@ -3,6 +3,7 @@
 // ================================================
 
 const pool = require('../config/database')
+const erreurServeur = require('../utils/erreurServeur')
 
 // ── Voir infos station actuelle ──────────────────────
 const getStation = async (req, res) => {
@@ -12,7 +13,7 @@ const getStation = async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Station non trouvée' })
     res.json({ station: result.rows[0] })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -34,7 +35,7 @@ const getMesStations = async (req, res) => {
     )
     res.json({ stations: result.rows })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -69,7 +70,7 @@ const creerStation = async (req, res) => {
 
     res.status(201).json({ message: 'Station créée avec succès', station: station.rows[0] })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -96,7 +97,7 @@ const updateStation = async (req, res) => {
 
     res.json({ message: 'Station mise à jour', station: result.rows[0] })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -123,7 +124,7 @@ const changerStation = async (req, res) => {
 
     res.json({ message: 'Station changée', token, station_id: parseInt(station_id), user: userResult.rows[0] })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -160,7 +161,7 @@ const getConsolide = async (req, res) => {
 
     res.json({ consolide: total.rows[0], stations: stations.rows })
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 

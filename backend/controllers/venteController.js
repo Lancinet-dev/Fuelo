@@ -5,6 +5,7 @@
 const venteService = require('../services/venteService')
 const { getPagination, formatPaginatedResponse } = require('../utils/pagination')
 const logger = require('../utils/logger')
+const erreurServeur = require('../utils/erreurServeur')
 const pool   = require('../config/database')
 
 const enregistrerVente = async (req, res) => {
@@ -31,7 +32,7 @@ const getVentes = async (req, res) => {
     }))
   } catch (err) {
     logger.error('getVentes', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -41,7 +42,7 @@ const getVentesRecentes = async (req, res) => {
     res.json({ ventes })
   } catch (err) {
     logger.error('getVentesRecentes', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -58,7 +59,7 @@ const getVentesAujourdhui = async (req, res) => {
     res.json({ aujourdhui: result.rows[0] })
   } catch (err) {
     logger.error('getVentesAujourdhui', err)
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
