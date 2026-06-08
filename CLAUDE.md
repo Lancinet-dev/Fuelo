@@ -133,6 +133,15 @@ Comptes test prod :
   - 11 sections : Navbar glass au scroll → Hero (grille de points + orbes lumineux + titre "fraude" barré animé + mockup app 3D au survol) → Preuve sociale (marquee infini) → Problème/Solution (2 colonnes animées) → Features (6 cards 3×2) → Démo interactive (tabs Dashboard/Anti-fraude/GPS avec mockups SVG animés) → Pricing (toggle mensuel/annuel -20% + convertisseur USD/EUR/GNF/FCFA) → Témoignages → FAQ accordion → CTA gradient bleu→violet → Footer 4 colonnes
   - Palette : fond `#020817`, texte `#FFFFFF`, sous-texte `#94A3B8`, glassmorphism (`backdropFilter: blur`)
   - Respecte `prefers-reduced-motion` (orbes/particules désactivés, animations CSS raccourcies)
+- **Assistant IA Fuelo** — chat flottant powered by Claude, réservé gérant/owner (`isManager`)
+  - Frontend : `ui/AssistantFuelo.jsx` (drawer + FAB Framer Motion) + hook `useAssistant.js` (`useAssistantChat`)
+  - Backend : route `POST /api/assistant`, `services/assistantService.js` — connaît en temps réel ventes/stock/alertes/performance de la station active
+- **Audit sécurité complet** (2026-06-08, commit `8a84f99`) — 7 domaines passés en revue (auth, DB, API, uploads, env vars, RBAC, XSS/CSRF), 5 corrections appliquées :
+  - RBAC : `POST /api/stock/livraison` n'avait aucun contrôle de rôle → ajout `checkExactRole(['gerant'])`
+  - XSS reflété corrigé dans `sandboxSimulate` (abonnements) — `order_id`/`currency` de `req.query` étaient interpolés bruts dans le HTML
+  - Upload logo station (`routes/station.js`) utilisait un multer local sans `fileFilter` → remplacé par `middleware/upload.js` partagé (images uniquement, 8 Mo)
+  - CORS : origines `localhost` retirées de la liste blanche en production (seul `FRONTEND_URL` autorisé)
+  - Fuite d'infos (CWE-209) : 51 occurrences de `res.status(500).json({ error: err.message })` remplacées par `erreurServeur(err)` (nouvel utilitaire `backend/utils/erreurServeur.js`) qui masque les détails internes (SQL, contraintes Postgres) en production
 
 ---
 
@@ -167,7 +176,8 @@ Comptes test prod :
 - Soft delete : toujours `deleted_at IS NULL` dans les requêtes
 - Routes spécifiques AVANT routes paramétrées (ex: `/actif` avant `/:id`)
 - Zod v4 : utiliser `err.issues ?? err.errors ?? []` dans le middleware `validate`
-- `multer` : utiliser `memoryStorage()` + upload manuel Cloudinary (pas `multer-storage-cloudinary`)
+- Erreurs 500 : toujours utiliser `erreurServeur(err)` (`backend/utils/erreurServeur.js`) dans `res.status(500).json({ error: ... })` — jamais `err.message` brut (fuite de détails internes type requêtes SQL/contraintes Postgres en prod, CWE-209)
+- `multer` : utiliser `memoryStorage()` + upload manuel Cloudinary (pas `multer-storage-cloudinary`). Pour les uploads d'images, réutiliser le middleware partagé `middleware/upload.js` (fileFilter images uniquement + limite 8 Mo) plutôt que de créer une instance multer locale
 - `.npmrc` dans `backend/` contient `legacy-peer-deps=true` (conflit cloudinary v2 / multer-storage-cloudinary)
 
 ---
