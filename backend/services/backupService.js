@@ -98,16 +98,25 @@ const envoyerEmailBackup = async (result, erreur = null) => {
 
 // ── Point d'entrée appelé par le cron ────────────
 const lancerBackup = async () => {
+  let result
   try {
-    const result = await effectuerBackup()
-    await envoyerEmailBackup(result)
+    result = await effectuerBackup()
   } catch (err) {
-    logger.error('❌ Backup échoué:', err.message)
+    logger.error(`❌ Backup échoué: ${err.message}`)
     try {
       await envoyerEmailBackup(null, err.message)
     } catch (emailErr) {
-      logger.error('Email backup failure notification échoué:', emailErr.message)
+      logger.error(`Email backup failure notification échoué: ${emailErr.message}`)
     }
+    return
+  }
+
+  // Le backup a réussi — un échec d'envoi de la notification ne doit
+  // jamais être confondu avec un échec du backup lui-même
+  try {
+    await envoyerEmailBackup(result)
+  } catch (emailErr) {
+    logger.error(`Backup OK mais notification email échouée: ${emailErr.message}`)
   }
 }
 
