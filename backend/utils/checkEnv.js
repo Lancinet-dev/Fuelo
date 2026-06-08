@@ -27,6 +27,11 @@ const checkEnv = () => {
     console.warn('⚠️  ANTHROPIC_API_KEY absente — l\'Assistant IA Fuelo sera indisponible.')
   }
 
+  // Optionnelle — sans elle, mot de passe oublié et notifications de backup ne peuvent pas être envoyés
+  if (!process.env.RESEND_API_KEY) {
+    console.warn('⚠️  RESEND_API_KEY absente — l\'envoi d\'emails (reset password, backup) sera indisponible.')
+  }
+
   console.log('✅ Variables d\'environnement OK')
 }
 

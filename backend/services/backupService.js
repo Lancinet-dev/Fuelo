@@ -6,20 +6,12 @@
 const zlib      = require('zlib')
 const { promisify } = require('util')
 const gzip      = promisify(zlib.gzip)
-const nodemailer = require('nodemailer')
 const pool      = require('../config/database')
 const cloudinary = require('../config/cloudinary')
 const logger    = require('../utils/logger')
+const { envoyerEmail } = require('../utils/mailer')
 
 const numFmt = (n) => Math.round(Number(n) || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
-
-const transporter = nodemailer.createTransport({
-  service: process.env.EMAIL_SERVICE || 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-})
 
 // ── Exporter toutes les tables en JSON ───────────
 const exporterTables = async () => {
@@ -74,8 +66,7 @@ const envoyerEmailBackup = async (result, erreur = null) => {
   const dateStr = new Date().toLocaleDateString('fr-FR', { timeZone: 'Africa/Conakry' })
 
   if (erreur) {
-    await transporter.sendMail({
-      from:    process.env.EMAIL_USER,
+    await envoyerEmail({
       to:      dest,
       subject: `❌ Fuelo — Backup DB ÉCHOUÉ (${dateStr})`,
       html:    `<h2>❌ Backup automatique échoué</h2><p><strong>Erreur :</strong> ${erreur}</p><p>Vérifiez les logs Render.</p>`,
@@ -83,8 +74,7 @@ const envoyerEmailBackup = async (result, erreur = null) => {
     return
   }
 
-  await transporter.sendMail({
-    from:    process.env.EMAIL_USER,
+  await envoyerEmail({
     to:      dest,
     subject: `✅ Fuelo — Backup DB réussi (${dateStr})`,
     html: `

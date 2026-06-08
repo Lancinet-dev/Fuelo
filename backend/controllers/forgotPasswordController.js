@@ -6,39 +6,15 @@
 const pool       = require('../config/database')
 const bcrypt     = require('bcryptjs')
 const crypto     = require('crypto')
-const nodemailer = require('nodemailer')
 const logger     = require('../utils/logger')
+const { envoyerEmail } = require('../utils/mailer')
 
-// ── Transporteur email ────────────────────────────────
-const transporter = nodemailer.createTransport({
-  service: process.env.EMAIL_SERVICE || 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-})
-
-// Diagnostic au démarrage — confirme que les variables sont bien lues
-// SANS jamais loguer leur valeur (uniquement présence/longueur)
+// Diagnostic au démarrage — confirme que la clé Resend est bien lue
+// SANS jamais loguer sa valeur (uniquement présence/longueur)
 logger.info(
-  `[email] Config transporter — service=${process.env.EMAIL_SERVICE || 'gmail (défaut)'} ` +
-  `EMAIL_USER=${process.env.EMAIL_USER ? `défini (${process.env.EMAIL_USER})` : '❌ MANQUANT'} ` +
-  `EMAIL_PASS=${process.env.EMAIL_PASS ? `défini (${process.env.EMAIL_PASS.length} caractères)` : '❌ MANQUANT'}`
+  `[email] Config Resend — RESEND_API_KEY=${process.env.RESEND_API_KEY ? `définie (${process.env.RESEND_API_KEY.length} caractères)` : '❌ MANQUANTE'} ` +
+  `RESEND_FROM_EMAIL=${process.env.RESEND_FROM_EMAIL || 'Fuelo <onboarding@resend.dev> (défaut)'}`
 )
-
-// Vérifie la connexion/authentification SMTP dès le démarrage du serveur —
-// permet de voir l'échec dans les logs Render sans attendre qu'un utilisateur
-// déclenche /forgot-password
-transporter.verify((err) => {
-  if (err) {
-    logger.error(
-      `[email] Échec vérification SMTP au démarrage — code=${err.code ?? '?'} ` +
-      `responseCode=${err.responseCode ?? '?'} command=${err.command ?? '?'} message=${err.message}`
-    )
-  } else {
-    logger.info('[email] Connexion SMTP vérifiée avec succès — transporter prêt')
-  }
-})
 
 // ── POST /auth/forgot-password ───────────────────────
 const forgotPassword = async (req, res) => {
@@ -71,11 +47,10 @@ const forgotPassword = async (req, res) => {
 
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`
 
-    logger.info(`[email] Envoi du lien de réinitialisation à ${user.email} via ${process.env.EMAIL_SERVICE || 'gmail'}...`)
+    logger.info(`[email] Envoi du lien de réinitialisation à ${user.email} via Resend...`)
 
     // Envoyer email
-    await transporter.sendMail({
-      from:    `"Fuelo ⛽" <${process.env.EMAIL_USER}>`,
+    await envoyerEmail({
       to:      user.email,
       subject: 'Réinitialisation de votre mot de passe Fuelo',
       html: `
@@ -113,13 +88,9 @@ const forgotPassword = async (req, res) => {
     logger.info(`[email] ✅ Reset password envoyé à ${user.email}`)
     res.json({ message: 'Si cet email existe, un lien a été envoyé.' })
   } catch (err) {
-    // Détail complet de l'erreur SMTP côté logs serveur (jamais renvoyé au client —
-    // pourrait exposer des infos internes, cf. audit sécurité CWE-209)
-    logger.error(
-      `[email] ❌ Échec envoi forgotPassword — code=${err.code ?? '?'} ` +
-      `responseCode=${err.responseCode ?? '?'} command=${err.command ?? '?'} ` +
-      `response=${err.response ?? '?'} message=${err.message}`
-    )
+    // Détail complet de l'erreur côté logs serveur uniquement (jamais renvoyé
+    // au client — pourrait exposer des infos internes, cf. audit CWE-209)
+    logger.error(`[email] ❌ Échec envoi forgotPassword — ${err.message}`)
     res.status(500).json({ error: 'Erreur lors de l\'envoi' })
   }
 }
