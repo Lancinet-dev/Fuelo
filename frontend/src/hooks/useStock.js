@@ -22,6 +22,9 @@ export function useStock() {
   const essence = parseFloat(stocks.essence?.quantite ?? 0)
   const gasoil  = parseFloat(stocks.gasoil?.quantite  ?? 0)
 
+  const essenceMaj = stocks.essence?.updated_at ?? null
+  const gasoilMaj  = stocks.gasoil?.updated_at  ?? null
+
   // ── Ajouter une livraison ─────────────────────────
   const { mutateAsync: ajouterLivraison, isPending: livraisonLoading } = useMutation({
     mutationFn: (payload) => api.post('/stock/livraison', payload).then(r => r.data),
@@ -38,6 +41,8 @@ export function useStock() {
   return {
     essence,
     gasoil,
+    essenceMaj,
+    gasoilMaj,
     loading:          isLoading,
     livraisonLoading,
     error:            error?.message ?? null,
