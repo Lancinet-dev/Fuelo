@@ -5,14 +5,13 @@
 
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth }   from '../context/AuthContext'
 import { useTheme }  from '../context/ThemeContext'
 
-import { usePlan, PLAN_COLORS } from '../hooks/usePlan'
+import { usePlan } from '../hooks/usePlan'
 import { useParametres } from '../hooks/useParametres'
 import { usePerformancesBadge } from '../hooks/usePerformances'
-
-const BLUE = '#2563EB'
 
 const normalizeRole = (value = '') => {
   const role = String(value).trim().toLowerCase()
@@ -46,7 +45,7 @@ const ALL_NAV = [
   { path: '/abonnements',  label: 'Mon abonnement',  roles: ['owner'], d: 'M3 3h18v18H3zM3 9h18M9 21V9' },
 ]
 
-function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logout, onSearch, user, role, isDark, toggle }) {
+function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logout, onSearch, user, role, isDark, toggle, palette }) {
   const { plan, colors } = usePlan()
   const { parametres }   = useParametres()
   const { data: badgeData } = usePerformancesBadge()
@@ -59,7 +58,7 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
 
       {/* Header espace de travail — logo + nom station */}
-      <div style={{ padding: '16px 14px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: '0.5px solid rgba(255,255,255,0.07)', marginBottom: 6 }}>
+      <div style={{ padding: '18px 14px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: `1px solid ${palette.sidebarBorder}`, marginBottom: 8 }}>
         {logoUrl ? (
           <img
             src={logoUrl}
@@ -73,16 +72,16 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
             border: '1px solid rgba(37,99,235,0.35)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 16, fontWeight: 800, color: '#93C5FD',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            boxShadow: '0 0 0 1px rgba(255,255,255,0.05), 0 8px 20px rgba(37,99,235,0.25)',
           }}>
             {stationNom ? stationNom.charAt(0).toUpperCase() : 'F'}
           </div>
         )}
         <div style={{ overflow: 'hidden', flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '-0.1px' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: palette.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', letterSpacing: '-0.1px' }}>
             {stationNom || 'Ma station'}
           </div>
-          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.28)', marginTop: 1 }}>
+          <div style={{ fontSize: 10, color: palette.textMuted, marginTop: 1 }}>
             fuel<span style={{ color: '#F59E0B' }}>o</span>
           </div>
         </div>
@@ -91,55 +90,64 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
       {/* Bouton recherche */}
       <button
         onClick={onSearch}
-        style={{ display: 'flex', alignItems: 'center', gap: 8, width: 'calc(100% - 24px)', margin: '0 12px 8px', padding: '7px 10px', borderRadius: 8, border: 'none', cursor: 'pointer', background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.32)', fontFamily: 'inherit', fontSize: 12, transition: 'all 0.15s' }}
-        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = 'rgba(255,255,255,0.55)' }}
-        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = 'rgba(255,255,255,0.32)' }}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, width: 'calc(100% - 24px)', margin: '0 12px 10px', padding: '8px 10px', borderRadius: 10, border: `1px solid ${palette.sidebarBorder}`, cursor: 'pointer', background: 'rgba(255,255,255,0.03)', color: palette.textMuted, fontFamily: 'inherit', fontSize: 12, transition: 'all 0.2s ease' }}
+        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = palette.textSub; e.currentTarget.style.borderColor = 'rgba(37,99,235,0.3)' }}
+        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.color = palette.textMuted; e.currentTarget.style.borderColor = palette.sidebarBorder }}
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           <circle cx="11" cy="11" r="8"/>
           <path d="M21 21l-4.35-4.35"/>
         </svg>
         <span style={{ flex: 1 }}>Rechercher...</span>
-        <kbd style={{ fontSize: 9, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, padding: '1px 4px', fontFamily: 'monospace', color: 'rgba(255,255,255,0.2)' }}>⌘K</kbd>
+        <kbd style={{ fontSize: 9, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, padding: '1px 4px', fontFamily: 'monospace', color: palette.textMuted }}>⌘K</kbd>
       </button>
 
-      <div style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6, paddingLeft: 12 }}>
+      <div style={{ fontSize: 10, fontWeight: 600, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6, paddingLeft: 12 }}>
         Navigation
       </div>
 
-      <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1, overflowY: 'auto', minHeight: 0 }}>
-        {navItems.map((item) => {
+      <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto', minHeight: 0, padding: '0 8px' }}>
+        {navItems.map((item, i) => {
           const active   = location.pathname === item.path
           const isAlerte = item.path === '/alertes'
 
           return (
-            <button
+            <motion.button
               key={item.path}
               onClick={() => { navigate(item.path); setMobileOpen(false) }}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.025, duration: 0.25 }}
+              whileHover={{ x: active ? 0 : 2 }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '9px 12px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                background: active ? 'rgba(37,99,235,0.15)' : 'transparent',
-                color: active ? BLUE : 'rgba(255,255,255,0.5)',
+                background: active ? 'rgba(37,99,235,0.14)' : 'transparent',
+                boxShadow: active ? '0 0 0 1px rgba(37,99,235,0.25), 0 4px 16px rgba(37,99,235,0.18)' : 'none',
+                color: active ? '#60A5FA' : palette.textSub,
                 fontFamily: 'inherit', fontSize: 13, fontWeight: active ? 600 : 400,
-                width: '100%', textAlign: 'left', transition: 'all 0.15s', position: 'relative',
+                width: '100%', textAlign: 'left', transition: 'background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease', position: 'relative',
               }}
               onMouseEnter={(e) => {
-                if (!active) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(255,255,255,0.8)' }
+                if (!active) { e.currentTarget.style.background = palette.hover; e.currentTarget.style.color = palette.text }
               }}
               onMouseLeave={(e) => {
-                if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }
+                if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = palette.textSub }
               }}
             >
               {active && (
-                <div style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', width: 3, height: 18, background: BLUE, borderRadius: '0 2px 2px 0' }} />
+                <motion.div
+                  layoutId="sidebar-active-glow"
+                  transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                  style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', width: 3, height: 18, background: '#2563EB', borderRadius: '0 3px 3px 0', boxShadow: '0 0 12px rgba(37,99,235,0.8)' }}
+                />
               )}
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d={item.d} />
               </svg>
               <span style={{ flex: 1 }}>{item.label}</span>
               {isAlerte && alertesNb > 0 && (
-                <span style={{ background: '#EF4444', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 20, padding: '2px 7px' }}>
+                <span style={{ background: '#EF4444', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 20, padding: '2px 7px', boxShadow: '0 0 0 1px rgba(239,68,68,0.3), 0 2px 8px rgba(239,68,68,0.4)' }}>
                   {alertesNb}
                 </span>
               )}
@@ -149,28 +157,34 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
                 </span>
               )}
               {item.ownerReadOnly && role === 'owner' && (
-                <span style={{ fontSize: 8, fontWeight: 700, color: 'rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.06)', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.06em', textTransform: 'uppercase', flexShrink: 0 }}>
+                <span style={{ fontSize: 8, fontWeight: 700, color: palette.textMuted, background: 'rgba(255,255,255,0.06)', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.06em', textTransform: 'uppercase', flexShrink: 0 }}>
                   lecture
                 </span>
               )}
-            </button>
+            </motion.button>
           )
         })}
       </nav>
 
       {/* Bas de sidebar */}
-      <div style={{ borderTop: '0.5px solid rgba(255,255,255,0.07)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <div style={{ borderTop: `1px solid ${palette.sidebarBorder}`, paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 1, padding: '12px 8px 8px' }}>
 
         {/* Utilisateur */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', marginBottom: 2 }}>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(37,99,235,0.2)', border: '1px solid rgba(37,99,235,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: BLUE, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 8px', marginBottom: 2, borderRadius: 12, background: 'rgba(255,255,255,0.02)', border: `1px solid ${palette.sidebarBorder}` }}>
+          <div style={{
+            width: 34, height: 34, borderRadius: '50%', flexShrink: 0,
+            background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 13, fontWeight: 700, color: '#fff',
+            boxShadow: '0 0 0 1px rgba(255,255,255,0.08), 0 4px 14px rgba(37,99,235,0.35)',
+          }}>
             {(user?.nom || 'G').charAt(0).toUpperCase()}
           </div>
           <div style={{ overflow: 'hidden', flex: 1 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: palette.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {user?.nom || 'Gérant'}
             </div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', textTransform: 'capitalize' }}>
+            <div style={{ fontSize: 10, color: palette.textMuted, textTransform: 'capitalize' }}>
               {getRoleLabel(role)}
             </div>
             {isOwner && plan && (
@@ -192,9 +206,9 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
         {/* Mode dark/light */}
         <button
           onClick={toggle}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '8px 12px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'transparent', color: 'rgba(255,255,255,0.35)', fontFamily: 'inherit', fontSize: 12, width: '100%', textAlign: 'left', transition: 'all 0.15s' }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)' }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.35)' }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '8px 12px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'transparent', color: palette.textMuted, fontFamily: 'inherit', fontSize: 12, width: '100%', textAlign: 'left', transition: 'all 0.2s ease' }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = palette.hover; e.currentTarget.style.color = palette.textSub }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = palette.textMuted }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -205,15 +219,19 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
             </svg>
             {isDark ? 'Mode jour' : 'Mode nuit'}
           </div>
-          <div style={{ width: 34, height: 18, borderRadius: 18, background: isDark ? BLUE : 'rgba(255,255,255,0.12)', position: 'relative', transition: 'background 0.3s', flexShrink: 0 }}>
-            <div style={{ position: 'absolute', top: 2, left: isDark ? 16 : 2, width: 14, height: 14, borderRadius: '50%', background: '#fff', transition: 'left 0.3s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }} />
+          <div style={{ width: 34, height: 18, borderRadius: 18, background: isDark ? '#2563EB' : 'rgba(255,255,255,0.12)', position: 'relative', transition: 'background 0.3s ease', flexShrink: 0 }}>
+            <motion.div
+              animate={{ left: isDark ? 16 : 2 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+              style={{ position: 'absolute', top: 2, width: 14, height: 14, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
+            />
           </div>
         </button>
 
         {/* Déconnexion */}
         <button
           onClick={logout}
-          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'transparent', color: 'rgba(239,68,68,0.65)', fontFamily: 'inherit', fontSize: 12, width: '100%', textAlign: 'left', transition: 'all 0.15s', marginBottom: 4 }}
+          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'transparent', color: 'rgba(239,68,68,0.65)', fontFamily: 'inherit', fontSize: 12, width: '100%', textAlign: 'left', transition: 'all 0.2s ease', marginBottom: 4 }}
           onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.color = '#EF4444' }}
           onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(239,68,68,0.65)' }}
         >
@@ -228,39 +246,43 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
 }
 
 // ── Modale confirmation déconnexion ─────────────────
-function LogoutConfirmModal({ onConfirm, onCancel }) {
+function LogoutConfirmModal({ onConfirm, onCancel, palette }) {
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
-      <div style={{ background: '#0F172A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: '28px 24px', width: '100%', maxWidth: 320, boxShadow: '0 20px 60px rgba(0,0,0,0.5)', animation: 'lgSlide 0.2s ease' }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.18 }}
+        style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 16, padding: '28px 24px', width: '100%', maxWidth: 320, boxShadow: '0 0 0 1px rgba(255,255,255,0.05), 0 20px 60px rgba(0,0,0,0.5)' }}
+      >
         <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(239,68,68,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
           </svg>
         </div>
-        <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Déconnexion</div>
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginBottom: 24, lineHeight: 1.6 }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: palette.text, marginBottom: 8 }}>Déconnexion</div>
+        <div style={{ fontSize: 13, color: palette.textSub, marginBottom: 24, lineHeight: 1.6 }}>
           Vous allez être déconnecté de Fuelo. Toutes vos données sont sauvegardées.
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button
             onClick={onCancel}
-            style={{ flex: 1, height: 42, borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, transition: 'all 0.15s' }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'rgba(255,255,255,0.8)' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.5)' }}
+            style={{ flex: 1, height: 42, borderRadius: 10, border: `1px solid ${palette.cardBorder}`, background: 'transparent', color: palette.textSub, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, transition: 'all 0.2s ease' }}
+            onMouseEnter={e => { e.currentTarget.style.background = palette.hover; e.currentTarget.style.color = palette.text }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = palette.textSub }}
           >
             Annuler
           </button>
           <button
             onClick={onConfirm}
-            style={{ flex: 1, height: 42, borderRadius: 10, border: 'none', background: '#EF4444', color: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700, transition: 'all 0.15s' }}
+            style={{ flex: 1, height: 42, borderRadius: 10, border: 'none', background: '#EF4444', color: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700, transition: 'all 0.2s ease' }}
             onMouseEnter={e => { e.currentTarget.style.background = '#DC2626' }}
             onMouseLeave={e => { e.currentTarget.style.background = '#EF4444' }}
           >
             Se déconnecter
           </button>
         </div>
-      </div>
-      <style>{`@keyframes lgSlide { from { opacity:0; transform:scale(0.96) } to { opacity:1; transform:scale(1) } }`}</style>
+      </motion.div>
     </div>
   )
 }
@@ -269,7 +291,7 @@ export default function Sidebar({ alertesNb = 0, onSearch }) {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, role, logout: authLogout } = useAuth()
-  const { isDark, toggle } = useTheme()
+  const { isDark, toggle, palette } = useTheme()
   const [mobileOpen,     setMobileOpen]     = useState(false)
   const [confirmLogout,  setConfirmLogout]  = useState(false)
 
@@ -278,15 +300,25 @@ export default function Sidebar({ alertesNb = 0, onSearch }) {
 
   const doLogout = () => { authLogout(); navigate('/login') }
 
-  const contentProps = { alertesNb, navItems, location, navigate, setMobileOpen, logout: () => setConfirmLogout(true), onSearch, user, role: userRole, isDark, toggle }
+  const contentProps = { alertesNb, navItems, location, navigate, setMobileOpen, logout: () => setConfirmLogout(true), onSearch, user, role: userRole, isDark, toggle, palette }
 
   return (
     <>
-      {confirmLogout && <LogoutConfirmModal onConfirm={doLogout} onCancel={() => setConfirmLogout(false)} />}
+      <AnimatePresence>
+        {confirmLogout && <LogoutConfirmModal onConfirm={doLogout} onCancel={() => setConfirmLogout(false)} palette={palette} />}
+      </AnimatePresence>
 
       <div
         className="fuelo-sidebar-desktop"
-        style={{ width: 220, background: '#0F172A', borderRight: '0.5px solid rgba(255,255,255,0.06)', position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 50, display: 'flex', flexDirection: 'column' }}
+        style={{
+          width: 220,
+          background: palette.sidebar,
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderRight: `1px solid ${palette.sidebarBorder}`,
+          position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 50,
+          display: 'flex', flexDirection: 'column',
+        }}
       >
         <Content {...contentProps} />
       </div>
@@ -294,7 +326,7 @@ export default function Sidebar({ alertesNb = 0, onSearch }) {
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
         className="fuelo-hamburger"
-        style={{ display: 'none', position: 'fixed', top: 14, left: 14, zIndex: 200, width: 40, height: 40, borderRadius: 10, background: '#0F172A', border: '0.5px solid rgba(255,255,255,0.1)', cursor: 'pointer', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)' }}
+        style={{ display: 'none', position: 'fixed', top: 14, left: 14, zIndex: 200, width: 40, height: 40, borderRadius: 10, background: palette.sidebar, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: `1px solid ${palette.sidebarBorder}`, cursor: 'pointer', alignItems: 'center', justifyContent: 'center', color: palette.textSub, boxShadow: '0 4px 16px rgba(0,0,0,0.3)' }}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
           {mobileOpen
@@ -304,13 +336,28 @@ export default function Sidebar({ alertesNb = 0, onSearch }) {
         </svg>
       </button>
 
-      {mobileOpen && (
-        <div onClick={() => setMobileOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 98, backdropFilter: 'blur(4px)' }} />
-      )}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setMobileOpen(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 98, backdropFilter: 'blur(4px)' }}
+          />
+        )}
+      </AnimatePresence>
 
       <div
         className="fuelo-sidebar-mobile"
-        style={{ position: 'fixed', top: 0, left: mobileOpen ? 0 : -260, bottom: 0, width: 240, background: '#0F172A', borderRight: '0.5px solid rgba(255,255,255,0.06)', zIndex: 99, transition: 'left 0.3s ease', display: 'none', flexDirection: 'column' }}
+        style={{
+          position: 'fixed', top: 0, left: mobileOpen ? 0 : -260, bottom: 0, width: 240,
+          background: palette.sidebar,
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderRight: `1px solid ${palette.sidebarBorder}`,
+          zIndex: 99, transition: 'left 0.3s ease', display: 'none', flexDirection: 'column',
+        }}
       >
         <Content {...contentProps} />
       </div>
