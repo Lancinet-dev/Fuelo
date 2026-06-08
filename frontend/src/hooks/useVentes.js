@@ -7,13 +7,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../services/api'
 import toast from 'react-hot-toast'
 
-export function useVentes({ page = 1, limit = 20, type = '' } = {}) {
+export function useVentes({ page = 1, limit = 20, type = '', search = '' } = {}) {
   const queryClient = useQueryClient()
 
   // ── Historique paginé ─────────────────────────────
   const { data, isLoading, error } = useQuery({
-    queryKey:  ['ventes', page, limit, type],
-    queryFn:   () => api.get('/ventes', { params: { page, limit, type: type || undefined } }).then(r => r.data),
+    queryKey:  ['ventes', page, limit, type, search],
+    queryFn:   () => api.get('/ventes', { params: { page, limit, type: type || undefined, search: search || undefined } }).then(r => r.data),
     staleTime: 15_000,
     keepPreviousData: true,
   })

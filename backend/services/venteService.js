@@ -92,7 +92,7 @@ const createVente = async (user, data, app) => {
 
 // ── Récupérer les ventes paginées ────────────────────
 const getVentesPaginated = async (station_id, filters = {}, pagination) => {
-  const { type } = filters
+  const { type, search } = filters
   const { limit, offset } = pagination
 
   let whereClause = 'WHERE v.station_id = $1 AND v.deleted_at IS NULL'
@@ -103,6 +103,11 @@ const getVentesPaginated = async (station_id, filters = {}, pagination) => {
     whereClause += ` AND v.type = $${params.length}`
   }
 
+  if (search && search.trim()) {
+    params.push(`%${search.trim()}%`)
+    whereClause += ` AND u.nom ILIKE $${params.length}`
+  }
+
   const dataQuery = `
     SELECT v.*, u.nom as employe_nom
     FROM ventes v
@@ -110,7 +115,12 @@ const getVentesPaginated = async (station_id, filters = {}, pagination) => {
     ${whereClause}
     ORDER BY v.created_at DESC
   `
-  const countQuery = `SELECT COUNT(*) FROM ventes v ${whereClause}`
+  const countQuery = `
+    SELECT COUNT(*)
+    FROM ventes v
+    LEFT JOIN users u ON u.id = v.user_id
+    ${whereClause}
+  `
   const dataParams = [...params, limit, offset]
   const dataFull   = `${dataQuery} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`
 

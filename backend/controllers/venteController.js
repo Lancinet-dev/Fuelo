@@ -21,7 +21,7 @@ const getVentes = async (req, res) => {
   try {
     const station_id  = req.user.station_id
     const pagination  = getPagination(req)
-    const filters     = { type: req.query.type }
+    const filters     = { type: req.query.type, search: req.query.search }
     const { ventes, total } = await venteService.getVentesPaginated(station_id, filters, pagination)
     res.json(formatPaginatedResponse('ventes', {
       data: ventes, ...pagination, total,

@@ -1,9 +1,10 @@
 // ================================================
-// FUELO V2 — Ventes responsive mobile
+// FUELO V2 — Ventes premium (glassmorphism)
 // Fichier : frontend/src/features/ventes/Ventes.jsx
 // ================================================
 
 import { useEffect, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useVentes }  from '../../hooks/useVentes'
 import { useTheme }   from '../../context/ThemeContext'
 import { useAuth }    from '../../context/AuthContext'
@@ -21,19 +22,29 @@ const ICONS = {
   cash:   'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
   pdf:    'M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z',
   excel:  'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+  search: 'M21 21l-4.35-4.35M11 19a8 8 0 100-16 8 8 0 000 16z',
+  close:  'M18 6L6 18M6 6l12 12',
 }
 
 export default function Ventes() {
   const { user }     = useAuth()
   const isOwner      = user?.role === 'owner'
-  const { palette }  = useTheme()
+  const { palette, isDark } = useTheme()
   const [filterType, setFilterType] = useState('')
+  const [search,     setSearch]     = useState('')
+  const [searchInput, setSearchInput] = useState('')
   const [page,       setPage]       = useState(1)
   const [exporting,  setExporting]  = useState('')
   const [nomStation, setNomStation] = useState('Ma Station')
   const [logoUrl,    setLogoUrl]    = useState(null)
 
-  const { ventes, meta, aujourdhui, loading } = useVentes({ page, limit: 20, type: filterType })
+  // Recherche avec debounce — évite une requête à chaque frappe
+  useEffect(() => {
+    const t = setTimeout(() => { setSearch(searchInput.trim()); setPage(1) }, 350)
+    return () => clearTimeout(t)
+  }, [searchInput])
+
+  const { ventes, meta, aujourdhui, loading } = useVentes({ page, limit: 20, type: filterType, search })
 
   useEffect(() => {
     let cancelled = false
@@ -60,16 +71,20 @@ export default function Ventes() {
         </div>
         {!isOwner && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button onClick={handleExportExcel} disabled={exporting === 'excel' || ventes.length === 0}
-              style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: palette.card, color: '#10B981', cursor: ventes.length === 0 ? 'not-allowed' : 'pointer', fontSize: theme.font.size.sm, fontFamily: theme.font.family, fontWeight: theme.font.weight.semi, boxShadow: theme.shadow.sm, opacity: ventes.length === 0 ? 0.5 : 1 }}>
+            <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }} onClick={handleExportExcel} disabled={exporting === 'excel' || ventes.length === 0}
+              style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: theme.radius.button, border: '1px solid rgba(16,185,129,0.25)', background: 'rgba(16,185,129,0.08)', color: '#10B981', cursor: ventes.length === 0 ? 'not-allowed' : 'pointer', fontSize: theme.font.size.sm, fontFamily: theme.font.family, fontWeight: theme.font.weight.semi, opacity: ventes.length === 0 ? 0.5 : 1, transition: theme.transition.hover }}
+              onMouseEnter={e => { if (ventes.length) e.currentTarget.style.boxShadow = '0 0 0 1px rgba(16,185,129,0.3), 0 8px 22px rgba(16,185,129,0.22)' }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}>
               {exporting === 'excel' ? <div style={{ width: 14, height: 14, border: '2px solid #10B981', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.excel} /></svg>}
               Excel
-            </button>
-            <button onClick={handleExportPDF} disabled={exporting === 'pdf' || ventes.length === 0}
-              style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: palette.card, color: '#EF4444', cursor: ventes.length === 0 ? 'not-allowed' : 'pointer', fontSize: theme.font.size.sm, fontFamily: theme.font.family, fontWeight: theme.font.weight.semi, boxShadow: theme.shadow.sm, opacity: ventes.length === 0 ? 0.5 : 1 }}>
+            </motion.button>
+            <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }} onClick={handleExportPDF} disabled={exporting === 'pdf' || ventes.length === 0}
+              style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: theme.radius.button, border: '1px solid rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.08)', color: '#EF4444', cursor: ventes.length === 0 ? 'not-allowed' : 'pointer', fontSize: theme.font.size.sm, fontFamily: theme.font.family, fontWeight: theme.font.weight.semi, opacity: ventes.length === 0 ? 0.5 : 1, transition: theme.transition.hover }}
+              onMouseEnter={e => { if (ventes.length) e.currentTarget.style.boxShadow = '0 0 0 1px rgba(239,68,68,0.3), 0 8px 22px rgba(239,68,68,0.22)' }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none' }}>
               {exporting === 'pdf' ? <div style={{ width: 14, height: 14, border: '2px solid #EF4444', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.pdf} /></svg>}
               PDF
-            </button>
+            </motion.button>
           </div>
         )}
       </div>
@@ -96,14 +111,47 @@ export default function Ventes() {
         </div>
       )}
 
-      {/* Filtres */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-        {[{ val: '', label: 'Toutes' }, { val: 'essence', label: 'Essence' }, { val: 'gasoil', label: 'Gasoil' }].map(({ val, label }) => (
-          <button key={val} onClick={() => { setFilterType(val); setPage(1) }}
-            style={{ padding: '7px 16px', borderRadius: theme.radius.full, border: `1px solid ${filterType === val ? theme.colors.primary : palette.cardBorder}`, background: filterType === val ? theme.colors.primaryLight : palette.card, color: filterType === val ? theme.colors.primary : palette.textSub, fontSize: theme.font.size.sm, fontWeight: filterType === val ? theme.font.weight.semi : theme.font.weight.normal, cursor: 'pointer', fontFamily: theme.font.family, transition: theme.transition.fast }}>
-            {label}
-          </button>
-        ))}
+      {/* Barre de recherche + filtres */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+
+        {/* Search bar premium */}
+        <div style={{ position: 'relative', flex: '1 1 220px', maxWidth: 320 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={palette.textMuted} strokeWidth="2" strokeLinecap="round" style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+            <path d={ICONS.search} />
+          </svg>
+          <input
+            value={searchInput}
+            onChange={e => setSearchInput(e.target.value)}
+            placeholder="Rechercher un pompiste..."
+            style={{
+              width: '100%', height: 38, padding: '0 36px 0 36px', borderRadius: theme.radius.button,
+              border: `1px solid ${palette.inputBorder}`, background: palette.inputBg, color: palette.text,
+              fontSize: 13, fontFamily: theme.font.family, outline: 'none', transition: theme.transition.hover,
+              boxSizing: 'border-box',
+            }}
+            onFocus={e => { e.currentTarget.style.borderColor = theme.colors.primary; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.12)' }}
+            onBlur={e => { e.currentTarget.style.borderColor = palette.inputBorder; e.currentTarget.style.boxShadow = 'none' }}
+          />
+          {searchInput && (
+            <button onClick={() => setSearchInput('')} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 22, height: 22, borderRadius: '50%', border: 'none', background: palette.hover, color: palette.textMuted, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d={ICONS.close} /></svg>
+            </button>
+          )}
+        </div>
+
+        {/* Filtres carburant */}
+        <div style={{ display: 'flex', gap: 8 }}>
+          {[{ val: '', label: 'Toutes' }, { val: 'essence', label: 'Essence' }, { val: 'gasoil', label: 'Gasoil' }].map(({ val, label }) => {
+            const active = filterType === val
+            return (
+              <motion.button key={val} whileTap={{ scale: 0.95 }} onClick={() => { setFilterType(val); setPage(1) }}
+                style={{ padding: '7px 16px', borderRadius: theme.radius.full, border: `1px solid ${active ? theme.colors.primary : palette.cardBorder}`, background: active ? theme.colors.primaryLight : palette.card, color: active ? theme.colors.primary : palette.textSub, fontSize: theme.font.size.sm, fontWeight: active ? theme.font.weight.semi : theme.font.weight.normal, cursor: 'pointer', fontFamily: theme.font.family, transition: theme.transition.hover, boxShadow: active ? '0 0 0 1px rgba(37,99,235,0.2), 0 4px 14px rgba(37,99,235,0.18)' : 'none' }}>
+                {label}
+              </motion.button>
+            )
+          })}
+        </div>
+
         {ventes.length > 0 && (
           <span style={{ marginLeft: 'auto', fontSize: theme.font.size.xs, color: palette.textMuted, alignSelf: 'center' }}>
             {meta.total ?? 0} vente{(meta.total ?? 0) > 1 ? 's' : ''} au total
@@ -111,8 +159,14 @@ export default function Ventes() {
         )}
       </div>
 
-      {/* Tableau */}
-      <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.lg, overflow: 'hidden', boxShadow: theme.shadow.sm }}>
+      {/* Tableau glassmorphism */}
+      <div style={{
+        background: isDark ? palette.glass : palette.card,
+        backdropFilter: isDark ? 'blur(20px)' : 'none',
+        WebkitBackdropFilter: isDark ? 'blur(20px)' : 'none',
+        border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.card, overflow: 'hidden',
+        boxShadow: isDark ? theme.shadow.premium : theme.shadow.sm,
+      }}>
 
         {/* Header — desktop seulement */}
         <div className="ventes-header-desktop" style={{ display: 'grid', gridTemplateColumns: '50px 1fr 100px 130px 150px', padding: '10px 22px', background: palette.hover, borderBottom: `1px solid ${palette.cardBorder}`, gap: 8 }}>
@@ -124,71 +178,86 @@ export default function Ventes() {
         {loading
           ? Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} cols={5} />)
           : ventes.length === 0
-          ? <EmptyState type="ventes" />
-          : ventes.map((v, i) => (
-            <div key={v.id}>
-              {/* Desktop row */}
-              <div className="ventes-row-desktop"
-                style={{ display: 'grid', gridTemplateColumns: '50px 1fr 100px 130px 150px', padding: '13px 22px', borderBottom: i < ventes.length - 1 ? `1px solid ${palette.cardBorder}` : 'none', transition: theme.transition.fast, gap: 8, alignItems: 'center' }}
-                onMouseEnter={e => e.currentTarget.style.background = palette.hover}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-              >
-                <div style={{ fontSize: theme.font.size.sm, color: palette.textMuted, fontFamily: theme.font.mono }}>#{v.id}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {v.type === 'essence'
-                    ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={theme.colors.warning} strokeWidth="2" strokeLinecap="round"><path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/><path d="M3 11h12"/><path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/><path d="M6 7h4"/></svg>
-                    : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={theme.colors.info} strokeWidth="2" strokeLinecap="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.657 3.582 3 8 3s8-1.343 8-3V6"/></svg>
-                  }
-                  <div>
-                    <div style={{ fontSize: theme.font.size.md, fontWeight: theme.font.weight.semi, color: palette.text, textTransform: 'capitalize' }}>{v.type}</div>
-                    {v.employe_nom && <div style={{ fontSize: theme.font.size.xs, color: palette.textMuted }}>{v.employe_nom}</div>}
-                  </div>
-                </div>
-                <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.semi, color: theme.colors.success, fontFamily: theme.font.mono }}>{formatLitres(v.litres)}</div>
-                <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.bold, color: theme.colors.primary, fontFamily: theme.font.mono }}>{formatGNF(v.montant_gnf)}</div>
-                <div style={{ fontSize: theme.font.size.xs, color: palette.textSub }}>{formatDateTime(v.created_at)}</div>
-              </div>
-
-              {/* Mobile card */}
-              <div className="ventes-row-mobile"
-                style={{ display: 'none', padding: '12px 16px', borderBottom: i < ventes.length - 1 ? `1px solid ${palette.cardBorder}` : 'none' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: theme.radius.md, background: v.type === 'essence' ? theme.colors.warningLight : theme.colors.infoLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      {v.type === 'essence'
-                        ? <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={theme.colors.warning} strokeWidth="2" strokeLinecap="round"><path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/><path d="M3 11h12"/><path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/><path d="M6 7h4"/></svg>
-                        : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={theme.colors.info} strokeWidth="2" strokeLinecap="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.657 3.582 3 8 3s8-1.343 8-3V6"/></svg>
-                      }
+          ? <EmptyState type="ventes" title={search ? 'Aucun résultat' : undefined} message={search ? `Aucune vente trouvée pour "${search}"` : undefined} />
+          : (
+            <AnimatePresence mode="popLayout">
+              {ventes.map((v, i) => {
+                const altBg = i % 2 === 1 ? (isDark ? 'rgba(255,255,255,0.015)' : 'rgba(0,0,0,0.012)') : 'transparent'
+                return (
+                  <motion.div
+                    key={v.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ delay: Math.min(i, 12) * 0.025, duration: 0.2 }}
+                  >
+                    {/* Desktop row */}
+                    <div className="ventes-row-desktop"
+                      style={{ display: 'grid', gridTemplateColumns: '50px 1fr 100px 130px 150px', padding: '13px 22px', borderBottom: i < ventes.length - 1 ? `1px solid ${palette.cardBorder}` : 'none', transition: theme.transition.hover, gap: 8, alignItems: 'center', background: altBg }}
+                      onMouseEnter={e => e.currentTarget.style.background = palette.hover}
+                      onMouseLeave={e => e.currentTarget.style.background = altBg}
+                    >
+                      <div style={{ fontSize: theme.font.size.sm, color: palette.textMuted, fontFamily: theme.font.mono }}>#{v.id}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {v.type === 'essence'
+                          ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={theme.colors.warning} strokeWidth="2" strokeLinecap="round"><path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/><path d="M3 11h12"/><path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/><path d="M6 7h4"/></svg>
+                          : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={theme.colors.info} strokeWidth="2" strokeLinecap="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.657 3.582 3 8 3s8-1.343 8-3V6"/></svg>
+                        }
+                        <div>
+                          <div style={{ fontSize: theme.font.size.md, fontWeight: theme.font.weight.semi, color: palette.text, textTransform: 'capitalize' }}>{v.type}</div>
+                          {v.employe_nom && <div style={{ fontSize: theme.font.size.xs, color: palette.textMuted }}>{v.employe_nom}</div>}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.semi, color: theme.colors.success, fontFamily: theme.font.mono }}>{formatLitres(v.litres)}</div>
+                      <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.bold, color: theme.colors.primary, fontFamily: theme.font.mono }}>{formatGNF(v.montant_gnf)}</div>
+                      <div style={{ fontSize: theme.font.size.xs, color: palette.textSub }}>{formatDateTime(v.created_at)}</div>
                     </div>
-                    <div>
-                      <div style={{ fontSize: theme.font.size.md, fontWeight: theme.font.weight.semi, color: palette.text, textTransform: 'capitalize' }}>{v.type}</div>
-                      <div style={{ fontSize: theme.font.size.xs, color: palette.textMuted }}>
-                        {v.employe_nom && `${v.employe_nom} · `}{formatDateTime(v.created_at)}
+
+                    {/* Mobile card */}
+                    <div className="ventes-row-mobile"
+                      style={{ display: 'none', padding: '12px 16px', borderBottom: i < ventes.length - 1 ? `1px solid ${palette.cardBorder}` : 'none', background: altBg }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{ width: 36, height: 36, borderRadius: theme.radius.md, background: v.type === 'essence' ? theme.colors.warningLight : theme.colors.infoLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            {v.type === 'essence'
+                              ? <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={theme.colors.warning} strokeWidth="2" strokeLinecap="round"><path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/><path d="M3 11h12"/><path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/><path d="M6 7h4"/></svg>
+                              : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={theme.colors.info} strokeWidth="2" strokeLinecap="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.657 3.582 3 8 3s8-1.343 8-3V6"/></svg>
+                            }
+                          </div>
+                          <div>
+                            <div style={{ fontSize: theme.font.size.md, fontWeight: theme.font.weight.semi, color: palette.text, textTransform: 'capitalize' }}>{v.type}</div>
+                            <div style={{ fontSize: theme.font.size.xs, color: palette.textMuted }}>
+                              {v.employe_nom && `${v.employe_nom} · `}{formatDateTime(v.created_at)}
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.bold, color: theme.colors.primary, fontFamily: theme.font.mono }}>{formatGNF(v.montant_gnf)}</div>
+                          <div style={{ fontSize: theme.font.size.xs, color: theme.colors.success, fontFamily: theme.font.mono }}>{formatLitres(v.litres)}</div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: theme.font.size.sm, fontWeight: theme.font.weight.bold, color: theme.colors.primary, fontFamily: theme.font.mono }}>{formatGNF(v.montant_gnf)}</div>
-                    <div style={{ fontSize: theme.font.size.xs, color: theme.colors.success, fontFamily: theme.font.mono }}>{formatLitres(v.litres)}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))
+                  </motion.div>
+                )
+              })}
+            </AnimatePresence>
+          )
         }
 
         {/* Pagination */}
         {meta.pages > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, padding: 16, borderTop: `1px solid ${palette.cardBorder}`, flexWrap: 'wrap' }}>
-            <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={!meta.has_prev}
-              style={{ padding: '7px 14px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: palette.card, color: meta.has_prev ? palette.text : palette.textMuted, cursor: meta.has_prev ? 'pointer' : 'not-allowed', fontFamily: theme.font.family, fontSize: theme.font.size.sm }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, padding: 16, borderTop: `1px solid ${palette.cardBorder}`, flexWrap: 'wrap' }}>
+            <motion.button whileHover={{ scale: meta.has_prev ? 1.04 : 1 }} whileTap={{ scale: meta.has_prev ? 0.96 : 1 }} onClick={() => setPage(p => Math.max(1, p - 1))} disabled={!meta.has_prev}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: theme.radius.full, border: `1px solid ${palette.cardBorder}`, background: palette.card, color: meta.has_prev ? palette.text : palette.textMuted, cursor: meta.has_prev ? 'pointer' : 'not-allowed', fontFamily: theme.font.family, fontSize: theme.font.size.sm, transition: theme.transition.hover }}>
               ← Précédent
-            </button>
-            <span style={{ fontSize: theme.font.size.sm, color: palette.textSub }}>Page {meta.page} / {meta.pages}</span>
-            <button onClick={() => setPage(p => p + 1)} disabled={!meta.has_next}
-              style={{ padding: '7px 14px', borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}`, background: palette.card, color: meta.has_next ? palette.text : palette.textMuted, cursor: meta.has_next ? 'pointer' : 'not-allowed', fontFamily: theme.font.family, fontSize: theme.font.size.sm }}>
+            </motion.button>
+            <span style={{ fontSize: theme.font.size.sm, padding: '6px 14px', borderRadius: theme.radius.full, background: theme.colors.primaryLight, color: theme.colors.primary, fontWeight: theme.font.weight.semi }}>
+              Page {meta.page} / {meta.pages}
+            </span>
+            <motion.button whileHover={{ scale: meta.has_next ? 1.04 : 1 }} whileTap={{ scale: meta.has_next ? 0.96 : 1 }} onClick={() => setPage(p => p + 1)} disabled={!meta.has_next}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: theme.radius.full, border: `1px solid ${palette.cardBorder}`, background: palette.card, color: meta.has_next ? palette.text : palette.textMuted, cursor: meta.has_next ? 'pointer' : 'not-allowed', fontFamily: theme.font.family, fontSize: theme.font.size.sm, transition: theme.transition.hover }}>
               Suivant →
-            </button>
+            </motion.button>
           </div>
         )}
       </div>
