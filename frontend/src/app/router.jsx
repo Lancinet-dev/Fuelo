@@ -7,7 +7,7 @@ import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import AppLayout from '../ui/AppLayout'
-import AppLoader from '../ui/AppLoader'
+import PageLoader from '../ui/PageLoader'
 
 const normalizeRole = (value = '') => {
   const role = String(value).trim().toLowerCase()
@@ -38,9 +38,6 @@ const NotFound           = lazy(() => import('../features/auth/NotFound'))
 const AbonnementsPage        = lazy(() => import('../features/abonnements/AbonnementsPage'))
 const SuperadminDashboard    = lazy(() => import('../features/dashboard/SuperadminDashboard'))
 const PerformancesPage       = lazy(() => import('../features/performances/PerformancesPage'))
-
-// ── Fallback loading ──────────────────────────────────
-const PageLoader = () => <AppLoader />
 
 // ── Garde routes protégées ────────────────────────────
 function PrivateRoute({ children, allowedRoles }) {

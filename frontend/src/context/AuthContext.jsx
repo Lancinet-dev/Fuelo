@@ -55,24 +55,30 @@ export function AuthProvider({ children }) {
     const token = storage.getToken()
     if (!token) return
 
-    let cancelled = false
+    let settled = false
+
+    const finish = (normalizedUser) => {
+      if (settled) return
+      settled = true
+      clearTimeout(safety)
+      if (!normalizedUser) storage.clear()
+      setUser(normalizedUser)
+      setStationId(normalizedUser ? storage.getStation() : null)
+      setLoading(false)
+    }
+
+    // Filet de sécurité — backend lent à se réveiller (Render gratuit) ou
+    // requête qui ne répond jamais : au bout de 3s on considère la session
+    // comme invalide plutôt que de bloquer l'app sur l'écran de chargement
+    const safety = setTimeout(() => finish(null), 3_000)
 
     api.get('/auth/me')
-      .then((res) => {
-        if (cancelled) return
-        setUser(normalizeUser(res.data.user))
-        setStationId(storage.getStation())
-      })
-      .catch(() => {
-        if (cancelled) return
-        storage.clear()
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
+      .then((res) => finish(normalizeUser(res.data.user)))
+      .catch(() => finish(null))
 
     return () => {
-      cancelled = true
+      settled = true
+      clearTimeout(safety)
     }
   }, [])
 
