@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme }  from '../../context/ThemeContext'
 import { useAuth }   from '../../context/AuthContext'
+import { PlanGatePage } from '../../ui/PlanGate'
 import { usePerformances, usePerformancesEmploye, useValiderPrime, useAnneesDisponibles } from '../../hooks/usePerformances'
 import StatCard      from '../../ui/StatCard'
 import EmptyState    from '../../ui/EmptyState'
@@ -312,7 +313,7 @@ function CarteEmploye({ p, mois, annee, palette, isDark, onHistorique, index }) 
 }
 
 // ── Page principale ───────────────────────────────
-export default function PerformancesPage() {
+function PerformancesPageContent() {
   const { isDark, palette } = useTheme()
   const { role }            = useAuth()
 
@@ -479,5 +480,13 @@ export default function PerformancesPage() {
         }
       `}</style>
     </div>
+  )
+}
+
+export default function PerformancesPage() {
+  return (
+    <PlanGatePage feature="performances">
+      <PerformancesPageContent />
+    </PlanGatePage>
   )
 }

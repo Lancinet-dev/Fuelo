@@ -5,6 +5,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useAuth }    from '../../context/AuthContext'
 import { useTheme }   from '../../context/ThemeContext'
+import { PlanGatePage } from '../../ui/PlanGate'
 import { useTrajets, useGpsPoints, useCiternes } from '../../hooks/useTrajets'
 import { usePerformances, useValiderPrime } from '../../hooks/usePerformances'
 import { useParametres } from '../../hooks/useParametres'
@@ -913,7 +914,7 @@ function TabRapports({ palette}) {
 }
 
 // ── Page principale ────────────────────────────────
-export default function LogistiquePage() {
+function LogistiquePageContent() {
   const { user, logout }            = useAuth()
   const { isDark, toggle, palette } = useTheme()
   const { parametres }              = useParametres()
@@ -1000,5 +1001,13 @@ export default function LogistiquePage() {
         select { appearance: none; }
       `}</style>
     </div>
+  )
+}
+
+export default function LogistiquePage() {
+  return (
+    <PlanGatePage feature="logistique">
+      <LogistiquePageContent />
+    </PlanGatePage>
   )
 }

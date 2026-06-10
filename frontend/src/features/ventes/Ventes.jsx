@@ -8,6 +8,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useVentes }  from '../../hooks/useVentes'
 import { useTheme }   from '../../context/ThemeContext'
 import { useAuth }    from '../../context/AuthContext'
+import { usePlan }    from '../../hooks/usePlan'
+import { useUpgradeModal } from '../../ui/PlanGate'
 import StatCard       from '../../ui/StatCard'
 import EmptyState     from '../../ui/EmptyState'
 import { SkeletonStatCard, SkeletonRow, SkeletonStyle } from '../../ui/Skeleton'
@@ -30,6 +32,9 @@ export default function Ventes() {
   const { user }     = useAuth()
   const isOwner      = user?.role === 'owner'
   const { palette, isDark } = useTheme()
+  const { canAccess } = usePlan()
+  const { showUpgrade, Modal: UpgradeModal } = useUpgradeModal()
+  const canExport = canAccess('exports')
   const [filterType, setFilterType] = useState('')
   const [search,     setSearch]     = useState('')
   const [searchInput, setSearchInput] = useState('')
@@ -57,11 +62,12 @@ export default function Ventes() {
     return () => { cancelled = true }
   }, [])
 
-  const handleExportPDF   = async () => { setExporting('pdf');   try { await exportVentesPDF(ventes, nomStation, logoUrl)   } finally { setExporting('') } }
-  const handleExportExcel = async () => { setExporting('excel'); try { await exportVentesExcel(ventes, nomStation, logoUrl) } finally { setExporting('') } }
+  const handleExportPDF   = async () => { if (!canExport) return showUpgrade('exports'); setExporting('pdf');   try { await exportVentesPDF(ventes, nomStation, logoUrl)   } finally { setExporting('') } }
+  const handleExportExcel = async () => { if (!canExport) return showUpgrade('exports'); setExporting('excel'); try { await exportVentesExcel(ventes, nomStation, logoUrl) } finally { setExporting('') } }
 
   return (
     <div style={{ padding: '32px 28px', maxWidth: 1100, margin: '0 auto' }} className="fuelo-ventes">
+      {UpgradeModal}
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 14 }}>

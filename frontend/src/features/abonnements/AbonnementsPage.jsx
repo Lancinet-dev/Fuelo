@@ -12,22 +12,29 @@ import { usePlan, PLAN_COLORS } from '../../hooks/usePlan'
 import theme from '../../config/theme'
 
 const FEATURES = [
+  // Starter — bases
   { label: 'Ventes & caisse',                  starter: true,  pro: true,  enterprise: true,  section: 'base' },
   { label: 'Gestion du stock',                 starter: true,  pro: true,  enterprise: true,  section: 'base' },
   { label: 'Alertes stock faible',             starter: true,  pro: true,  enterprise: true,  section: 'base' },
-  { label: 'Dashboard & statistiques',         starter: true,  pro: true,  enterprise: true,  section: 'base' },
-  { label: 'Interface pompiste dédiée',        starter: false, pro: true,  enterprise: true,  section: 'pro'  },
+  { label: 'Dashboard basique',                starter: true,  pro: true,  enterprise: true,  section: 'base' },
+  { label: '1 station · max 5 employés',       starter: true,  pro: false, enterprise: false, section: 'base' },
+  { label: 'Support email',                    starter: true,  pro: true,  enterprise: true,  section: 'base' },
+  // Pro — opérations complètes
+  { label: 'Jusqu\'à 3 stations · 20 employés',starter: false, pro: true,  enterprise: true,  section: 'pro'  },
+  { label: 'Rôle logisticien & chauffeur',     starter: false, pro: true,  enterprise: true,  section: 'pro'  },
+  { label: 'GPS citernes — trajets temps réel',starter: false, pro: true,  enterprise: true,  section: 'pro'  },
+  { label: 'Export PDF & Excel',               starter: false, pro: true,  enterprise: true,  section: 'pro'  },
+  { label: 'Assistant IA (50 questions/mois)', starter: false, pro: true,  enterprise: true,  section: 'pro'  },
+  { label: 'Primes & performance employés',    starter: false, pro: true,  enterprise: true,  section: 'pro'  },
+  { label: 'Toutes les alertes (fraude, GPS)', starter: false, pro: true,  enterprise: true,  section: 'pro'  },
   { label: 'Anti-fraude pompistes (photos)',   starter: false, pro: true,  enterprise: true,  section: 'pro'  },
-  { label: 'Exports PDF & Excel',              starter: false, pro: true,  enterprise: true,  section: 'pro'  },
-  { label: 'Rapports automatiques mensuels',   starter: false, pro: true,  enterprise: true,  section: 'pro'  },
   { label: 'Support prioritaire',              starter: false, pro: true,  enterprise: true,  section: 'pro'  },
-  { label: 'Rôle logisticien & chauffeur GPS', starter: false, pro: false, enterprise: true,  section: 'ent'  },
-  { label: 'GPS citernes — trajets temps réel',starter: false, pro: false, enterprise: true,  section: 'ent'  },
-  { label: 'Gestion des citernes',             starter: false, pro: false, enterprise: true,  section: 'ent'  },
-  { label: 'Alertes transport (fraude, arrêt)',starter: false, pro: false, enterprise: true,  section: 'ent'  },
-  { label: 'QR code anti-vol citernes',        starter: false, pro: false, enterprise: true,  section: 'ent'  },
-  { label: 'Export rapports trajets Excel',    starter: false, pro: false, enterprise: true,  section: 'ent'  },
-  { label: 'Multi-stations illimitées',        starter: false, pro: false, enterprise: true,  section: 'ent'  },
+  // Enterprise — scale illimitée
+  { label: 'Stations & employés illimités',    starter: false, pro: false, enterprise: true,  section: 'ent'  },
+  { label: 'Assistant IA illimité',            starter: false, pro: false, enterprise: true,  section: 'ent'  },
+  { label: 'Module comptable',                 starter: false, pro: false, enterprise: true,  section: 'ent'  },
+  { label: 'Accès API',                        starter: false, pro: false, enterprise: true,  section: 'ent'  },
+  { label: 'Rapports personnalisés',           starter: false, pro: false, enterprise: true,  section: 'ent'  },
   { label: 'Support dédié 24/7',               starter: false, pro: false, enterprise: true,  section: 'ent'  },
 ]
 

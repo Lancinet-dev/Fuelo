@@ -97,6 +97,12 @@ pool.query(`
   CREATE INDEX IF NOT EXISTS idx_stocks_logs_station ON stocks_logs(station_id, created_at DESC);
   CREATE INDEX IF NOT EXISTS idx_users_email         ON users(email) WHERE deleted_at IS NULL;
   CREATE INDEX IF NOT EXISTS idx_station_users_user  ON station_users(user_id);
+  CREATE TABLE IF NOT EXISTS assistant_logs (
+    id         SERIAL PRIMARY KEY,
+    owner_id   INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+  );
+  CREATE INDEX IF NOT EXISTS idx_assistant_logs_owner ON assistant_logs(owner_id, created_at DESC);
 `).catch(err => logger.error('Migration startup error:', err.message))
 
 // ── Rate limiting ─────────────────────────────────────

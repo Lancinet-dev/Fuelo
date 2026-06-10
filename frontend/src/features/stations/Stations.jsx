@@ -7,6 +7,9 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStations } from '../../hooks/useStations'
 import { useTheme }    from '../../context/ThemeContext'
+import { useAuth }     from '../../context/AuthContext'
+import { usePlan }     from '../../hooks/usePlan'
+import { useUpgradeModal } from '../../ui/PlanGate'
 import EmptyState      from '../../ui/EmptyState'
 import { SkeletonStatCard, SkeletonStyle } from '../../ui/Skeleton'
 import { formatGNF, getStockStatus } from '../../utils/format'
@@ -200,10 +203,16 @@ function StationCard({ station, onSwitch, switching, palette }) {
 export default function Stations() {
   const navigate = useNavigate()
   const { palette } = useTheme()
+  const { user }    = useAuth()
   const { stations, consolide, loading, createLoading, creerStation, switchStation } = useStations()
+  const { maxStations } = usePlan()
+  const { showUpgrade, Modal: UpgradeModal } = useUpgradeModal()
 
   const [showModal,   setShowModal]   = useState(false)
   const [switchingId, setSwitchingId] = useState(null)
+
+  // Limite atteinte si maxStations non null et stations >= limite
+  const limitAtteinte = maxStations !== null && stations.length >= maxStations
 
   const handleCreate = async (data) => { await creerStation(data); setShowModal(false) }
 
@@ -217,19 +226,24 @@ export default function Stations() {
     <div style={{ padding: '32px 28px', maxWidth: 1100, margin: '0 auto' }} className="fuelo-stations">
 
       {showModal && <CreateModal onConfirm={handleCreate} onCancel={() => setShowModal(false)} loading={createLoading} palette={palette} />}
+      {UpgradeModal}
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 14 }}>
         <div>
           <h1 style={{ fontSize: theme.font.size['2xl'], fontWeight: theme.font.weight.black, color: palette.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 4 }}>Mes stations</h1>
           <p style={{ fontSize: theme.font.size.md, color: palette.textSub, margin: 0 }}>
-            {stations.length} station{stations.length > 1 ? 's' : ''} · vue propriétaire
+            {stations.length} station{stations.length > 1 ? 's' : ''}{maxStations ? ` / ${maxStations} max` : ''} · vue propriétaire
           </p>
         </div>
-        <button onClick={() => setShowModal(true)}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: theme.radius.md, border: 'none', background: theme.colors.primary, color: '#fff', cursor: 'pointer', fontSize: theme.font.size.md, fontWeight: theme.font.weight.bold, fontFamily: theme.font.family, boxShadow: theme.shadow.primary }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d={ICONS.plus} /></svg>
-          Nouvelle station
+        <button
+          onClick={() => limitAtteinte ? showUpgrade('logistique') : setShowModal(true)}
+          title={limitAtteinte ? `Limite de ${maxStations} station(s) atteinte` : 'Ajouter une station'}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: theme.radius.md, border: 'none', background: limitAtteinte ? palette.hover : theme.colors.primary, color: limitAtteinte ? palette.textMuted : '#fff', cursor: 'pointer', fontSize: theme.font.size.md, fontWeight: theme.font.weight.bold, fontFamily: theme.font.family, boxShadow: limitAtteinte ? 'none' : theme.shadow.primary, transition: theme.transition.fast }}>
+          {limitAtteinte
+            ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d={ICONS.plus} /></svg>}
+          {limitAtteinte ? `Limite atteinte (${maxStations} max)` : 'Nouvelle station'}
         </button>
       </div>
 

@@ -12,7 +12,7 @@ const logger = require('../utils/logger')
 const erreurServeur = require('../utils/erreurServeur')
 
 // GET /api/citernes
-router.get('/', verifyToken, isTransport, async (req, res) => {
+router.get('/', verifyToken, isTransport, checkPlan('logistique'), async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT c.*, u.nom as chauffeur_nom

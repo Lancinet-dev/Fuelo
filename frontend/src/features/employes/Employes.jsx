@@ -10,6 +10,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useEmployes } from '../../hooks/useEmployes'
 import { useTheme }    from '../../context/ThemeContext'
 import { useAuth }     from '../../context/AuthContext'
+import { usePlan }     from '../../hooks/usePlan'
+import { useUpgradeModal } from '../../ui/PlanGate'
 import EmptyState      from '../../ui/EmptyState'
 import Shimmer, { SkeletonStyle } from '../../ui/Skeleton'
 import { formatGNF }   from '../../utils/format'
@@ -129,6 +131,13 @@ export default function Employes() {
 
   const { palette, isDark } = useTheme()
   const { employes, loading, createLoading, creerEmploye, toggleEmploye, supprimerEmploye } = useEmployes()
+  const { maxEmployes, canAccess } = usePlan()
+  const { showUpgrade, Modal: UpgradeModal } = useUpgradeModal()
+
+  // Pour owner : bloquer création de logisticien si plan Starter
+  const canCreateLogisticien = canAccess('logistique')
+  // Limite employés : maxEmployes null = illimité
+  const limitEmployesAtteinte = maxEmployes !== null && employes.length >= maxEmployes
 
   const [showForm, setShowForm] = useState(false)
   const [toDelete, setToDelete] = useState(null)
@@ -191,6 +200,7 @@ export default function Employes() {
           <ConfirmModal key="confirm-delete" employe={toDelete} onConfirm={handleDelete} onCancel={() => setToDelete(null)} palette={palette} isDark={isDark} />
         )}
       </AnimatePresence>
+      {UpgradeModal}
 
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 14 }}>
@@ -200,14 +210,21 @@ export default function Employes() {
           </h1>
           <p style={{ fontSize: 13, color: palette.textSub, margin: 0 }}>
             {config.subtitle(employes.length)}
+            {maxEmployes !== null && ` · ${employes.length}/${maxEmployes} max`}
           </p>
         </div>
         {canManage && (
           <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}
-            onClick={() => { resetForm(); setShowForm(v => !v) }}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: theme.radius.button, border: 'none', background: theme.colors.primary, color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: theme.font.family, boxShadow: theme.shadow.primary, whiteSpace: 'nowrap' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
-            {config.btnLabel}
+            onClick={() => {
+              if (limitEmployesAtteinte) return showUpgrade('performances')
+              resetForm(); setShowForm(v => !v)
+            }}
+            title={limitEmployesAtteinte ? `Limite de ${maxEmployes} employé(s) atteinte` : config.btnLabel}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: theme.radius.button, border: 'none', background: limitEmployesAtteinte ? palette.hover : theme.colors.primary, color: limitEmployesAtteinte ? palette.textMuted : '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: theme.font.family, boxShadow: limitEmployesAtteinte ? 'none' : theme.shadow.primary, whiteSpace: 'nowrap' }}>
+            {limitEmployesAtteinte
+              ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+              : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>}
+            {limitEmployesAtteinte ? `Limite atteinte (${maxEmployes} max)` : config.btnLabel}
           </motion.button>
         )}
       </div>

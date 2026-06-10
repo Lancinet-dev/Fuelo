@@ -6,6 +6,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
+import { usePlan } from '../hooks/usePlan'
+import { useUpgradeModal } from './PlanGate'
 import { useAssistantChat } from '../hooks/useAssistant'
 import theme from '../config/theme'
 
@@ -91,6 +93,8 @@ function Bubble({ role, content, erreur }) {
 
 export default function AssistantFuelo() {
   const { isManager } = useAuth()
+  const { canAccess } = usePlan()
+  const { showUpgrade, Modal: UpgradeModal } = useUpgradeModal()
   const [open, setOpen]         = useState(false)
   const [input, setInput]       = useState('')
   const [messages, setMessages] = useState([])
@@ -135,11 +139,12 @@ export default function AssistantFuelo() {
 
   return (
     <>
+      {UpgradeModal}
       <AnimatePresence>
         {!open && (
           <motion.button
             key="assistant-fab"
-            onClick={() => setOpen(true)}
+            onClick={() => canAccess('assistant') ? setOpen(true) : showUpgrade('assistant')}
             initial={{ opacity: 0, scale: 0.7, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.7, y: 20 }}

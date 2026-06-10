@@ -6,6 +6,7 @@ const express    = require('express')
 const router     = express.Router()
 const verifyToken = require('../middleware/auth')
 const { canManageEmployes } = require('../middleware/checkRole')
+const { checkPlan } = require('../middleware/checkPlan')
 const {
   listePerformances,
   performanceEmploye,
@@ -15,10 +16,11 @@ const {
 } = require('../controllers/performanceController')
 
 // Routes spécifiques avant paramétrées
-router.get('/badge',             verifyToken, canManageEmployes, badgeCount)
-router.get('/annees',            verifyToken, canManageEmployes, anneesDisponiblesHandler)
-router.get('/',                  verifyToken, canManageEmployes, listePerformances)
-router.get('/:userId',           verifyToken, canManageEmployes, performanceEmploye)
-router.post('/:userId/valider',  verifyToken, canManageEmployes, validerPrimeHandler)
+const planPerf = checkPlan('performances')
+router.get('/badge',             verifyToken, canManageEmployes, planPerf, badgeCount)
+router.get('/annees',            verifyToken, canManageEmployes, planPerf, anneesDisponiblesHandler)
+router.get('/',                  verifyToken, canManageEmployes, planPerf, listePerformances)
+router.get('/:userId',           verifyToken, canManageEmployes, planPerf, performanceEmploye)
+router.post('/:userId/valider',  verifyToken, canManageEmployes, planPerf, validerPrimeHandler)
 
 module.exports = router

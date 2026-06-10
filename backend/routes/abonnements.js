@@ -14,6 +14,31 @@ const {
   getTousAbonnements,
   validerAbonnement,
 } = require('../controllers/abonnementController')
+const { getPlanOwner, PLANS } = require('../middleware/checkPlan')
+const erreurServeur = require('../utils/erreurServeur')
+const logger = require('../utils/logger')
+
+// Plan léger — accessible à tous les rôles (gérant, pompiste, logisticien…)
+router.get('/mon-plan', verifyToken, async (req, res) => {
+  try {
+    const plan    = await getPlanOwner(req.user)
+    const def     = PLANS[plan] ?? PLANS.starter
+    res.json({
+      plan,
+      planDef: {
+        label:        def.label,
+        max_stations: def.max_stations === Infinity ? null : def.max_stations,
+        max_employes: def.max_employes === Infinity ? null : def.max_employes,
+        features:     def.features,
+        assistant_limit: def.assistant_limit === Infinity ? null : def.assistant_limit,
+        upgrade_vers: def.upgrade_vers,
+      },
+    })
+  } catch (err) {
+    logger.error('monPlan', err)
+    res.status(500).json({ error: erreurServeur(err) })
+  }
+})
 
 router.get('/',           verifyToken, isOwner, getMonPlan)
 router.post('/souscrire', verifyToken, isOwner, souscrire)
