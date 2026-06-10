@@ -147,7 +147,7 @@ app.get('/', (req, res) => {
 // ── IP publique Render (diagnostic temporaire) ────────
 app.get('/api/myip', async (req, res) => {
   try {
-    const r = await fetch('https://ifconfig.me')
+    const r = await fetch('https://ifconfig.me/ip')
     const ip = (await r.text()).trim()
     res.json({ ip })
   } catch (e) {
