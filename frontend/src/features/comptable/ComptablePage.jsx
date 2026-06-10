@@ -4,6 +4,7 @@
 // ================================================
 import { useState } from 'react'
 import { useTheme } from '../../context/ThemeContext'
+import { useAuth } from '../../context/AuthContext'
 import {
   useDashboardComptable,
   useAchats, useCreateAchat, useUpdateAchat, useDeleteAchat,
@@ -36,6 +37,8 @@ const CATEGORIES_DEPENSES = [
 
 export default function ComptablePage() {
   const { palette } = useTheme()
+  const { user } = useAuth()
+  const readOnly = user?.role === 'owner' || user?.role === 'superadmin'
   const now = new Date()
   const [tab, setTab] = useState('dashboard')
   const [mois, setMois] = useState(now.getMonth() + 1)
@@ -98,11 +101,11 @@ export default function ComptablePage() {
       </div>
 
       {tab === 'dashboard' && <TabDashboard mois={mois} annee={annee} s={s} palette={palette} />}
-      {tab === 'achats'    && <TabAchats    mois={mois} annee={annee} s={s} palette={palette} />}
-      {tab === 'bl'        && <TabBL        s={s} palette={palette} />}
-      {tab === 'depenses'  && <TabDepenses  mois={mois} annee={annee} s={s} palette={palette} />}
-      {tab === 'transport' && <TabTransport mois={mois} annee={annee} s={s} palette={palette} />}
-      {tab === 'paie'      && <TabPaie      mois={mois} annee={annee} s={s} palette={palette} />}
+      {tab === 'achats'    && <TabAchats    mois={mois} annee={annee} s={s} palette={palette} readOnly={readOnly} />}
+      {tab === 'bl'        && <TabBL        s={s} palette={palette} readOnly={readOnly} />}
+      {tab === 'depenses'  && <TabDepenses  mois={mois} annee={annee} s={s} palette={palette} readOnly={readOnly} />}
+      {tab === 'transport' && <TabTransport mois={mois} annee={annee} s={s} palette={palette} readOnly={readOnly} />}
+      {tab === 'paie'      && <TabPaie      mois={mois} annee={annee} s={s} palette={palette} readOnly={readOnly} />}
     </div>
   )
 }
@@ -194,7 +197,7 @@ function TabDashboard({ mois, annee, s, palette }) {
 }
 
 // ── Tab Achats ────────────────────────────────────────
-function TabAchats({ mois, annee, s, palette }) {
+function TabAchats({ mois, annee, s, palette, readOnly }) {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ fournisseur:'', type_carburant:'essence', quantite_commandee:'', quantite_recue:'', prix_unitaire_ht:'', tva_taux:'18', numero_bl:'', numero_facture:'', date_echeance:'', statut_paiement:'non_paye', depot_origine:'', notes:'' })
   const { data, isLoading } = useAchats({ mois, annee })
@@ -214,11 +217,13 @@ function TabAchats({ mois, annee, s, palette }) {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-        <button style={s.btn} onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Annuler' : '+ Nouvel achat'}
-        </button>
-      </div>
+      {!readOnly && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+          <button style={s.btn} onClick={() => setShowForm(!showForm)}>
+            {showForm ? 'Annuler' : '+ Nouvel achat'}
+          </button>
+        </div>
+      )}
 
       {showForm && (
         <div style={{ ...s.card, marginBottom: 20 }}>
@@ -285,7 +290,7 @@ function TabAchats({ mois, annee, s, palette }) {
                   <td style={s.td}>{a.numero_bl || '—'}</td>
                   <td style={s.td}><StatutPaiementBadge statut={a.statut_paiement} /></td>
                   <td style={s.td}>
-                    {a.statut_paiement !== 'paye' && (
+                    {!readOnly && a.statut_paiement !== 'paye' && (
                       <button style={s.btnSm} onClick={() => update.mutate({ id: a.id, statut_paiement: 'paye' })}>
                         Marquer payé
                       </button>
@@ -305,7 +310,7 @@ function TabAchats({ mois, annee, s, palette }) {
 }
 
 // ── Tab BL ────────────────────────────────────────────
-function TabBL({ s, palette }) {
+function TabBL({ s, palette, readOnly }) {
   const [showForm, setShowForm] = useState(false)
   const [filtreStatut, setFiltreStatut] = useState('')
   const [form, setForm] = useState({ numero_bl:'', fournisseur:'', type_carburant:'essence', quantite_commandee:'', quantite_livree:'', chauffeur_nom:'', depot_origine:'', reserves:'' })
@@ -329,9 +334,11 @@ function TabBL({ s, palette }) {
           <option value="valide">Validé</option>
           <option value="litige">Litige</option>
         </select>
-        <button style={s.btn} onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Annuler' : '+ Nouveau BL'}
-        </button>
+        {!readOnly && (
+          <button style={s.btn} onClick={() => setShowForm(!showForm)}>
+            {showForm ? 'Annuler' : '+ Nouveau BL'}
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -389,14 +396,14 @@ function TabBL({ s, palette }) {
                     <td style={s.td}><StatutBLBadge statut={bl.statut} /></td>
                     <td style={s.td}>
                       <div style={{ display: 'flex', gap: 4 }}>
-                        <button style={{ ...s.btnSm, background: bl.signe_chauffeur ? '#22c55e' : palette.border, color: bl.signe_chauffeur ? '#fff' : palette.text }}
-                          onClick={() => !bl.signe_chauffeur && signer.mutate({ id: bl.id, qui: 'chauffeur' })}>
-                          Chauffeur
-                        </button>
-                        <button style={{ ...s.btnSm, background: bl.signe_receptionnaire ? '#22c55e' : palette.border, color: bl.signe_receptionnaire ? '#fff' : palette.text }}
-                          onClick={() => !bl.signe_receptionnaire && signer.mutate({ id: bl.id, qui: 'receptionnaire' })}>
-                          Réceptionnaire
-                        </button>
+                        <span style={{ ...s.btnSm, background: bl.signe_chauffeur ? '#22c55e' : palette.border, color: bl.signe_chauffeur ? '#fff' : palette.text, cursor: 'default', ...(readOnly ? {} : { cursor: 'pointer' }) }}
+                          onClick={() => !readOnly && !bl.signe_chauffeur && signer.mutate({ id: bl.id, qui: 'chauffeur' })}>
+                          Chauffeur {bl.signe_chauffeur ? '✓' : ''}
+                        </span>
+                        <span style={{ ...s.btnSm, background: bl.signe_receptionnaire ? '#22c55e' : palette.border, color: bl.signe_receptionnaire ? '#fff' : palette.text, cursor: 'default', ...(readOnly ? {} : { cursor: 'pointer' }) }}
+                          onClick={() => !readOnly && !bl.signe_receptionnaire && signer.mutate({ id: bl.id, qui: 'receptionnaire' })}>
+                          Réceptionnaire {bl.signe_receptionnaire ? '✓' : ''}
+                        </span>
                       </div>
                     </td>
                   </tr>
@@ -414,7 +421,7 @@ function TabBL({ s, palette }) {
 }
 
 // ── Tab Dépenses ───────────────────────────────────────
-function TabDepenses({ mois, annee, s, palette }) {
+function TabDepenses({ mois, annee, s, palette, readOnly }) {
   const [showForm, setShowForm] = useState(false)
   const [filtreCat, setFiltreCat] = useState('')
   const [form, setForm] = useState({ categorie: '', description: '', montant: '', date_depense: '' })
@@ -443,9 +450,11 @@ function TabDepenses({ mois, annee, s, palette }) {
             </span>
           )}
         </div>
-        <button style={s.btn} onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Annuler' : '+ Nouvelle dépense'}
-        </button>
+        {!readOnly && (
+          <button style={s.btn} onClick={() => setShowForm(!showForm)}>
+            {showForm ? 'Annuler' : '+ Nouvelle dépense'}
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -489,10 +498,12 @@ function TabDepenses({ mois, annee, s, palette }) {
                   <td style={s.td}><strong>{fmt(d.montant)} GNF</strong></td>
                   <td style={s.td}>{d.createur || '—'}</td>
                   <td style={s.td}>
-                    <button style={{ ...s.btnSm, background: '#fef2f2', color: '#ef4444' }}
-                      onClick={() => window.confirm('Supprimer cette dépense ?') && remove.mutate(d.id)}>
-                      Suppr.
-                    </button>
+                    {!readOnly && (
+                      <button style={{ ...s.btnSm, background: '#fef2f2', color: '#ef4444' }}
+                        onClick={() => window.confirm('Supprimer cette dépense ?') && remove.mutate(d.id)}>
+                        Suppr.
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -508,7 +519,7 @@ function TabDepenses({ mois, annee, s, palette }) {
 }
 
 // ── Tab Transport ──────────────────────────────────────
-function TabTransport({ mois, annee, s, palette }) {
+function TabTransport({ mois, annee, s, palette, readOnly }) {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ trajet_id:'', litres_transportes:'', carburant_camion:'', peages:'', prime_chauffeur:'', autres_frais:'' })
   const { data, isLoading } = useCoutsTransport({ mois, annee })
@@ -527,9 +538,11 @@ function TabTransport({ mois, annee, s, palette }) {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-        <button style={s.btn} onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Annuler' : '+ Nouveau coût transport'}
-        </button>
+        {!readOnly && (
+          <button style={s.btn} onClick={() => setShowForm(!showForm)}>
+            {showForm ? 'Annuler' : '+ Nouveau coût transport'}
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -591,7 +604,7 @@ function TabTransport({ mois, annee, s, palette }) {
 }
 
 // ── Tab Paie ──────────────────────────────────────────
-function TabPaie({ mois, annee, s, palette }) {
+function TabPaie({ mois, annee, s, palette, readOnly }) {
   const [showForm, setShowForm] = useState(false)
   const [selectedEmploye, setSelectedEmploye] = useState(null)
   const [form, setForm] = useState({ salaire_base:'', primes:'', avances:'', retenues:'', notes:'' })
@@ -616,9 +629,11 @@ function TabPaie({ mois, annee, s, palette }) {
         <p style={{ color: palette.textSecondary, fontSize: 14 }}>
           {MOIS_NOMS[mois-1]} {annee} — {data?.fiches?.length || 0} fiche(s)
         </p>
-        <button style={s.btn} onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Annuler' : '+ Nouvelle fiche'}
-        </button>
+        {!readOnly && (
+          <button style={s.btn} onClick={() => setShowForm(!showForm)}>
+            {showForm ? 'Annuler' : '+ Nouvelle fiche'}
+          </button>
+        )}
       </div>
 
       {showForm && (
@@ -686,7 +701,7 @@ function TabPaie({ mois, annee, s, palette }) {
                     </span>
                   </td>
                   <td style={s.td}>
-                    {f.statut !== 'paye' && (
+                    {!readOnly && f.statut !== 'paye' && (
                       <button style={s.btnSm} onClick={() => payer.mutate(f.id)}>Marquer payé</button>
                     )}
                   </td>
