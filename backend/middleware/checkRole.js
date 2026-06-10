@@ -6,7 +6,7 @@ const ROLE_LEVELS = Object.freeze({
   pompiste:     1,
   chauffeur:    1,
   logisticien:  1,
-  comptable:    2,
+  comptable:    1,  // rôle isolé — accès via canAccessComptable uniquement, pas via checkRole hiérarchique
   gerant:       2,
   owner:        4,
   superadmin:   5,
