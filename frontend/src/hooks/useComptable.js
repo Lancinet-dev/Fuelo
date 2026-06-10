@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../services/api'
 
-const BASE = '/api/comptable'
+const BASE = '/comptable'
 
 // ── Dashboard ────────────────────────────────────────
 export function useDashboardComptable(mois, annee) {

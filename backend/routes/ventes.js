@@ -18,6 +18,6 @@ const {
 router.post('/',          verifyToken, isPompiste, validate(venteSchema), enregistrerVente)
 router.get('/',           verifyToken, isManager,  getVentes)
 router.get('/recentes',   verifyToken, isManager,  getVentesRecentes)
-router.get('/aujourdhui', verifyToken, isPompiste, getVentesAujourdhui)
+router.get('/aujourdhui', verifyToken, getVentesAujourdhui)
 
 module.exports = router

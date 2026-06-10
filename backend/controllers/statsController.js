@@ -20,7 +20,7 @@ const getResume = async (req, res) => {
          COALESCE(SUM(litres), 0) as litres,
          COALESCE(SUM(montant_gnf), 0) as montant
          FROM ventes WHERE station_id = $1
-         AND DATE(created_at) = CURRENT_DATE`,
+         AND DATE(created_at) = CURRENT_DATE AND deleted_at IS NULL`,
         [station_id]
       ),
       // Hier — sert de référence pour calculer la tendance (↑/↓ %) des cartes du dashboard
@@ -29,7 +29,7 @@ const getResume = async (req, res) => {
          COALESCE(SUM(litres), 0) as litres,
          COALESCE(SUM(montant_gnf), 0) as montant
          FROM ventes WHERE station_id = $1
-         AND DATE(created_at) = CURRENT_DATE - INTERVAL '1 day'`,
+         AND DATE(created_at) = CURRENT_DATE - INTERVAL '1 day' AND deleted_at IS NULL`,
         [station_id]
       ),
       pool.query(
@@ -38,7 +38,8 @@ const getResume = async (req, res) => {
          COALESCE(SUM(montant_gnf), 0) as montant
          FROM ventes WHERE station_id = $1
          AND EXTRACT(MONTH FROM created_at) = EXTRACT(MONTH FROM NOW())
-         AND EXTRACT(YEAR FROM created_at) = EXTRACT(YEAR FROM NOW())`,
+         AND EXTRACT(YEAR FROM created_at) = EXTRACT(YEAR FROM NOW())
+         AND deleted_at IS NULL`,
         [station_id]
       ),
       pool.query(
@@ -46,7 +47,7 @@ const getResume = async (req, res) => {
          COALESCE(SUM(montant_gnf), 0) as montant,
          COALESCE(SUM(litres), 0) as litres
          FROM ventes WHERE station_id = $1
-         AND created_at >= NOW() - INTERVAL '7 days'
+         AND created_at >= NOW() - INTERVAL '7 days' AND deleted_at IS NULL
          GROUP BY DATE(created_at)
          ORDER BY jour ASC`,
         [station_id]
@@ -76,9 +77,9 @@ const getResume = async (req, res) => {
 // 30j : groupé par jour (30 derniers jours)
 // 3m  : groupé par semaine (3 derniers mois) — sinon ~90 points illisibles sur le graphique
 const PERIODES = {
-  '7j':  { interval: '7 days',   group: `DATE(created_at)`,                    label: `TO_CHAR(created_at, 'DD/MM')` },
-  '30j': { interval: '30 days',  group: `DATE(created_at)`,                    label: `TO_CHAR(created_at, 'DD/MM')` },
-  '3m':  { interval: '3 months', group: `DATE_TRUNC('week', created_at)`,      label: `'Sem. ' || TO_CHAR(DATE_TRUNC('week', created_at), 'DD/MM')` },
+  '7j':  { interval: '7 days',   group: `DATE(created_at)`,                    label: `TO_CHAR(MIN(created_at), 'DD/MM')` },
+  '30j': { interval: '30 days',  group: `DATE(created_at)`,                    label: `TO_CHAR(MIN(created_at), 'DD/MM')` },
+  '3m':  { interval: '3 months', group: `DATE_TRUNC('week', created_at)`,      label: `'Sem. ' || TO_CHAR(DATE_TRUNC('week', MIN(created_at)), 'DD/MM')` },
 }
 
 const getGraphique = async (req, res) => {
@@ -94,6 +95,7 @@ const getGraphique = async (req, res) => {
        COALESCE(SUM(litres), 0) as litres
        FROM ventes WHERE station_id = $1
        AND created_at >= NOW() - INTERVAL '${interval}'
+       AND deleted_at IS NULL
        GROUP BY ${group}
        ORDER BY periode ASC`,
       [station_id]

@@ -24,7 +24,8 @@ const listePerformances = async (req, res) => {
     res.json({ performances: data })
   } catch (err) {
     logger.error('listePerformances', err)
-    res.status(err.message === 'Accès refusé' ? 403 : 500).json({ error: err.message })
+    if (err.message === 'Accès refusé') return res.status(403).json({ error: 'Accès refusé' })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -34,7 +35,9 @@ const performanceEmploye = async (req, res) => {
     res.json({ historique: data })
   } catch (err) {
     logger.error('performanceEmploye', err)
-    res.status(err.message === 'Accès refusé' ? 403 : 400).json({ error: err.message })
+    if (err.message === 'Accès refusé')     return res.status(403).json({ error: 'Accès refusé' })
+    if (err.message === 'Employé introuvable') return res.status(404).json({ error: 'Employé introuvable' })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -49,7 +52,10 @@ const validerPrimeHandler = async (req, res) => {
     })
   } catch (err) {
     logger.error('validerPrime', err)
-    res.status(err.message === 'Accès refusé' ? 403 : 400).json({ error: err.message })
+    if (err.message === 'Accès refusé')   return res.status(403).json({ error: 'Accès refusé' })
+    if (err.message === 'Action invalide') return res.status(400).json({ error: 'Action invalide' })
+    if (err.message.includes('introuvable')) return res.status(404).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 

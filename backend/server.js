@@ -109,6 +109,136 @@ pool.query(`
     created_at TIMESTAMP DEFAULT NOW()
   );
   CREATE INDEX IF NOT EXISTS idx_assistant_logs_owner ON assistant_logs(owner_id, created_at DESC);
+  CREATE TABLE IF NOT EXISTS performances (
+    id                  SERIAL PRIMARY KEY,
+    user_id             INT REFERENCES users(id) ON DELETE CASCADE,
+    mois                SMALLINT NOT NULL,
+    annee               SMALLINT NOT NULL,
+    score               FLOAT DEFAULT 0,
+    nb_jours_travailles INT DEFAULT 0,
+    nb_ventes           INT DEFAULT 0,
+    nb_trajets          INT DEFAULT 0,
+    nb_fraudes          INT DEFAULT 0,
+    nb_alertes          INT DEFAULT 0,
+    montant_vendu       BIGINT DEFAULT 0,
+    prime_proposee      BOOLEAN DEFAULT FALSE,
+    prime_validee       BOOLEAN,
+    prime_montant       BIGINT DEFAULT 0,
+    validee_par         INT REFERENCES users(id),
+    created_at          TIMESTAMP DEFAULT NOW(),
+    UNIQUE (user_id, mois, annee)
+  );
+  CREATE TABLE IF NOT EXISTS primes (
+    id          SERIAL PRIMARY KEY,
+    user_id     INT REFERENCES users(id) ON DELETE CASCADE,
+    validee_par INT REFERENCES users(id),
+    montant     BIGINT NOT NULL DEFAULT 0,
+    mois        SMALLINT NOT NULL,
+    annee       SMALLINT NOT NULL,
+    motif       TEXT,
+    statut      VARCHAR(20) DEFAULT 'propose' NOT NULL,
+    created_at  TIMESTAMP DEFAULT NOW()
+  );
+  CREATE INDEX IF NOT EXISTS idx_performances_user ON performances(user_id);
+  CREATE INDEX IF NOT EXISTS idx_primes_user        ON primes(user_id);
+  CREATE TABLE IF NOT EXISTS fuel_purchases (
+    id                  SERIAL PRIMARY KEY,
+    station_id          INT REFERENCES stations(id) ON DELETE CASCADE,
+    fournisseur         VARCHAR(100) NOT NULL,
+    type_carburant      VARCHAR(20) NOT NULL,
+    quantite_commandee  DECIMAL(10,2),
+    quantite_recue      DECIMAL(10,2),
+    prix_unitaire_ht    DECIMAL(12,2) NOT NULL,
+    montant_ht          DECIMAL(15,2),
+    tva_taux            DECIMAL(5,2) DEFAULT 0,
+    montant_ttc         DECIMAL(15,2),
+    numero_bl           VARCHAR(50),
+    numero_facture      VARCHAR(50),
+    date_achat          TIMESTAMP NOT NULL DEFAULT NOW(),
+    date_echeance       TIMESTAMP,
+    statut_paiement     VARCHAR(20) DEFAULT 'non_paye',
+    mode_paiement       VARCHAR(50),
+    depot_origine       VARCHAR(100),
+    notes               TEXT,
+    created_by          INT REFERENCES users(id),
+    created_at          TIMESTAMP DEFAULT NOW()
+  );
+  CREATE TABLE IF NOT EXISTS bons_livraison (
+    id                    SERIAL PRIMARY KEY,
+    station_id            INT REFERENCES stations(id) ON DELETE CASCADE,
+    numero_bl             VARCHAR(50) NOT NULL,
+    date_livraison        TIMESTAMP NOT NULL DEFAULT NOW(),
+    fournisseur           VARCHAR(100) NOT NULL,
+    depot_origine         VARCHAR(100),
+    chauffeur_nom         VARCHAR(100),
+    type_carburant        VARCHAR(20) NOT NULL,
+    quantite_commandee    DECIMAL(10,2) NOT NULL,
+    quantite_livree       DECIMAL(10,2),
+    ecart                 DECIMAL(10,2),
+    temperature           DECIMAL(5,2),
+    densite               DECIMAL(8,4),
+    statut                VARCHAR(20) DEFAULT 'en_attente',
+    reserves              TEXT,
+    document_url          VARCHAR(500),
+    signe_chauffeur       BOOLEAN DEFAULT FALSE,
+    signe_receptionnaire  BOOLEAN DEFAULT FALSE,
+    fuel_purchase_id      INT REFERENCES fuel_purchases(id),
+    created_by            INT REFERENCES users(id),
+    created_at            TIMESTAMP DEFAULT NOW(),
+    UNIQUE(station_id, numero_bl)
+  );
+  CREATE TABLE IF NOT EXISTS depenses (
+    id               SERIAL PRIMARY KEY,
+    station_id       INT REFERENCES stations(id) ON DELETE CASCADE,
+    categorie        VARCHAR(50) NOT NULL,
+    description      VARCHAR(200),
+    montant          DECIMAL(15,2) NOT NULL,
+    date_depense     TIMESTAMP NOT NULL DEFAULT NOW(),
+    justificatif_url VARCHAR(500),
+    created_by       INT REFERENCES users(id),
+    created_at       TIMESTAMP DEFAULT NOW()
+  );
+  CREATE TABLE IF NOT EXISTS couts_transport (
+    id                   SERIAL PRIMARY KEY,
+    trajet_id            INT REFERENCES trajets(id) ON DELETE CASCADE,
+    station_id           INT REFERENCES stations(id),
+    carburant_camion     DECIMAL(15,2) DEFAULT 0,
+    peages               DECIMAL(15,2) DEFAULT 0,
+    prime_chauffeur      DECIMAL(15,2) DEFAULT 0,
+    autres_frais         DECIMAL(15,2) DEFAULT 0,
+    cout_total           DECIMAL(15,2),
+    litres_transportes   DECIMAL(10,2),
+    cout_par_litre       DECIMAL(10,4),
+    fournisseur_transport VARCHAR(200),
+    date_transport       DATE,
+    distance_km          DECIMAL(8,2),
+    reference_trajet     VARCHAR(100),
+    created_by           INT REFERENCES users(id),
+    created_at           TIMESTAMP DEFAULT NOW()
+  );
+  CREATE TABLE IF NOT EXISTS fiches_paie (
+    id             SERIAL PRIMARY KEY,
+    station_id     INT REFERENCES stations(id) ON DELETE CASCADE,
+    user_id        INT REFERENCES users(id) ON DELETE CASCADE,
+    mois           SMALLINT NOT NULL,
+    annee          SMALLINT NOT NULL,
+    salaire_base   DECIMAL(15,2) NOT NULL DEFAULT 0,
+    primes         DECIMAL(15,2) DEFAULT 0,
+    avances        DECIMAL(15,2) DEFAULT 0,
+    retenues       DECIMAL(15,2) DEFAULT 0,
+    salaire_net    DECIMAL(15,2),
+    statut         VARCHAR(20) DEFAULT 'en_attente',
+    date_paiement  TIMESTAMP,
+    notes          TEXT,
+    created_by     INT REFERENCES users(id),
+    created_at     TIMESTAMP DEFAULT NOW(),
+    UNIQUE(station_id, user_id, mois, annee)
+  );
+  CREATE INDEX IF NOT EXISTS idx_fuel_purchases_station ON fuel_purchases(station_id, date_achat DESC);
+  CREATE INDEX IF NOT EXISTS idx_bons_livraison_station ON bons_livraison(station_id, date_livraison DESC);
+  CREATE INDEX IF NOT EXISTS idx_depenses_station       ON depenses(station_id, date_depense DESC);
+  CREATE INDEX IF NOT EXISTS idx_couts_transport_station ON couts_transport(station_id);
+  CREATE INDEX IF NOT EXISTS idx_fiches_paie_station    ON fiches_paie(station_id, annee DESC, mois DESC);
 `).catch(err => logger.error('Migration startup error:', err.message))
 
 // ── Rate limiting ─────────────────────────────────────
