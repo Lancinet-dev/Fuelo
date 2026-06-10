@@ -124,6 +124,16 @@ export default function ComptablePage() {
         </div>
       </div>
 
+      {/* Banner lecture seule — owner uniquement */}
+      {readOnly && (
+        <div style={{ background: 'rgba(245,158,11,0.08)', borderBottom: '1px solid rgba(245,158,11,0.2)', padding: '10px 32px', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <span style={{ fontSize: 13, color: '#f59e0b', fontWeight: 500 }}>
+            Mode lecture — Seul le comptable peut modifier les données financières.
+          </span>
+        </div>
+      )}
+
       {/* Content */}
       <div style={{ padding: '28px 32px' }}>
         <AnimatePresence mode="wait">
