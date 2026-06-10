@@ -86,11 +86,12 @@ async function initiatePayment({ montant, ownerId, description, customerEmail, c
   const token = await getAccessToken()
 
   const body = {
-    transaction_id:  transactionId,
+    merchant_transaction_id: transactionId,
     amount:          montant,
     currency:        CURRENCY,
-    description,
-    return_url:      `${process.env.FRONTEND_URL}/abonnements?status=success`,
+    designation:     description,
+    success_url:     `${process.env.FRONTEND_URL}/abonnements?status=success`,
+    failed_url:      `${process.env.FRONTEND_URL}/abonnements?status=cancel`,
     notify_url:      `${process.env.BACKEND_URL}/api/abonnements/callback`,
     channels:        'ALL',
     lang:            'fr',
@@ -135,7 +136,7 @@ async function checkPayment(transactionId) {
       'Content-Type':  'application/json',
       'Authorization': `Bearer ${token}`,
     },
-    body: JSON.stringify({ transaction_id: transactionId }),
+    body: JSON.stringify({ merchant_transaction_id: transactionId }),
   })
   const data = await res.json()
 
