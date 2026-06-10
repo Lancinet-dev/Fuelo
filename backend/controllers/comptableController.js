@@ -10,129 +10,86 @@ const erreurServeur = require('../utils/erreurServeur')
 // Helper — station_id de l'utilisateur courant
 const getStationId = (req) => req.user.station_id
 
-// ── Dashboard financier ──────────────────────────────
+// ── Dashboard financier premium ───────────────────────
 const getDashboard = async (req, res) => {
   try {
     const station_id = getStationId(req)
     const { mois, annee } = req.query
     const m = parseInt(mois)  || new Date().getMonth() + 1
     const a = parseInt(annee) || new Date().getFullYear()
-    const debut = new Date(a, m - 1, 1)
-    const fin   = new Date(a, m, 1)
+    const debut  = new Date(a, m - 1, 1)
+    const fin    = new Date(a, m, 1)
+    // Période précédente
+    const mPrec  = m === 1 ? 12 : m - 1
+    const aPrec  = m === 1 ? a - 1 : a
+    const debutP = new Date(aPrec, mPrec - 1, 1)
+    const finP   = new Date(aPrec, mPrec, 1)
 
-    const [ca, achats, depenses, transport, paie, ventesLitres] = await Promise.all([
-      // Chiffre d'affaires
-      pool.query(
-        `SELECT COALESCE(SUM(montant_gnf),0) AS total, COALESCE(SUM(litres),0) AS litres
-         FROM ventes WHERE station_id=$1 AND created_at>=$2 AND created_at<$3 AND deleted_at IS NULL`,
-        [station_id, debut, fin]
-      ),
-      // Coût achats carburant
-      pool.query(
-        `SELECT COALESCE(SUM(montant_ttc),0) AS total,
-                COALESCE(SUM(quantite_recue),0) AS litres,
-                COALESCE(AVG(prix_unitaire_ht),0) AS prix_moyen
-         FROM fuel_purchases WHERE station_id=$1 AND date_achat>=$2 AND date_achat<$3`,
-        [station_id, debut, fin]
-      ),
-      // Dépenses
-      pool.query(
-        `SELECT COALESCE(SUM(montant),0) AS total,
-                categorie, COALESCE(SUM(montant),0) AS cat_total
-         FROM depenses WHERE station_id=$1 AND date_depense>=$2 AND date_depense<$3
-         GROUP BY categorie`,
-        [station_id, debut, fin]
-      ),
-      // Coût transport
-      pool.query(
-        `SELECT COALESCE(SUM(ct.cout_total),0) AS total,
-                COALESCE(SUM(ct.litres_transportes),0) AS litres
-         FROM couts_transport ct WHERE ct.station_id=$1
-           AND ct.created_at>=$2 AND ct.created_at<$3`,
-        [station_id, debut, fin]
-      ),
-      // Masse salariale
-      pool.query(
-        `SELECT COALESCE(SUM(salaire_net),0) AS total
-         FROM fiches_paie WHERE station_id=$1 AND mois=$2 AND annee=$3`,
-        [station_id, m, a]
-      ),
-      // Litres vendus
-      pool.query(
-        `SELECT COALESCE(SUM(litres),0) AS total
-         FROM ventes WHERE station_id=$1 AND created_at>=$2 AND created_at<$3 AND deleted_at IS NULL`,
-        [station_id, debut, fin]
-      ),
+    const [ca, caPrec, achats, achatsPrec, depenses, depensesPrec,
+           transport, paie, blEnAttente, facturesRetard, facturesMontant,
+           ca30j, prixAchatEvol, volumesType] = await Promise.all([
+      pool.query(`SELECT COALESCE(SUM(montant_gnf),0) AS total, COALESCE(SUM(litres),0) AS litres FROM ventes WHERE station_id=$1 AND created_at>=$2 AND created_at<$3 AND deleted_at IS NULL`, [station_id, debut, fin]),
+      pool.query(`SELECT COALESCE(SUM(montant_gnf),0) AS total FROM ventes WHERE station_id=$1 AND created_at>=$2 AND created_at<$3 AND deleted_at IS NULL`, [station_id, debutP, finP]),
+      pool.query(`SELECT COALESCE(SUM(montant_ttc),0) AS total, COALESCE(SUM(quantite_recue),0) AS litres, COALESCE(AVG(prix_unitaire_ht),0) AS prix_moyen FROM fuel_purchases WHERE station_id=$1 AND date_achat>=$2 AND date_achat<$3`, [station_id, debut, fin]),
+      pool.query(`SELECT COALESCE(SUM(montant_ttc),0) AS total FROM fuel_purchases WHERE station_id=$1 AND date_achat>=$2 AND date_achat<$3`, [station_id, debutP, finP]),
+      pool.query(`SELECT categorie, COALESCE(SUM(montant),0) AS cat_total FROM depenses WHERE station_id=$1 AND date_depense>=$2 AND date_depense<$3 GROUP BY categorie`, [station_id, debut, fin]),
+      pool.query(`SELECT COALESCE(SUM(montant),0) AS total FROM depenses WHERE station_id=$1 AND date_depense>=$2 AND date_depense<$3`, [station_id, debutP, finP]),
+      pool.query(`SELECT COALESCE(SUM(cout_total),0) AS total FROM couts_transport WHERE station_id=$1 AND created_at>=$2 AND created_at<$3`, [station_id, debut, fin]),
+      pool.query(`SELECT COALESCE(SUM(salaire_net),0) AS total FROM fiches_paie WHERE station_id=$1 AND mois=$2 AND annee=$3`, [station_id, m, a]),
+      pool.query(`SELECT COUNT(*) FROM bons_livraison WHERE station_id=$1 AND statut='en_attente'`, [station_id]),
+      pool.query(`SELECT COUNT(*) FROM fuel_purchases WHERE station_id=$1 AND statut_paiement='non_paye' AND date_echeance < NOW()`, [station_id]),
+      pool.query(`SELECT COALESCE(SUM(montant_ttc),0) AS total FROM fuel_purchases WHERE station_id=$1 AND statut_paiement='non_paye'`, [station_id]),
+      // CA journalier 30 derniers jours
+      pool.query(`SELECT DATE(created_at) AS jour, COALESCE(SUM(montant_gnf),0) AS ca, COALESCE(SUM(litres),0) AS litres FROM ventes WHERE station_id=$1 AND created_at >= NOW()-INTERVAL '30 days' AND deleted_at IS NULL GROUP BY 1 ORDER BY 1`, [station_id]),
+      // Évolution prix achat carburant
+      pool.query(`SELECT DATE(date_achat) AS jour, AVG(prix_unitaire_ht) AS prix, type_carburant FROM fuel_purchases WHERE station_id=$1 AND date_achat >= NOW()-INTERVAL '90 days' GROUP BY 1,3 ORDER BY 1`, [station_id]),
+      // Volumes par type ce mois
+      pool.query(`SELECT type, COALESCE(SUM(litres),0) AS litres, COALESCE(SUM(montant_gnf),0) AS ca FROM ventes WHERE station_id=$1 AND created_at>=$2 AND created_at<$3 AND deleted_at IS NULL GROUP BY type`, [station_id, debut, fin]),
     ])
 
-    const caTotal       = parseFloat(ca.rows[0].total)
-    const achatTotal    = parseFloat(achats.rows[0].total)
-    const transportTotal= parseFloat(transport.rows[0].total)
-    const depTotal      = depenses.rows.reduce((s, r) => s + parseFloat(r.cat_total || 0), 0)
-    const paieTotal     = parseFloat(paie.rows[0].total)
-    const litresVendus  = parseFloat(ca.rows[0].litres)
-    const litresAchetes = parseFloat(achats.rows[0].litres)
-    const prixAchatMoyen= parseFloat(achats.rows[0].prix_moyen)
-    const litresTransp  = parseFloat(transport.rows[0].litres)
+    const caTotal        = parseFloat(ca.rows[0].total)
+    const caPrecTotal    = parseFloat(caPrec.rows[0].total)
+    const achatTotal     = parseFloat(achats.rows[0].total)
+    const achatPrecTotal = parseFloat(achatsPrec.rows[0].total)
+    const depTotal       = depenses.rows.reduce((s,r) => s+parseFloat(r.cat_total||0), 0)
+    const depPrecTotal   = parseFloat(depensesPrec.rows[0].total)
+    const transportTotal = parseFloat(transport.rows[0].total)
+    const paieTotal      = parseFloat(paie.rows[0].total)
+    const litresVendus   = parseFloat(ca.rows[0].litres)
+    const litresAchetes  = parseFloat(achats.rows[0].litres)
+    const prixAchatMoyen = parseFloat(achats.rows[0].prix_moyen)
 
-    const coutTransportParLitre = litresTransp > 0 ? transportTotal / litresTransp : 0
-    const prixRevient           = prixAchatMoyen + coutTransportParLitre
-    const prixVenteMoyen        = litresVendus > 0 ? caTotal / litresVendus : 0
-    const margeParLitre         = prixVenteMoyen - prixRevient
-    const margeBrute            = caTotal - achatTotal - transportTotal - depTotal - paieTotal
-    const margePct              = caTotal > 0 ? (margeBrute / caTotal) * 100 : 0
+    const margeBrute     = caTotal - achatTotal - transportTotal - depTotal - paieTotal
+    const margePct       = caTotal > 0 ? (margeBrute / caTotal) * 100 : 0
+    const prixVenteMoyen = litresVendus > 0 ? caTotal / litresVendus : 0
 
-    // BL en attente
-    const blEnAttente = await pool.query(
-      `SELECT COUNT(*) FROM bons_livraison WHERE station_id=$1 AND statut='en_attente'`,
-      [station_id]
-    )
-    // Factures en retard
-    const facturesRetard = await pool.query(
-      `SELECT COUNT(*) FROM fuel_purchases
-       WHERE station_id=$1 AND statut_paiement='non_paye' AND date_echeance < NOW()`,
-      [station_id]
-    )
-
-    // Graphique 6 mois
-    const historique = await pool.query(
-      `SELECT
-         DATE_TRUNC('month', v.created_at) AS mois,
-         COALESCE(SUM(v.montant_gnf),0) AS ca,
-         COALESCE(SUM(v.litres),0) AS litres
-       FROM ventes v
-       WHERE v.station_id=$1
-         AND v.created_at >= NOW() - INTERVAL '6 months'
-         AND v.deleted_at IS NULL
-       GROUP BY 1 ORDER BY 1`,
-      [station_id]
-    )
+    const variation = (curr, prev) => prev > 0 ? Math.round(((curr - prev) / prev) * 100 * 10) / 10 : null
 
     res.json({
       mois: m, annee: a,
       stats: {
-        ca:                 caTotal,
-        achats:             achatTotal,
-        transport:          transportTotal,
-        depenses:           depTotal,
-        paie:               paieTotal,
-        marge_brute:        margeBrute,
-        marge_pct:          Math.round(margePct * 10) / 10,
-        litres_vendus:      litresVendus,
-        litres_achetes:     litresAchetes,
-        prix_achat_moyen:   Math.round(prixAchatMoyen),
-        cout_transport_litre: Math.round(coutTransportParLitre),
-        prix_revient:       Math.round(prixRevient),
-        prix_vente_moyen:   Math.round(prixVenteMoyen),
-        marge_par_litre:    Math.round(margeParLitre),
+        ca: caTotal, ca_var: variation(caTotal, caPrecTotal),
+        achats: achatTotal, achats_var: variation(achatTotal, achatPrecTotal),
+        depenses: depTotal, depenses_var: variation(depTotal, depPrecTotal),
+        transport: transportTotal, paie: paieTotal,
+        marge_brute: margeBrute,
+        marge_pct: Math.round(margePct * 10) / 10,
+        litres_vendus: litresVendus, litres_achetes: litresAchetes,
+        prix_achat_moyen: Math.round(prixAchatMoyen),
+        prix_vente_moyen: Math.round(prixVenteMoyen),
+        factures_montant: parseFloat(facturesMontant.rows[0].total),
+        factures_retard_nb: parseInt(facturesRetard.rows[0].count),
       },
       alertes: {
-        bl_en_attente:    parseInt(blEnAttente.rows[0].count),
-        factures_retard:  parseInt(facturesRetard.rows[0].count),
-        marge_negative:   margeBrute < 0,
+        bl_en_attente:   parseInt(blEnAttente.rows[0].count),
+        factures_retard: parseInt(facturesRetard.rows[0].count),
+        marge_negative:  margeBrute < 0,
+        marge_baisse:    variation(margeBrute, caPrecTotal - achatPrecTotal - depPrecTotal) < -10,
       },
       depenses_par_categorie: depenses.rows.map(r => ({ categorie: r.categorie, total: parseFloat(r.cat_total) })),
-      historique: historique.rows,
+      ca_30j: ca30j.rows,
+      prix_achat_evol: prixAchatEvol.rows,
+      volumes_par_type: volumesType.rows,
     })
   } catch (err) {
     logger.error('getDashboard comptable', err)

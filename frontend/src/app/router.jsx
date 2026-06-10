@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import AppLayout from '../ui/AppLayout'
 import PageLoader from '../ui/PageLoader'
+import ComptableLayout from '../features/comptable/ComptableLayout'
 
 const normalizeRole = (value = '') => {
   const role = String(value).trim().toLowerCase()
@@ -121,10 +122,12 @@ export default function Router() {
             </PrivateRoute>
           } />
 
-          {/* Page comptable — layout différent */}
+          {/* Page comptable — layout dédié finance */}
           <Route path="/comptable" element={
             <PrivateRoute allowedRoles={['comptable']}>
-              <ComptablePage />
+              <ComptableLayout>
+                <ComptablePage />
+              </ComptableLayout>
             </PrivateRoute>
           } />
 
