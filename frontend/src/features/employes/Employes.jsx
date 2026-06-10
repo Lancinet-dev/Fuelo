@@ -30,7 +30,11 @@ const ROLE_CONFIG = {
     subtitle:    (n) => `${n} membre${n > 1 ? 's' : ''} dans votre équipe de gestion`,
     btnLabel:    'Ajouter un membre',
     formTitle:   'Nouveau membre',
-    rolesDispos: CREATABLE_ROLES.owner,
+    rolesDispos: [
+      { value: 'gerant',      label: 'Gérant',      desc: 'Dashboard, ventes, stock, alertes, services, pompistes' },
+      { value: 'logisticien', label: 'Logisticien', desc: 'Citernes, trajets GPS, alertes transport, chauffeurs' },
+      { value: 'comptable',   label: 'Comptable',   desc: 'Gestion financière, BL, factures et paie' },
+    ],
     showVentes:  false,
   },
   gerant: {
