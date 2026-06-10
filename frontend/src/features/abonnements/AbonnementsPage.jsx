@@ -1,5 +1,5 @@
 // ================================================
-// FUELO — Page Abonnements (Orange Money)
+// FUELO — Page Abonnements (CinetPay)
 // ================================================
 
 import { useState, useEffect } from 'react'
@@ -11,37 +11,30 @@ import { useTheme }            from '../../context/ThemeContext'
 import { usePlan, PLAN_COLORS } from '../../hooks/usePlan'
 import theme from '../../config/theme'
 
-// ── Features alignées sur checkPlan.js ───────────
-// starter  : ventes, stock, alertes
-// pro      : + services (pompiste anti-fraude), exports, rapports
-// enterprise : + trajets, citernes, logistique (logisticien + chauffeur)
 const FEATURES = [
-  // ─── Disponible sur tous les plans ───
-  { label: 'Ventes & caisse',                 starter: true,  pro: true,  enterprise: true,  section: 'base' },
-  { label: 'Gestion du stock',                starter: true,  pro: true,  enterprise: true,  section: 'base' },
-  { label: 'Alertes stock faible',            starter: true,  pro: true,  enterprise: true,  section: 'base' },
-  { label: 'Dashboard & statistiques',        starter: true,  pro: true,  enterprise: true,  section: 'base' },
-  // ─── Pro et plus ───
-  { label: 'Interface pompiste dédiée',       starter: false, pro: true,  enterprise: true,  section: 'pro'  },
-  { label: 'Anti-fraude pompistes (photos)',  starter: false, pro: true,  enterprise: true,  section: 'pro'  },
-  { label: 'Exports PDF & Excel',             starter: false, pro: true,  enterprise: true,  section: 'pro'  },
-  { label: 'Rapports automatiques mensuels',  starter: false, pro: true,  enterprise: true,  section: 'pro'  },
-  { label: 'Support prioritaire',             starter: false, pro: true,  enterprise: true,  section: 'pro'  },
-  // ─── Enterprise uniquement (transport + logistique) ───
-  { label: 'Rôle logisticien & chauffeur GPS',starter: false, pro: false, enterprise: true,  section: 'ent'  },
-  { label: 'GPS citernes — trajets temps réel',starter: false,pro: false, enterprise: true,  section: 'ent'  },
-  { label: 'Gestion des citernes',            starter: false, pro: false, enterprise: true,  section: 'ent'  },
-  { label: 'Alertes transport (fraude, arrêt)',starter: false,pro: false, enterprise: true,  section: 'ent'  },
-  { label: 'QR code anti-vol citernes',       starter: false, pro: false, enterprise: true,  section: 'ent'  },
-  { label: 'Export rapports trajets Excel',   starter: false, pro: false, enterprise: true,  section: 'ent'  },
-  { label: 'Multi-stations illimitées',       starter: false, pro: false, enterprise: true,  section: 'ent'  },
-  { label: 'Support dédié 24/7',              starter: false, pro: false, enterprise: true,  section: 'ent'  },
+  { label: 'Ventes & caisse',                  starter: true,  pro: true,  enterprise: true,  section: 'base' },
+  { label: 'Gestion du stock',                 starter: true,  pro: true,  enterprise: true,  section: 'base' },
+  { label: 'Alertes stock faible',             starter: true,  pro: true,  enterprise: true,  section: 'base' },
+  { label: 'Dashboard & statistiques',         starter: true,  pro: true,  enterprise: true,  section: 'base' },
+  { label: 'Interface pompiste dédiée',        starter: false, pro: true,  enterprise: true,  section: 'pro'  },
+  { label: 'Anti-fraude pompistes (photos)',   starter: false, pro: true,  enterprise: true,  section: 'pro'  },
+  { label: 'Exports PDF & Excel',              starter: false, pro: true,  enterprise: true,  section: 'pro'  },
+  { label: 'Rapports automatiques mensuels',   starter: false, pro: true,  enterprise: true,  section: 'pro'  },
+  { label: 'Support prioritaire',              starter: false, pro: true,  enterprise: true,  section: 'pro'  },
+  { label: 'Rôle logisticien & chauffeur GPS', starter: false, pro: false, enterprise: true,  section: 'ent'  },
+  { label: 'GPS citernes — trajets temps réel',starter: false, pro: false, enterprise: true,  section: 'ent'  },
+  { label: 'Gestion des citernes',             starter: false, pro: false, enterprise: true,  section: 'ent'  },
+  { label: 'Alertes transport (fraude, arrêt)',starter: false, pro: false, enterprise: true,  section: 'ent'  },
+  { label: 'QR code anti-vol citernes',        starter: false, pro: false, enterprise: true,  section: 'ent'  },
+  { label: 'Export rapports trajets Excel',    starter: false, pro: false, enterprise: true,  section: 'ent'  },
+  { label: 'Multi-stations illimitées',        starter: false, pro: false, enterprise: true,  section: 'ent'  },
+  { label: 'Support dédié 24/7',               starter: false, pro: false, enterprise: true,  section: 'ent'  },
 ]
 
 const PLANS_INFO = {
-  starter:    { desc: 'Gérez l\'essentiel de votre station',              highlight: false },
-  pro:        { desc: 'Toutes les opérations, anti-fraude inclus',         highlight: true  },
-  enterprise: { desc: 'Flottes, citernes, logistique complète',            highlight: false },
+  starter:    { desc: "Gérez l'essentiel de votre station",        highlight: false },
+  pro:        { desc: 'Toutes les opérations, anti-fraude inclus', highlight: true  },
+  enterprise: { desc: 'Flottes, citernes, logistique complète',    highlight: false },
 }
 
 // ── Icônes ────────────────────────────────────────
@@ -61,13 +54,18 @@ function Check({ ok }) {
   )
 }
 
-function OmLogo({ size = 24 }) {
-  const r1 = size / 2, r2 = size * 0.325, r3 = size * 0.2
+function CinetPayLogo({ size = 32 }) {
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
-      <circle cx={r1} cy={r1} r={r1} fill="#FF6B00" />
-      <circle cx={r1} cy={r1} r={r2} fill="#fff" />
-      <circle cx={r1} cy={r1} r={r3} fill="#FF6B00" />
+    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" style={{ flexShrink: 0 }}>
+      <rect width="32" height="32" rx="8" fill="url(#cpgrad)" />
+      <circle cx="16" cy="16" r="9" stroke="#fff" strokeWidth="2.2" />
+      <path d="M11 16h10M16 11v10" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
+      <defs>
+        <linearGradient id="cpgrad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#1A5CFF" />
+          <stop offset="1" stopColor="#0030AA" />
+        </linearGradient>
+      </defs>
     </svg>
   )
 }
@@ -84,17 +82,38 @@ function Spinner({ color = '#fff' }) {
   )
 }
 
-// ── Modal paiement Orange Money ───────────────────
+// ── Badges méthodes de paiement ───────────────────
+const METHODS = [
+  { label: 'Orange Money', bg: '#FFF3E0', color: '#C45400' },
+  { label: 'MTN MoMo',     bg: '#FFFDE7', color: '#B45309' },
+  { label: 'Wave',         bg: '#E3F2FD', color: '#1565C0' },
+  { label: 'Moov Money',   bg: '#E8F5E9', color: '#2E7D32' },
+]
+
+function MethodBadges() {
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+      {METHODS.map(m => (
+        <span key={m.label} style={{
+          padding: '3px 9px', borderRadius: 6,
+          fontSize: 11, fontWeight: 700,
+          background: m.bg, color: m.color,
+        }}>
+          {m.label}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+// ── Modal paiement CinetPay ───────────────────────
 function ModalPaiement({ planKey, planLabel, prix, prixGnf, onClose, onConfirm, loading, palette, isDark }) {
-  const [phone, setPhone] = useState('')
-  const digits    = phone.replace(/\D/g, '')
-  const canSubmit = digits.length >= 8
 
   useEffect(() => {
     const fn = e => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', fn)
     return () => window.removeEventListener('keydown', fn)
-  }, [])
+  }, [onClose])
 
   return (
     <div
@@ -113,15 +132,16 @@ function ModalPaiement({ planKey, planLabel, prix, prixGnf, onClose, onConfirm, 
         width: '100%', maxWidth: 420,
         boxShadow: '0 32px 80px rgba(0,0,0,0.32)',
       }}>
+
         {/* En-tête */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
-          <OmLogo size={48} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
+          <CinetPayLogo size={48} />
           <div>
             <div style={{ fontSize: 20, fontWeight: 800, color: palette.text, letterSpacing: '-0.3px' }}>
               Passer au plan {planLabel}
             </div>
             <div style={{ fontSize: 13, color: palette.textSub, marginTop: 3 }}>
-              <span style={{ fontWeight: 700, color: '#FF6B00' }}>${prix}/mois</span>
+              <span style={{ fontWeight: 700, color: '#1A5CFF' }}>${prix}/mois</span>
               {prixGnf && (
                 <span style={{ color: palette.textMuted }}>
                   {' '}· {prixGnf.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} GNF
@@ -131,66 +151,32 @@ function ModalPaiement({ planKey, planLabel, prix, prixGnf, onClose, onConfirm, 
           </div>
         </div>
 
-        {/* Méthode sélectionnée */}
+        {/* Méthodes acceptées */}
         <div style={{
-          background: 'rgba(255,107,0,0.08)',
-          border: '1.5px solid rgba(255,107,0,0.28)',
-          borderRadius: 14, padding: '12px 16px',
-          display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24,
+          background: isDark ? 'rgba(26,92,255,0.07)' : 'rgba(26,92,255,0.05)',
+          border: `1.5px solid ${isDark ? 'rgba(26,92,255,0.25)' : 'rgba(26,92,255,0.18)'}`,
+          borderRadius: 14, padding: '14px 16px', marginBottom: 22,
         }}>
-          <OmLogo size={28} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#FF6B00' }}>Orange Money</div>
-            <div style={{ fontSize: 12, color: palette.textMuted }}>Paiement mobile — Guinée</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#1A5CFF', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
+            Méthodes acceptées
           </div>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" fill="#FF6B00" />
-            <polyline points="7 12 10.5 15.5 17 9" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <MethodBadges />
         </div>
 
-        {/* Numéro */}
-        <div style={{ marginBottom: 20 }}>
-          <div style={{
-            fontSize: 11, fontWeight: 700, color: palette.textMuted,
-            textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 10,
-          }}>
-            Numéro Orange Money
-          </div>
-          <input
-            type="tel" placeholder="Ex : 620 00 00 00"
-            value={phone}
-            onChange={e => setPhone(e.target.value)}
-            autoFocus
-            style={{
-              width: '100%', height: 54, boxSizing: 'border-box',
-              background: palette.inputBg,
-              border: `1.5px solid ${canSubmit ? '#FF6B00' : (palette.inputBorder ?? palette.cardBorder)}`,
-              borderRadius: 14, padding: '0 18px',
-              fontSize: 22, fontWeight: 700, fontFamily: theme.font.mono,
-              color: palette.text, outline: 'none', letterSpacing: '0.06em',
-              transition: 'border-color 0.15s',
-            }}
-          />
-          <div style={{ fontSize: 12, color: palette.textMuted, marginTop: 7, lineHeight: 1.5 }}>
-            Vous recevrez une invite USSD pour confirmer le paiement sur votre téléphone.
-          </div>
-        </div>
-
-        {/* Notice */}
+        {/* Explication flux */}
         <div style={{
-          background: isDark ? 'rgba(255,107,0,0.06)' : 'rgba(255,107,0,0.04)',
-          border: '1px solid rgba(255,107,0,0.18)',
-          borderRadius: 12, padding: '11px 14px',
-          fontSize: 12, color: isDark ? '#FFA050' : '#CC4400',
-          marginBottom: 26, lineHeight: 1.6,
+          background: isDark ? 'rgba(26,92,255,0.05)' : 'rgba(26,92,255,0.04)',
+          border: `1px solid ${isDark ? 'rgba(26,92,255,0.15)' : 'rgba(26,92,255,0.12)'}`,
+          borderRadius: 12, padding: '12px 14px', marginBottom: 26,
+          fontSize: 12, color: palette.textSub, lineHeight: 1.65,
           display: 'flex', alignItems: 'flex-start', gap: 8,
         }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0, marginTop: 1 }}>
-            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-            <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1A5CFF" strokeWidth="2" style={{ flexShrink: 0, marginTop: 1 }}>
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
           </svg>
-          Votre plan est activé automatiquement après confirmation Orange Money.
+          Vous serez redirigé vers la page de paiement CinetPay pour choisir votre méthode et entrer votre numéro. Votre plan est activé automatiquement après confirmation.
         </div>
 
         {/* Boutons */}
@@ -204,21 +190,23 @@ function ModalPaiement({ planKey, planLabel, prix, prixGnf, onClose, onConfirm, 
             Annuler
           </button>
           <button
-            onClick={() => onConfirm(phone)}
-            disabled={!canSubmit || loading}
+            onClick={onConfirm}
+            disabled={loading}
             style={{
               height: 50, borderRadius: 14, border: 'none',
-              background: canSubmit && !loading ? '#FF6B00' : (isDark ? '#2A1505' : '#F3F4F6'),
-              color: canSubmit && !loading ? '#fff' : palette.textMuted,
-              cursor: canSubmit && !loading ? 'pointer' : 'not-allowed',
+              background: loading
+                ? (isDark ? '#0A1F5C' : '#E8EFFF')
+                : 'linear-gradient(135deg, #1A5CFF, #0040CC)',
+              color: loading ? palette.textMuted : '#fff',
+              cursor: loading ? 'not-allowed' : 'pointer',
               fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              boxShadow: canSubmit && !loading ? '0 4px 18px rgba(255,107,0,0.35)' : 'none',
+              boxShadow: loading ? 'none' : '0 4px 18px rgba(26,92,255,0.35)',
               transition: 'all 0.15s',
             }}
           >
             {loading && <Spinner />}
-            {loading ? 'Envoi...' : 'Payer avec Orange Money →'}
+            {loading ? 'Redirection...' : 'Payer avec CinetPay →'}
           </button>
         </div>
       </div>
@@ -250,11 +238,10 @@ export default function AbonnementsPage() {
 
   const { plan: planActuel } = usePlan()
 
-  // Retour depuis Orange Money (return_url / cancel_url)
   useEffect(() => {
     const status = searchParams.get('status')
     if (status === 'success') {
-      toast.success('Paiement Orange Money confirmé. Activation en cours...', { duration: 8000 })
+      toast.success('Paiement CinetPay confirmé. Activation en cours...', { duration: 8000 })
       queryClient.invalidateQueries({ queryKey: ['abonnement'] })
       setSearchParams({})
     } else if (status === 'cancel') {
@@ -270,13 +257,13 @@ export default function AbonnementsPage() {
   })
 
   const { mutateAsync: souscrire, isPending: loadingSub } = useMutation({
-    mutationFn: ({ plan, payment_phone }) =>
-      api.post('/abonnements/souscrire', { plan, payment_phone }).then(r => r.data),
+    mutationFn: ({ plan }) =>
+      api.post('/abonnements/souscrire', { plan }).then(r => r.data),
     onSuccess: (d) => {
       queryClient.invalidateQueries({ queryKey: ['abonnement'] })
       if (d.payment_url) {
-        toast.loading('Redirection vers Orange Money...', { duration: 2000 })
-        setTimeout(() => { window.location.href = d.payment_url }, 1000)
+        toast.loading('Redirection vers CinetPay...', { duration: 2500 })
+        setTimeout(() => { window.location.href = d.payment_url }, 1200)
       } else {
         toast.success(d.message, { duration: 7000 })
         setModal(null)
@@ -293,11 +280,11 @@ export default function AbonnementsPage() {
 
       {modal && (
         <ModalPaiement
-          planKey={modal.key} planLabel={modal.label}
-          prix={modal.prix}   prixGnf={modal.prix_gnf}
+          planKey={modal.key}   planLabel={modal.label}
+          prix={modal.prix}     prixGnf={modal.prix_gnf}
           onClose={() => setModal(null)}
-          onConfirm={phone => souscrire({ plan: modal.key, payment_phone: phone })}
-          loading={loadingSub} palette={palette} isDark={isDark}
+          onConfirm={() => souscrire({ plan: modal.key })}
+          loading={loadingSub}  palette={palette} isDark={isDark}
         />
       )}
 
@@ -305,15 +292,16 @@ export default function AbonnementsPage() {
       <div style={{ textAlign: 'center', marginBottom: 52 }}>
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
-          background: isDark ? 'rgba(255,107,0,0.12)' : 'rgba(255,107,0,0.07)',
-          border: `1px solid ${isDark ? 'rgba(255,107,0,0.28)' : 'rgba(255,107,0,0.18)'}`,
+          background: isDark ? 'rgba(26,92,255,0.12)' : 'rgba(26,92,255,0.07)',
+          border: `1px solid ${isDark ? 'rgba(26,92,255,0.28)' : 'rgba(26,92,255,0.18)'}`,
           borderRadius: 99, padding: '5px 14px 5px 10px',
-          fontSize: 12, fontWeight: 700, color: '#FF6B00',
+          fontSize: 12, fontWeight: 700, color: '#1A5CFF',
           letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 18,
         }}>
-          <OmLogo size={18} />
-          Paiement Orange Money — Guinée
+          <CinetPayLogo size={18} />
+          Paiement sécurisé — CinetPay
         </div>
+
         <h1 style={{
           fontSize: 36, fontWeight: 900, color: palette.text,
           letterSpacing: '-0.8px', margin: '0 0 14px', lineHeight: 1.15,
@@ -327,7 +315,24 @@ export default function AbonnementsPage() {
           Commencez avec Starter. Passez à Pro ou Enterprise quand vous êtes prêt.
         </p>
 
-        {/* Badge statut abonnement */}
+        {/* Méthodes acceptées */}
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          marginTop: 18, flexWrap: 'wrap', justifyContent: 'center',
+        }}>
+          {METHODS.map(m => (
+            <span key={m.label} style={{
+              padding: '4px 10px', borderRadius: 7,
+              fontSize: 11, fontWeight: 700,
+              background: isDark ? m.color + '22' : m.bg,
+              color: isDark ? m.color.replace('C4', 'F4').replace('B4', 'F4') : m.color,
+            }}>
+              {m.label}
+            </span>
+          ))}
+        </div>
+
+        {/* Badge statut */}
         {abonnement?.statut === 'en_attente' && (
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 8, marginTop: 20,
@@ -337,7 +342,7 @@ export default function AbonnementsPage() {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
             </svg>
-            En attente de validation Orange Money
+            En attente de validation CinetPay
           </div>
         )}
         {abonnement?.statut === 'actif' && abonnement?.expires_at && (
@@ -373,10 +378,10 @@ export default function AbonnementsPage() {
           </div>
           <div>
             <div style={{ fontWeight: 700, color: '#D97706', fontSize: 14, marginBottom: 3 }}>
-              Paiement Orange Money en attente
+              Paiement CinetPay en attente
             </div>
             <div style={{ fontSize: 13, color: palette.textSub, lineHeight: 1.5 }}>
-              Plan <strong>{abonnement.plan?.toUpperCase()}</strong> · {abonnement.payment_phone} · Activation automatique après confirmation
+              Plan <strong>{abonnement.plan?.toUpperCase()}</strong> · Activation automatique après confirmation du paiement
             </div>
           </div>
         </div>
@@ -409,11 +414,11 @@ export default function AbonnementsPage() {
 
             return (
               <div key={plan.key} style={{
-                background:    cardBg,
-                border:        `1.5px solid ${cardBorder}`,
-                borderRadius:  24, padding: '28px 26px 26px',
-                position:      'relative', display: 'flex', flexDirection: 'column',
-                boxShadow:     isHigh
+                background:   cardBg,
+                border:       `1.5px solid ${cardBorder}`,
+                borderRadius: 24, padding: '28px 26px 26px',
+                position:     'relative', display: 'flex', flexDirection: 'column',
+                boxShadow:    isHigh
                   ? (isDark ? '0 16px 48px rgba(37,99,235,0.20)' : '0 16px 48px rgba(37,99,235,0.12)')
                   : (isDark ? 'none' : theme.shadow.sm),
                 transition: 'transform 0.2s, box-shadow 0.2s',
@@ -430,7 +435,6 @@ export default function AbonnementsPage() {
                     POPULAIRE
                   </div>
                 )}
-
                 {isActuel && (
                   <div style={{
                     position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)',
@@ -490,7 +494,6 @@ export default function AbonnementsPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28, flex: 1 }}>
                   {FEATURES.map((f, idx) => {
                     const ok = f[plan.key] === true
-                    // Séparateur avant les sections pro et enterprise
                     const showDivider = idx > 0 &&
                       f.section !== FEATURES[idx - 1].section &&
                       f.section !== 'base'
@@ -522,17 +525,20 @@ export default function AbonnementsPage() {
                 {/* Bouton */}
                 <button
                   disabled={isActuel}
-                  onClick={() => !isActuel && setModal({ key: plan.key, label: plan.label, prix: plan.prix, prix_gnf: plan.prix_gnf })}
+                  onClick={() => !isActuel && setModal({
+                    key: plan.key, label: plan.label,
+                    prix: plan.prix, prix_gnf: plan.prix_gnf,
+                  })}
                   style={{
                     width: '100%', height: 52, borderRadius: 14, border: 'none',
                     background: isActuel
                       ? (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)')
-                      : '#FF6B00',
+                      : 'linear-gradient(135deg, #1A5CFF, #0040CC)',
                     color: isActuel ? palette.textMuted : '#fff',
                     fontSize: 14, fontWeight: 700,
                     cursor: isActuel ? 'default' : 'pointer',
                     fontFamily: 'inherit',
-                    boxShadow: isActuel ? 'none' : '0 4px 18px rgba(255,107,0,0.32)',
+                    boxShadow: isActuel ? 'none' : '0 4px 18px rgba(26,92,255,0.30)',
                     transition: 'all 0.15s',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
                   }}
@@ -548,7 +554,7 @@ export default function AbonnementsPage() {
                     </>
                   ) : (
                     <>
-                      <OmLogo size={18} />
+                      <CinetPayLogo size={18} />
                       Choisir {plan.label}
                     </>
                   )}
@@ -570,7 +576,6 @@ export default function AbonnementsPage() {
           </h2>
           <div style={{ overflowX: 'auto', borderRadius: 20, border: `1px solid ${palette.cardBorder}` }}>
             <div style={{ background: palette.card, borderRadius: 20, overflow: 'hidden', minWidth: 500 }}>
-              {/* Header */}
               <div style={{
                 display: 'grid', gridTemplateColumns: '1fr repeat(3, 110px)',
                 padding: '14px 24px',
@@ -591,14 +596,11 @@ export default function AbonnementsPage() {
                   )
                 })}
               </div>
-              {/* Lignes */}
               {FEATURES.map((f, idx) => {
-                const showGroupHeader = idx === 0 ||
-                  (f.section !== FEATURES[idx - 1].section)
+                const showGroupHeader = idx === 0 || f.section !== FEATURES[idx - 1].section
                 const sectionLabel = f.section === 'base' ? null
                   : f.section === 'pro' ? 'PRO ET PLUS'
                   : 'ENTERPRISE UNIQUEMENT'
-
                 return (
                   <div key={f.label}>
                     {showGroupHeader && sectionLabel && (
@@ -636,12 +638,17 @@ export default function AbonnementsPage() {
 
       {/* ── Footer ──────────────────────────────── */}
       <div style={{ textAlign: 'center', marginTop: 56 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 8 }}>
-          <OmLogo size={22} />
-          <span style={{ fontSize: 14, fontWeight: 700, color: palette.textSub }}>Orange Money Guinée</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 10 }}>
+          <CinetPayLogo size={22} />
+          <span style={{ fontSize: 14, fontWeight: 700, color: palette.textSub }}>CinetPay — Paiement mobile Afrique de l'Ouest</span>
         </div>
-        <div style={{ fontSize: 12, color: palette.textMuted, lineHeight: 2 }}>
-          Facturation mensuelle · Sans engagement · Activation automatique · Sécurisé par Orange Money
+        <div style={{ marginBottom: 10 }}>
+          <MethodBadges />
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <div style={{ fontSize: 12, color: palette.textMuted, lineHeight: 2 }}>
+            Facturation mensuelle · Sans engagement · Activation automatique · Sécurisé par CinetPay
+          </div>
         </div>
       </div>
 

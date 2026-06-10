@@ -32,6 +32,11 @@ const checkEnv = () => {
     console.warn('⚠️  RESEND_API_KEY absente — l\'envoi d\'emails (reset password, backup) sera indisponible.')
   }
 
+  // Optionnelles — sans elles, les paiements CinetPay tombent en mode fallback manuel
+  if (!process.env.CINETPAY_API_KEY || !process.env.CINETPAY_API_PASSWORD) {
+    console.warn('⚠️  CINETPAY_API_KEY / CINETPAY_API_PASSWORD absentes — paiements abonnements indisponibles.')
+  }
+
   console.log('✅ Variables d\'environnement OK')
 }
 

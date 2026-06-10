@@ -1,5 +1,5 @@
 // ================================================
-// FUELO — Routes abonnements
+// FUELO — Routes abonnements (CinetPay)
 // ================================================
 
 const express     = require('express')
@@ -18,7 +18,7 @@ const {
 router.get('/',           verifyToken, isOwner, getMonPlan)
 router.post('/souscrire', verifyToken, isOwner, souscrire)
 
-// Webhook Orange Money — public (appelé par Orange après paiement)
+// Webhook CinetPay — public (appelé par CinetPay après paiement)
 router.post('/callback', handleCallback)
 
 // Page de simulation sandbox (actif uniquement si ORANGE_MONEY_SANDBOX=true)
