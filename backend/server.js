@@ -144,6 +144,17 @@ app.get('/', (req, res) => {
 })
 
 
+// ── IP publique Render (diagnostic temporaire) ────────
+app.get('/api/myip', async (req, res) => {
+  try {
+    const r = await fetch('https://ifconfig.me')
+    const ip = (await r.text()).trim()
+    res.json({ ip })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
 // ── 404 ───────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({ status: 'fail', error: `Route ${req.originalUrl} introuvable` })
