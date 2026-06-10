@@ -85,10 +85,16 @@ const pool = require('./config/database')
 
 // Migrations idempotentes — colonnes ajoutées progressivement
 pool.query(`
-  ALTER TABLE stations ADD COLUMN IF NOT EXISTS logo_url VARCHAR(500);
-  ALTER TABLE stations ADD COLUMN IF NOT EXISTS seuil_fraude_citerne FLOAT DEFAULT 50;
-  ALTER TABLE users    ADD COLUMN IF NOT EXISTS refresh_token VARCHAR(255);
-  ALTER TABLE users    ADD COLUMN IF NOT EXISTS refresh_token_expires_at TIMESTAMP;
+  ALTER TABLE stations         ADD COLUMN IF NOT EXISTS logo_url              VARCHAR(500);
+  ALTER TABLE stations         ADD COLUMN IF NOT EXISTS seuil_fraude_citerne  FLOAT DEFAULT 50;
+  ALTER TABLE users            ADD COLUMN IF NOT EXISTS refresh_token          VARCHAR(255);
+  ALTER TABLE users            ADD COLUMN IF NOT EXISTS refresh_token_expires_at TIMESTAMP;
+  ALTER TABLE users            ADD COLUMN IF NOT EXISTS reset_token            VARCHAR(255);
+  ALTER TABLE users            ADD COLUMN IF NOT EXISTS reset_token_expires    TIMESTAMP;
+  ALTER TABLE couts_transport  ADD COLUMN IF NOT EXISTS fournisseur_transport  VARCHAR(200);
+  ALTER TABLE couts_transport  ADD COLUMN IF NOT EXISTS date_transport         DATE;
+  ALTER TABLE couts_transport  ADD COLUMN IF NOT EXISTS distance_km            DECIMAL(8,2);
+  ALTER TABLE couts_transport  ADD COLUMN IF NOT EXISTS reference_trajet       VARCHAR(100);
   CREATE INDEX IF NOT EXISTS idx_ventes_station      ON ventes(station_id, deleted_at);
   CREATE INDEX IF NOT EXISTS idx_ventes_station_date ON ventes(station_id, created_at DESC);
   CREATE INDEX IF NOT EXISTS idx_alertes_station     ON alertes(station_id, created_at DESC);
@@ -160,6 +166,7 @@ app.use((req, res) => {
 // ── Error handler ─────────────────────────────────────
 const errorHandler = require('./middleware/errorHandler')
 app.use(errorHandler)
+
 
 // ── Démarrage ─────────────────────────────────────────
 const PORT = process.env.PORT || 5000

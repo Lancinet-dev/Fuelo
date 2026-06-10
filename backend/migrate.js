@@ -373,6 +373,12 @@ CREATE INDEX IF NOT EXISTS idx_fuel_purchases_station ON fuel_purchases(station_
 CREATE INDEX IF NOT EXISTS idx_bons_livraison_station ON bons_livraison(station_id, date_livraison DESC);
 CREATE INDEX IF NOT EXISTS idx_depenses_station       ON depenses(station_id, date_depense DESC);
 CREATE INDEX IF NOT EXISTS idx_couts_transport_trajet ON couts_transport(trajet_id);
+
+-- Nouvelles colonnes couts_transport (transport direct sans trajet GPS)
+ALTER TABLE couts_transport ADD COLUMN IF NOT EXISTS fournisseur_transport VARCHAR(200);
+ALTER TABLE couts_transport ADD COLUMN IF NOT EXISTS date_transport        DATE;
+ALTER TABLE couts_transport ADD COLUMN IF NOT EXISTS distance_km           DECIMAL(8,2);
+ALTER TABLE couts_transport ADD COLUMN IF NOT EXISTS reference_trajet      VARCHAR(100);
 CREATE INDEX IF NOT EXISTS idx_fiches_paie_station    ON fiches_paie(station_id, annee DESC, mois DESC);
 CREATE INDEX IF NOT EXISTS idx_assistant_logs_owner   ON assistant_logs(owner_id, created_at DESC);
 

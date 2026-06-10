@@ -38,7 +38,7 @@ const getDashboard = async (req, res) => {
       pool.query(`SELECT COALESCE(SUM(salaire_net),0) AS total FROM fiches_paie WHERE station_id=$1 AND mois=$2 AND annee=$3`, [station_id, m, a]),
       pool.query(`SELECT COUNT(*) FROM bons_livraison WHERE station_id=$1 AND statut='en_attente'`, [station_id]),
       pool.query(`SELECT COUNT(*) FROM fuel_purchases WHERE station_id=$1 AND statut_paiement='non_paye' AND date_echeance < NOW()`, [station_id]),
-      pool.query(`SELECT COALESCE(SUM(montant_ttc),0) AS total FROM fuel_purchases WHERE station_id=$1 AND statut_paiement='non_paye'`, [station_id]),
+      pool.query(`SELECT COALESCE(SUM(montant_ttc),0) AS total FROM fuel_purchases WHERE station_id=$1 AND statut_paiement='non_paye' AND date_achat>=$2 AND date_achat<$3`, [station_id, debut, fin]),
       // CA journalier 30 derniers jours
       pool.query(`SELECT DATE(created_at) AS jour, COALESCE(SUM(montant_gnf),0) AS ca, COALESCE(SUM(litres),0) AS litres FROM ventes WHERE station_id=$1 AND created_at >= NOW()-INTERVAL '30 days' AND deleted_at IS NULL GROUP BY 1 ORDER BY 1`, [station_id]),
       // Évolution prix achat carburant
@@ -84,7 +84,9 @@ const getDashboard = async (req, res) => {
         bl_en_attente:   parseInt(blEnAttente.rows[0].count),
         factures_retard: parseInt(facturesRetard.rows[0].count),
         marge_negative:  margeBrute < 0,
-        marge_baisse:    variation(margeBrute, caPrecTotal - achatPrecTotal - depPrecTotal) < -10,
+        marge_baisse:    (caTotal > 0 && caPrecTotal > 0)
+          ? (margePct < ((caPrecTotal - achatPrecTotal - depPrecTotal) / caPrecTotal * 100) - 10)
+          : false,
       },
       depenses_par_categorie: depenses.rows.map(r => ({ categorie: r.categorie, total: parseFloat(r.cat_total) })),
       ca_30j: ca30j.rows,
@@ -315,15 +317,28 @@ const deleteDepense = async (req, res) => {
 const createCoutTransport = async (req, res) => {
   try {
     const station_id = getStationId(req)
-    const { trajet_id, carburant_camion = 0, peages = 0, prime_chauffeur = 0, autres_frais = 0, litres_transportes } = req.body
-    if (!trajet_id) return res.status(400).json({ error: 'trajet_id requis' })
-    const total = parseFloat(carburant_camion) + parseFloat(peages) + parseFloat(prime_chauffeur) + parseFloat(autres_frais)
+    const {
+      trajet_id,
+      fournisseur_transport, date_transport, distance_km, reference_trajet,
+      carburant_camion = 0, peages = 0, prime_chauffeur = 0, autres_frais = 0,
+      cout_total, litres_transportes,
+    } = req.body
+    // cout_total peut être fourni directement OU calculé depuis les composantes
+    const composantes = parseFloat(carburant_camion) + parseFloat(peages) + parseFloat(prime_chauffeur) + parseFloat(autres_frais)
+    const total  = cout_total ? parseFloat(cout_total) : composantes
+    if (!total)  return res.status(400).json({ error: 'cout_total requis' })
     const litres = parseFloat(litres_transportes) || 0
     const cpl    = litres > 0 ? total / litres : 0
     const result = await pool.query(
-      `INSERT INTO couts_transport (trajet_id, station_id, carburant_camion, peages, prime_chauffeur, autres_frais, cout_total, litres_transportes, cout_par_litre, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT DO NOTHING RETURNING *`,
-      [trajet_id, station_id, carburant_camion, peages, prime_chauffeur, autres_frais, total, litres, cpl, req.user.id]
+      `INSERT INTO couts_transport
+       (trajet_id, station_id, fournisseur_transport, date_transport, distance_km, reference_trajet,
+        carburant_camion, peages, prime_chauffeur, autres_frais, cout_total, litres_transportes, cout_par_litre, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
+      [trajet_id||null, station_id, fournisseur_transport||null, date_transport||null,
+       distance_km||null, reference_trajet||null,
+       parseFloat(carburant_camion)||0, parseFloat(peages)||0,
+       parseFloat(prime_chauffeur)||0, parseFloat(autres_frais)||0,
+       total, litres, cpl, req.user.id]
     )
     res.status(201).json({ cout: result.rows[0] })
   } catch (err) {

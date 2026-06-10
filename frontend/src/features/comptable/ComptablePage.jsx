@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
@@ -8,7 +9,7 @@ import {
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import {
-  useDashboardComptable, useAchats, useCreateAchat, useDeleteAchat,
+  useDashboardComptable, useAchats, useCreateAchat, useUpdateAchat, useDeleteAchat,
   useBL, useCreateBL, useSiginerBL,
   useDepenses, useCreateDepense, useDeleteDepense,
   useCoutsTransport, useCreateCoutTransport,
@@ -17,10 +18,11 @@ import {
 
 const fmt = (n) => {
   if (n === null || n === undefined || isNaN(n)) return '—'
-  const abs = Math.abs(n)
-  if (abs >= 1_000_000_000) return (n / 1_000_000_000).toFixed(1).replace('.', ',') + ' Md'
-  if (abs >= 1_000_000) return (n / 1_000_000).toFixed(1).replace('.', ',') + ' M'
-  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+  const v   = Math.round(parseFloat(n))
+  const abs = Math.abs(v)
+  if (abs >= 1_000_000_000) return (v / 1_000_000_000).toFixed(1).replace('.', ',') + ' Md'
+  if (abs >= 1_000_000) return (v / 1_000_000).toFixed(1).replace('.', ',') + ' M'
+  return v.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
 }
 const fmtGNF = (n) => (n === null || n === undefined || isNaN(n)) ? '—' : fmt(n) + ' GNF'
 const varColor = (v) => (v === null || v === undefined) ? '#94a3b8' : v >= 0 ? '#22c55e' : '#ef4444'
@@ -87,7 +89,11 @@ export default function ComptablePage() {
   const now = new Date()
   const [mois, setMois]   = useState(now.getMonth() + 1)
   const [annee, setAnnee] = useState(now.getFullYear())
-  const [tab, setTab]     = useState('dashboard')
+
+  // Tab synchronisé avec l'URL (?tab=achats etc.) — sidebar + header tabs sont cohérents
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tab    = searchParams.get('tab') || 'dashboard'
+  const setTab = (id) => setSearchParams(id === 'dashboard' ? {} : { tab: id }, { replace: true })
 
   const { selStyle } = makeStyles(palette, isDark)
 
@@ -307,6 +313,7 @@ function TabAchats({ mois, annee, readOnly }) {
   const { palette, isDark } = useTheme()
   const { data, isLoading } = useAchats({ mois, annee })
   const createAchat = useCreateAchat()
+  const updateAchat = useUpdateAchat()
   const deleteAchat = useDeleteAchat()
   const S = makeStyles(palette, isDark)
   const emptyForm = { fournisseur:'', date_achat:'', type_carburant:'essence', quantite_commandee:'', quantite_recue:'', prix_unitaire_ht:'', date_echeance:'' }
@@ -357,7 +364,14 @@ function TabAchats({ mois, annee, readOnly }) {
               <td style={S.tdNumStyle}>{fmt(a.prix_unitaire_ht)}</td>
               <td style={{ ...S.tdNumStyle, color: '#22c55e', fontWeight: 700 }}>{fmtGNF(a.montant_ttc)}</td>
               <td style={S.tdStyle}><StatutBadge statut={a.statut_paiement} /></td>
-              <td style={S.tdStyle}>{!readOnly && <button onClick={() => deleteAchat.mutate(a.id)} style={btnDangerSmall}>Suppr.</button>}</td>
+              <td style={{ ...S.tdStyle, display: 'flex', gap: 4 }}>
+                {!readOnly && a.statut_paiement !== 'paye' && (
+                  <button onClick={() => updateAchat.mutate({ id: a.id, statut_paiement: 'paye' })} style={btnPrimarySmall} disabled={updateAchat.isPending}>
+                    Payé ✓
+                  </button>
+                )}
+                {!readOnly && <button onClick={() => deleteAchat.mutate(a.id)} style={btnDangerSmall}>Suppr.</button>}
+              </td>
             </tr>
           ))}
           {achats.length === 0 && <EmptyRow cols={9} />}
@@ -376,7 +390,7 @@ function TabBL({ readOnly }) {
   const createBL = useCreateBL()
   const signerBL = useSiginerBL()
   const S = makeStyles(palette, isDark)
-  const emptyForm = { numero_bl:'', fournisseur:'', date_livraison:'', type_carburant:'essence', quantite_livree:'', reference_commande:'' }
+  const emptyForm = { numero_bl:'', fournisseur:'', date_livraison:'', type_carburant:'essence', quantite_commandee:'', quantite_livree:'' }
   const [form, setForm] = useState(emptyForm)
   const [showForm, setShowForm] = useState(false)
 
@@ -384,7 +398,8 @@ function TabBL({ readOnly }) {
 
   const handleCreate = async (e) => {
     e.preventDefault()
-    await createBL.mutateAsync(form)
+    const payload = { ...form, quantite_commandee: form.quantite_commandee || form.quantite_livree }
+    await createBL.mutateAsync(payload)
     setShowForm(false)
     setForm(emptyForm)
   }
@@ -404,15 +419,15 @@ function TabBL({ readOnly }) {
                   <option value="essence">Essence</option><option value="gasoil">Gasoil</option>
                 </select>
               </FormField>
-              <FormField label="Quantité livrée (L)" required><input type="number" style={S.inputStyle} value={form.quantite_livree} onChange={e => setForm(p=>({...p,quantite_livree:e.target.value}))} required /></FormField>
-              <FormField label="Réf. commande"><input style={S.inputStyle} value={form.reference_commande} onChange={e => setForm(p=>({...p,reference_commande:e.target.value}))} /></FormField>
+              <FormField label="Qté commandée (L)" required><input type="number" style={S.inputStyle} value={form.quantite_commandee} onChange={e => setForm(p=>({...p,quantite_commandee:e.target.value}))} required /></FormField>
+              <FormField label="Qté livrée (L)"><input type="number" style={S.inputStyle} value={form.quantite_livree} onChange={e => setForm(p=>({...p,quantite_livree:e.target.value}))} /></FormField>
             </FormGrid>
             <FormActions onCancel={() => setShowForm(false)} loading={createBL.isPending} btnSecondary={S.btnSecondary} />
           </form>
         </FormCard>
       )}
       {isLoading ? <LoadingTable /> : (
-        <DataTable headers={['N° BL','Fournisseur','Date','Type','Qté livrée','Statut','Signé par','']} thStyle={S.thStyle}>
+        <DataTable headers={['N° BL','Fournisseur','Date','Type','Qté livrée','Statut','Signatures','']} thStyle={S.thStyle}>
           {bls.map(b => (
             <tr key={b.id} style={S.trStyle}>
               <td style={{ ...S.tdStyle, fontFamily: 'monospace', color: '#2563eb', fontSize: 12 }}>{b.numero_bl}</td>
@@ -421,8 +436,19 @@ function TabBL({ readOnly }) {
               <td style={S.tdStyle}><TypeBadge type={b.type_carburant} /></td>
               <td style={S.tdNumStyle}>{fmt(b.quantite_livree)} L</td>
               <td style={S.tdStyle}><StatutBLBadge statut={b.statut} /></td>
-              <td style={S.tdStyle}>{b.signe_par || '—'}</td>
-              <td style={S.tdStyle}>{!readOnly && b.statut === 'en_attente' && <button onClick={() => signerBL.mutate({ id: b.id, qui: 'comptable' })} style={btnPrimarySmall}>Signer</button>}</td>
+              <td style={S.tdStyle}>
+                <span style={{ fontSize: 11 }}>
+                  {b.signe_chauffeur ? '✅ Chauffeur ' : '⬜ Chauffeur '}
+                  {b.signe_receptionnaire ? '✅ Récept.' : '⬜ Récept.'}
+                </span>
+              </td>
+              <td style={S.tdStyle}>
+                {!readOnly && !b.signe_receptionnaire && (
+                  <button onClick={() => signerBL.mutate({ id: b.id, qui: 'receptionnaire' })} style={btnPrimarySmall} disabled={signerBL.isPending}>
+                    Signer
+                  </button>
+                )}
+              </td>
             </tr>
           ))}
           {bls.length === 0 && <EmptyRow cols={8} />}
@@ -563,16 +589,17 @@ function TabPaie({ mois, annee, readOnly }) {
   const createFiche = useCreateFichePaie()
   const payerFiche = usePayerFichePaie()
   const S = makeStyles(palette, isDark)
-  const emptyForm = { employe_nom:'', employe_role:'', salaire_base:'', primes:'', retenues:'' }
+  const emptyForm = { user_id:'', salaire_base:'', primes:'', retenues:'' }
   const [form, setForm] = useState(emptyForm)
   const [showForm, setShowForm] = useState(false)
 
-  const fiches = data?.fiches || []
-  const totalNet = fiches.reduce((s, f) => s + parseFloat(f.salaire_net || 0), 0)
+  const fiches          = data?.fiches || []
+  const sansFixe        = data?.employes_sans_fiche || []
+  const totalNet        = fiches.reduce((s, f) => s + parseFloat(f.salaire_net || 0), 0)
 
   const handleCreate = async (e) => {
     e.preventDefault()
-    await createFiche.mutateAsync({ ...form, mois, annee })
+    await createFiche.mutateAsync({ user_id: form.user_id, salaire_base: form.salaire_base, primes: form.primes || 0, retenues: form.retenues || 0, avances: 0, mois, annee })
     setShowForm(false)
     setForm(emptyForm)
   }
@@ -586,17 +613,16 @@ function TabPaie({ mois, annee, readOnly }) {
             {fiches.length} employé(s) · Masse salariale : <span style={{ color: '#22c55e', fontWeight: 700 }}>{fmtGNF(totalNet)}</span>
           </p>
         </div>
-        {!readOnly && <button onClick={() => setShowForm(true)} style={btnPrimary}>+ Fiche de paie</button>}
+        {!readOnly && sansFixe.length > 0 && <button onClick={() => setShowForm(true)} style={btnPrimary}>+ Fiche de paie</button>}
       </div>
       {showForm && (
         <FormCard onClose={() => setShowForm(false)}>
           <form onSubmit={handleCreate}>
             <FormGrid>
-              <FormField label="Nom employé" required><input style={S.inputStyle} value={form.employe_nom} onChange={e => setForm(p=>({...p,employe_nom:e.target.value}))} required /></FormField>
-              <FormField label="Rôle">
-                <select style={S.inputStyle} value={form.employe_role} onChange={e => setForm(p=>({...p,employe_role:e.target.value}))}>
-                  <option value="">—</option>
-                  {['gerant','pompiste','chauffeur','logisticien','comptable'].map(r => <option key={r} value={r}>{r}</option>)}
+              <FormField label="Employé" required>
+                <select style={S.inputStyle} value={form.user_id} onChange={e => setForm(p=>({...p,user_id:e.target.value}))} required>
+                  <option value="">— Choisir un employé —</option>
+                  {sansFixe.map(emp => <option key={emp.id} value={emp.id}>{emp.nom} ({emp.role})</option>)}
                 </select>
               </FormField>
               <FormField label="Salaire de base (GNF)" required><input type="number" style={S.inputStyle} value={form.salaire_base} onChange={e => setForm(p=>({...p,salaire_base:e.target.value}))} required /></FormField>
@@ -611,8 +637,8 @@ function TabPaie({ mois, annee, readOnly }) {
         <DataTable headers={['Employé','Rôle','Salaire base','Primes','Retenues','Net','Statut','']} thStyle={S.thStyle}>
           {fiches.map(f => (
             <tr key={f.id} style={S.trStyle}>
-              <td style={{ ...S.tdStyle, fontWeight: 600, color: palette.text }}>{f.employe_nom}</td>
-              <td style={S.tdStyle}><RoleBadge role={f.employe_role} /></td>
+              <td style={{ ...S.tdStyle, fontWeight: 600, color: palette.text }}>{f.nom}</td>
+              <td style={S.tdStyle}><RoleBadge role={f.role} /></td>
               <td style={S.tdNumStyle}>{fmtGNF(f.salaire_base)}</td>
               <td style={{ ...S.tdNumStyle, color: '#22c55e' }}>+{fmtGNF(f.primes || 0)}</td>
               <td style={{ ...S.tdNumStyle, color: '#ef4444' }}>-{fmtGNF(f.retenues || 0)}</td>

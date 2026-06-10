@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
@@ -94,9 +94,13 @@ export default function ComptableLayout({ children }) {
 }
 
 function SidebarItem({ item, collapsed }) {
-  const { pathname, search } = window.location
-  const currentFull = pathname + search
-  const isActive = item.exact ? currentFull === item.path : currentFull.startsWith(item.path)
+  const location = useLocation()
+  const searchParams = new URLSearchParams(location.search)
+  const currentTab = searchParams.get('tab') || 'dashboard'
+  const itemTab = item.path.includes('tab=')
+    ? new URLSearchParams(item.path.split('?')[1]).get('tab')
+    : 'dashboard'
+  const isActive = currentTab === itemTab
 
   return (
     <NavLink
