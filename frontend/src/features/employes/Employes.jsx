@@ -26,7 +26,7 @@ const normalizeRole = (value = '') => {
 // ── Config par rôle créateur ──────────────────────────
 const ROLE_CONFIG = {
   owner: {
-    title:       'Gérants & Logisticiens',
+    title:       'Gérants, Logisticiens & Comptables',
     subtitle:    (n) => `${n} membre${n > 1 ? 's' : ''} dans votre équipe de gestion`,
     btnLabel:    'Ajouter un membre',
     formTitle:   'Nouveau membre',
@@ -56,6 +56,7 @@ const ROLE_COLORS = {
   logisticien: { color: '#8B5CF6',            bg: 'rgba(139,92,246,0.1)' },
   pompiste:    { color: theme.colors.success, bg: theme.colors.successLight },
   chauffeur:   { color: theme.colors.warning, bg: theme.colors.warningLight },
+  comptable:   { color: '#0891B2',            bg: 'rgba(8,145,178,0.1)' },
 }
 
 const ROLE_LABELS = {
@@ -63,6 +64,7 @@ const ROLE_LABELS = {
   logisticien: 'Logisticien',
   pompiste:    'Pompiste',
   chauffeur:   'Chauffeur',
+  comptable:   'Comptable',
   owner:       'Propriétaire',
 }
 

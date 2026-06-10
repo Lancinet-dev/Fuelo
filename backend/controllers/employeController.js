@@ -19,10 +19,10 @@ const normalizeRole = (value = '') => {
 
 // Rôles que chaque créateur peut créer
 const CREATION_RULES = {
-  owner:       ['gerant', 'logisticien'],
+  owner:       ['gerant', 'logisticien', 'comptable'],
   gerant:      ['pompiste'],
   logisticien: ['chauffeur'],
-  superadmin:  ['gerant', 'logisticien', 'pompiste', 'chauffeur'],
+  superadmin:  ['gerant', 'logisticien', 'pompiste', 'chauffeur', 'comptable'],
 }
 
 // ── Créer un employé ─────────────────────────────────
@@ -81,8 +81,8 @@ const getEmployes = asyncHandler(async (req, res) => {
   const params = [station_id]
 
   if (creatorRole === 'owner' || creatorRole === 'superadmin') {
-    // L'owner voit tous les gérants + logisticiens de sa station
-    roleFilter = `LOWER(u.role) IN ('gerant', 'logisticien')`
+    // L'owner voit tous les gérants + logisticiens + comptables de sa station
+    roleFilter = `LOWER(u.role) IN ('gerant', 'logisticien', 'comptable')`
   } else if (creatorRole === 'gerant') {
     // Le gérant voit seulement ses pompistes (ceux qu'il a créés)
     roleFilter = `LOWER(u.role) = 'pompiste'`

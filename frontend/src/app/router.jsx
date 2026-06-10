@@ -39,6 +39,7 @@ const AbonnementsPage        = lazy(() => import('../features/abonnements/Abonne
 const SuperadminDashboard    = lazy(() => import('../features/dashboard/SuperadminDashboard'))
 const PerformancesPage       = lazy(() => import('../features/performances/PerformancesPage'))
 const AntiFraudePage         = lazy(() => import('../features/anti-fraude/AntiFraudePage'))
+const ComptablePage          = lazy(() => import('../features/comptable/ComptablePage'))
 
 // ── Garde routes protégées ────────────────────────────
 function PrivateRoute({ children, allowedRoles }) {
@@ -52,6 +53,7 @@ function PrivateRoute({ children, allowedRoles }) {
     if (userRole === 'pompiste')     return <Navigate to="/pompiste"    replace />
     if (userRole === 'chauffeur')    return <Navigate to="/chauffeur"   replace />
     if (userRole === 'logisticien')  return <Navigate to="/logistique"  replace />
+    if (userRole === 'comptable')    return <Navigate to="/comptable"   replace />
     return <Navigate to="/dashboard" replace />
   }
 
@@ -70,6 +72,7 @@ function PublicRoute({ children }) {
   if (userRole === 'pompiste')     return <Navigate to="/pompiste"   replace />
   if (userRole === 'chauffeur')    return <Navigate to="/chauffeur"  replace />
   if (userRole === 'logisticien')  return <Navigate to="/logistique" replace />
+  if (userRole === 'comptable')    return <Navigate to="/comptable"  replace />
   if (userRole === 'superadmin')   return <Navigate to="/admin"      replace />
   return <Navigate to="/dashboard" replace />
 }
@@ -118,6 +121,13 @@ export default function Router() {
             </PrivateRoute>
           } />
 
+          {/* Page comptable — layout différent */}
+          <Route path="/comptable" element={
+            <PrivateRoute allowedRoles={['comptable']}>
+              <ComptablePage />
+            </PrivateRoute>
+          } />
+
           {/* Pages gérant + owner — avec sidebar */}
           <Route element={
             <PrivateRoute allowedRoles={['gerant', 'owner', 'superadmin']}>
@@ -137,6 +147,11 @@ export default function Router() {
             <Route path="/abonnements"   element={<AbonnementsPage />} />
             <Route path="/performances" element={<PerformancesPage />} />
             <Route path="/anti-fraude"  element={<AntiFraudePage />} />
+            <Route path="/comptabilite"  element={
+              <PrivateRoute allowedRoles={['owner', 'superadmin']}>
+                <ComptablePage />
+              </PrivateRoute>
+            } />
             <Route path="/admin"        element={
               <PrivateRoute allowedRoles={['superadmin']}>
                 <SuperadminDashboard />

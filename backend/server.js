@@ -126,6 +126,7 @@ const performanceRoutes     = require('./routes/performances')
 const searchRoutes          = require('./routes/search')
 const antiFraudeRoutes      = require('./routes/antiFraude')
 const assistantRoutes       = require('./routes/assistant')
+const comptableRoutes       = require('./routes/comptable')
 
 app.use('/api/auth',      limiterAuth, authRoutes)
 app.use('/api/stock',     stockRoutes)
@@ -143,6 +144,7 @@ app.use('/api/admin',         adminRoutes)
 app.use('/api/performances',  performanceRoutes)
 app.use('/api/anti-fraude',   antiFraudeRoutes)
 app.use('/api/assistant',     assistantRoutes)
+app.use('/api/comptable',     comptableRoutes)
 
 // ── Route test ────────────────────────────────────────
 app.get('/', (req, res) => {

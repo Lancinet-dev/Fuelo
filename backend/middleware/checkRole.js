@@ -6,6 +6,7 @@ const ROLE_LEVELS = Object.freeze({
   pompiste:     1,
   chauffeur:    1,
   logisticien:  1,
+  comptable:    2,
   gerant:       2,
   owner:        4,
   superadmin:   5,
@@ -82,6 +83,22 @@ const isManager     = checkRole(['gerant'])
 const isOwner       = checkRole(['owner'])
 const isAdmin       = checkRole(['superadmin'])
 const isChauffeur   = checkExactRole(['chauffeur'])
+const isComptable   = checkExactRole(['comptable'])
+
+// Accès module comptable : comptable + owner + superadmin
+const canAccessComptable = (req, res, next) => {
+  const userRole = normalizeRole(req.user?.role)
+  if (!userRole) return res.status(401).json({ error: 'Non authentifié' })
+  if (!['comptable', 'owner', 'superadmin'].includes(userRole)) {
+    return res.status(403).json({
+      error: 'Accès refusé',
+      message: 'Réservé aux comptables et propriétaires',
+      votre_role: userRole,
+    })
+  }
+  req.user.role = userRole
+  next()
+}
 
 // Accès transport : logisticien + owner UNIQUEMENT (gerant exclu)
 const isTransport = (req, res, next) => {
@@ -122,6 +139,8 @@ module.exports = {
   isOwner,
   isAdmin,
   isChauffeur,
+  isComptable,
   isTransport,
   canManageEmployes,
+  canAccessComptable,
 }

@@ -259,6 +259,123 @@ CREATE TABLE IF NOT EXISTS primes (
 CREATE INDEX IF NOT EXISTS idx_performances_user ON performances(user_id);
 CREATE INDEX IF NOT EXISTS idx_primes_user ON primes(user_id);
 
+-- ── MODULE COMPTABLE ──────────────────────────────────
+
+-- Achats carburant fournisseur
+CREATE TABLE IF NOT EXISTS fuel_purchases (
+  id                  SERIAL PRIMARY KEY,
+  station_id          INT REFERENCES stations(id) ON DELETE CASCADE,
+  fournisseur         VARCHAR(100) NOT NULL,
+  type_carburant      VARCHAR(20) NOT NULL,
+  quantite_commandee  DECIMAL(10,2),
+  quantite_recue      DECIMAL(10,2),
+  ecart_livraison     DECIMAL(10,2) GENERATED ALWAYS AS (quantite_recue - quantite_commandee) STORED,
+  prix_unitaire_ht    DECIMAL(12,2) NOT NULL,
+  montant_ht          DECIMAL(15,2) GENERATED ALWAYS AS (COALESCE(quantite_recue,0) * prix_unitaire_ht) STORED,
+  tva_taux            DECIMAL(5,2) DEFAULT 0,
+  montant_ttc         DECIMAL(15,2),
+  numero_bl           VARCHAR(50),
+  numero_facture      VARCHAR(50),
+  date_achat          TIMESTAMP NOT NULL DEFAULT NOW(),
+  date_echeance       TIMESTAMP,
+  statut_paiement     VARCHAR(20) DEFAULT 'non_paye',
+  mode_paiement       VARCHAR(50),
+  depot_origine       VARCHAR(100),
+  notes               TEXT,
+  created_by          INT REFERENCES users(id),
+  created_at          TIMESTAMP DEFAULT NOW()
+);
+
+-- Bons de livraison
+CREATE TABLE IF NOT EXISTS bons_livraison (
+  id                    SERIAL PRIMARY KEY,
+  station_id            INT REFERENCES stations(id) ON DELETE CASCADE,
+  numero_bl             VARCHAR(50) NOT NULL,
+  date_livraison        TIMESTAMP NOT NULL DEFAULT NOW(),
+  fournisseur           VARCHAR(100) NOT NULL,
+  depot_origine         VARCHAR(100),
+  citerne_id            INT REFERENCES citernes(id),
+  chauffeur_nom         VARCHAR(100),
+  type_carburant        VARCHAR(20) NOT NULL,
+  quantite_commandee    DECIMAL(10,2) NOT NULL,
+  quantite_livree       DECIMAL(10,2),
+  ecart                 DECIMAL(10,2),
+  temperature           DECIMAL(5,2),
+  densite               DECIMAL(8,4),
+  statut                VARCHAR(20) DEFAULT 'en_attente',
+  reserves              TEXT,
+  document_url          VARCHAR(500),
+  signe_chauffeur       BOOLEAN DEFAULT FALSE,
+  signe_receptionnaire  BOOLEAN DEFAULT FALSE,
+  fuel_purchase_id      INT REFERENCES fuel_purchases(id),
+  created_by            INT REFERENCES users(id),
+  created_at            TIMESTAMP DEFAULT NOW(),
+  UNIQUE(station_id, numero_bl)
+);
+
+-- Dépenses station
+CREATE TABLE IF NOT EXISTS depenses (
+  id              SERIAL PRIMARY KEY,
+  station_id      INT REFERENCES stations(id) ON DELETE CASCADE,
+  categorie       VARCHAR(50) NOT NULL,
+  description     VARCHAR(200),
+  montant         DECIMAL(15,2) NOT NULL,
+  date_depense    TIMESTAMP NOT NULL DEFAULT NOW(),
+  justificatif_url VARCHAR(500),
+  created_by      INT REFERENCES users(id),
+  created_at      TIMESTAMP DEFAULT NOW()
+);
+
+-- Coûts transport par trajet
+CREATE TABLE IF NOT EXISTS couts_transport (
+  id                SERIAL PRIMARY KEY,
+  trajet_id         INT REFERENCES trajets(id) ON DELETE CASCADE,
+  station_id        INT REFERENCES stations(id),
+  carburant_camion  DECIMAL(15,2) DEFAULT 0,
+  peages            DECIMAL(15,2) DEFAULT 0,
+  prime_chauffeur   DECIMAL(15,2) DEFAULT 0,
+  autres_frais      DECIMAL(15,2) DEFAULT 0,
+  cout_total        DECIMAL(15,2),
+  litres_transportes DECIMAL(10,2),
+  cout_par_litre    DECIMAL(10,4),
+  created_by        INT REFERENCES users(id),
+  created_at        TIMESTAMP DEFAULT NOW()
+);
+
+-- Fiches de paie
+CREATE TABLE IF NOT EXISTS fiches_paie (
+  id             SERIAL PRIMARY KEY,
+  station_id     INT REFERENCES stations(id) ON DELETE CASCADE,
+  user_id        INT REFERENCES users(id) ON DELETE CASCADE,
+  mois           SMALLINT NOT NULL,
+  annee          SMALLINT NOT NULL,
+  salaire_base   DECIMAL(15,2) NOT NULL DEFAULT 0,
+  primes         DECIMAL(15,2) DEFAULT 0,
+  avances        DECIMAL(15,2) DEFAULT 0,
+  retenues       DECIMAL(15,2) DEFAULT 0,
+  salaire_net    DECIMAL(15,2),
+  statut         VARCHAR(20) DEFAULT 'en_attente',
+  date_paiement  TIMESTAMP,
+  notes          TEXT,
+  created_by     INT REFERENCES users(id),
+  created_at     TIMESTAMP DEFAULT NOW(),
+  UNIQUE(station_id, user_id, mois, annee)
+);
+
+-- Logs assistant IA (comptage mensuel plan Pro)
+CREATE TABLE IF NOT EXISTS assistant_logs (
+  id         SERIAL PRIMARY KEY,
+  owner_id   INT NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_fuel_purchases_station ON fuel_purchases(station_id, date_achat DESC);
+CREATE INDEX IF NOT EXISTS idx_bons_livraison_station ON bons_livraison(station_id, date_livraison DESC);
+CREATE INDEX IF NOT EXISTS idx_depenses_station       ON depenses(station_id, date_depense DESC);
+CREATE INDEX IF NOT EXISTS idx_couts_transport_trajet ON couts_transport(trajet_id);
+CREATE INDEX IF NOT EXISTS idx_fiches_paie_station    ON fiches_paie(station_id, annee DESC, mois DESC);
+CREATE INDEX IF NOT EXISTS idx_assistant_logs_owner   ON assistant_logs(owner_id, created_at DESC);
+
 -- Index performances critiques
 CREATE INDEX IF NOT EXISTS idx_ventes_station       ON ventes(station_id, deleted_at);
 CREATE INDEX IF NOT EXISTS idx_ventes_station_date  ON ventes(station_id, created_at DESC);

@@ -8,6 +8,7 @@ export const CREATABLE_ROLES = {
   owner: [
     { value: 'gerant',      label: 'Gérant',      desc: 'Dashboard, ventes, stock, alertes, services, pompistes' },
     { value: 'logisticien', label: 'Logisticien', desc: 'Citernes, trajets GPS, alertes transport, chauffeurs' },
+    { value: 'comptable',   label: 'Comptable',   desc: 'Comptabilité, achats carburant, BL, dépenses, fiches de paie' },
   ],
   gerant: [
     { value: 'pompiste', label: 'Pompiste', desc: 'Enregistrement des ventes et gestion de service' },
