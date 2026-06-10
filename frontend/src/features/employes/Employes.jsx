@@ -162,8 +162,8 @@ export default function Employes() {
 
   const validate = () => {
     const e = {}
-    if (!nom.trim())                 e.nom      = 'Obligatoire'
-    if (!email.trim().includes('@')) e.email    = 'Email invalide'
+    if (nom.trim().length < 2)       e.nom      = 'Minimum 2 caractères'
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) e.email = 'Email invalide (ex: nom@gmail.com)'
     if (password.length < 6)         e.password = 'Minimum 6 caractères'
     setErrors(e)
     return Object.keys(e).length === 0
