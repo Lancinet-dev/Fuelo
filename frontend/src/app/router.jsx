@@ -155,12 +155,14 @@ export default function Router() {
                 <ComptablePage />
               </PrivateRoute>
             } />
-            <Route path="/admin"        element={
-              <PrivateRoute allowedRoles={['superadmin']}>
-                <SuperadminDashboard />
-              </PrivateRoute>
-            } />
           </Route>
+
+          {/* Superadmin — layout standalone dédié */}
+          <Route path="/admin" element={
+            <PrivateRoute allowedRoles={['superadmin']}>
+              <SuperadminDashboard />
+            </PrivateRoute>
+          } />
 
           {/* Route inconnue — page 404 */}
           <Route path="*" element={<NotFound />} />
