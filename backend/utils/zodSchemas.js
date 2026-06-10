@@ -11,9 +11,9 @@ const normalizeRole = (value = '') => {
 
 const roleSchema = z.preprocess(
   (value) => normalizeRole(value),
-  z.enum(['pompiste', 'chauffeur', 'logisticien', 'gerant', 'owner', 'superadmin'], {
+  z.enum(['pompiste', 'chauffeur', 'logisticien', 'gerant', 'comptable', 'owner', 'superadmin'], {
     errorMap: () => ({
-      message: 'Role invalide. Choisissez pompiste, gerant, chauffeur ou logisticien.',
+      message: 'Role invalide. Choisissez pompiste, gerant, chauffeur, logisticien ou comptable.',
     }),
   })
 )
