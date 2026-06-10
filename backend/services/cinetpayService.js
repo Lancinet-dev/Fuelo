@@ -19,13 +19,14 @@ async function getAccessToken() {
     return _tokenCache.token
   }
 
+  const params = new URLSearchParams({
+    api_key:      process.env.CINETPAY_API_KEY,
+    api_password: process.env.CINETPAY_API_PASSWORD,
+  })
   const res = await fetch(`${CP_BASE}/oauth/login`, {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({
-      api_key:      process.env.CINETPAY_API_KEY,
-      api_password: process.env.CINETPAY_API_PASSWORD,
-    }),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body:    params.toString(),
   })
 
   if (!res.ok) {
