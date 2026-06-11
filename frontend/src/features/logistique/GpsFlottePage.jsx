@@ -1,5 +1,5 @@
 // ================================================
-// FUELO — GPS Flotte Premium (niveau Samsara/Fleet Complete)
+// FUELO — GPS Flotte Premium
 // ================================================
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
@@ -10,37 +10,48 @@ import { useSocket } from '../../hooks/useSocket'
 import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 
-// ── Palette dark fixe (page autonome) ────────────
+// ── Palette ───────────────────────────────────────
 const P = {
-  bg:       '#0A0E1A',
-  bgCard:   '#111827',
-  bgCard2:  '#1A2235',
-  border:   'rgba(255,255,255,0.07)',
-  text:     '#F1F5F9',
-  sub:      '#94A3B8',
-  blue:     '#2563EB',
-  green:    '#10B981',
-  orange:   '#F59E0B',
-  red:      '#EF4444',
-  purple:   '#8B5CF6',
+  bg: '#0A0E1A', bgCard: '#111827', bgCard2: '#1A2235',
+  border: 'rgba(255,255,255,0.07)',
+  text: '#F1F5F9', sub: '#94A3B8',
+  blue: '#2563EB', green: '#10B981', orange: '#F59E0B', red: '#EF4444', purple: '#8B5CF6',
 }
 
+// ── Tiles ─────────────────────────────────────────
+const TILE_NIGHT = 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png'
+const TILE_DAY   = 'https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png'
+const TILE_OPTS  = { subdomains: 'abcd', maxZoom: 20 }
+
 const TABS_GPS = [
-  { key: 'flotte',      label: 'Carte Flotte',  icon: '🗺️' },
-  { key: 'replay',      label: 'Replay Trajet',  icon: '▶️' },
-  { key: 'geofencing',  label: 'Géofencing',     icon: '📍' },
-  { key: 'historique',  label: 'Historique GPS',  icon: '📊' },
+  { key: 'flotte',     label: 'Carte Flotte',  icon: '🗺️' },
+  { key: 'replay',     label: 'Replay Trajet',  icon: '▶️' },
+  { key: 'geofencing', label: 'Géofencing',     icon: '📍' },
+  { key: 'historique', label: 'Historique GPS', icon: '📊' },
 ]
 
-// ── Inject CSS animations once ────────────────────
 const CSS_ANIM = `
-@keyframes pulse-red { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.4);opacity:.7} }
+@keyframes pulse-red   { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.4);opacity:.7} }
 @keyframes pulse-green { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
-@keyframes spin-slow { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-@keyframes fade-in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fade-in     { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+@media (max-width:768px){
+  .leaflet-control-zoom a{width:48px!important;height:48px!important;line-height:48px!important;font-size:20px!important;}
+  .leaflet-control-zoom{border-radius:14px!important;overflow:hidden!important;}
+}
 `
 
-// ── Calcul distance Haversine (km) ────────────────
+// ── Hooks ─────────────────────────────────────────
+function useWindowWidth() {
+  const [w, setW] = useState(() => typeof window !== 'undefined' ? window.innerWidth : 1200)
+  useEffect(() => {
+    const fn = () => setW(window.innerWidth)
+    window.addEventListener('resize', fn)
+    return () => window.removeEventListener('resize', fn)
+  }, [])
+  return w
+}
+
+// ── Haversine ─────────────────────────────────────
 function distKm(lat1, lng1, lat2, lng2) {
   const R = 6371, p1 = lat1*Math.PI/180, p2 = lat2*Math.PI/180
   const dp = (lat2-lat1)*Math.PI/180, dl = (lng2-lng1)*Math.PI/180
@@ -48,11 +59,21 @@ function distKm(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
 }
 
-// ── Icône camion SVG selon statut ─────────────────
+// ── NightToggleBtn ────────────────────────────────
+function NightToggleBtn({ nightMode, onToggle, style = {} }) {
+  return (
+    <motion.button whileTap={{ scale: 0.88 }} onClick={onToggle}
+      title={nightMode ? 'Mode jour' : 'Mode nuit'}
+      style={{ width: 44, height: 44, borderRadius: 12, border: `1px solid ${P.border}`, background: 'rgba(17,24,39,0.92)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 20, boxShadow: '0 2px 12px rgba(0,0,0,0.4)', zIndex: 1000, ...style }}>
+      {nightMode ? '☀️' : '🌙'}
+    </motion.button>
+  )
+}
+
+// ── TruckSvg ──────────────────────────────────────
 function TruckSvg({ statut, size = 28 }) {
   const color = statut === 'alerte' ? P.red : statut === 'arrive_attente' ? P.orange : P.green
-  const anim  = statut === 'alerte' ? { animation: 'pulse-red 1s infinite' }
-              : statut === 'en_cours' ? { animation: 'pulse-green 2s infinite' } : {}
+  const anim  = statut === 'alerte' ? { animation: 'pulse-red 1s infinite' } : statut === 'en_cours' ? { animation: 'pulse-green 2s infinite' } : {}
   return (
     <div style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center', ...anim }}>
       <svg viewBox="0 0 32 20" width={size} height={size*0.625} fill="none">
@@ -65,14 +86,55 @@ function TruckSvg({ statut, size = 28 }) {
   )
 }
 
-// ── KPI card ──────────────────────────────────────
-function KpiCard({ label, value, color, icon, sub }) {
+// ── KpiCard ───────────────────────────────────────
+function KpiCard({ label, value, color, icon }) {
   return (
-    <div style={{ background: P.bgCard, border: `1px solid ${P.border}`, borderTop: `3px solid ${color}`, borderRadius: 12, padding: '14px 18px', minWidth: 130, flex: 1 }}>
-      <div style={{ fontSize: 22, marginBottom: 2 }}>{icon}</div>
-      <div style={{ fontSize: 26, fontWeight: 700, color, lineHeight: 1 }}>{value ?? '—'}</div>
-      <div style={{ fontSize: 11, color: P.sub, marginTop: 4 }}>{label}</div>
-      {sub && <div style={{ fontSize: 11, color: P.sub, marginTop: 2 }}>{sub}</div>}
+    <div style={{ background: P.bgCard, border: `1px solid ${P.border}`, borderTop: `3px solid ${color}`, borderRadius: 12, padding: '12px 16px', minWidth: 110, flex: '0 0 auto' }}>
+      <div style={{ fontSize: 18, marginBottom: 2 }}>{icon}</div>
+      <div style={{ fontSize: 22, fontWeight: 700, color, lineHeight: 1 }}>{value ?? '—'}</div>
+      <div style={{ fontSize: 11, color: P.sub, marginTop: 4, whiteSpace: 'nowrap' }}>{label}</div>
+    </div>
+  )
+}
+
+// ── createTruckIcon ───────────────────────────────
+function createTruckIcon(L, statut, vitesse) {
+  const color = statut === 'alerte' ? '#EF4444' : statut === 'arrive_attente' ? '#F59E0B' : '#10B981'
+  const anim  = statut === 'alerte' ? 'pulse-red 1s infinite' : statut === 'en_cours' ? 'pulse-green 2s infinite' : 'none'
+  const html  = `<div style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;animation:${anim};">
+    <div style="width:32px;height:32px;background:${color};border-radius:50%;border:3px solid #1E293B;display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px ${color}80;">
+      <svg viewBox="0 0 20 14" width="18" height="12.6" fill="none"><rect x="1" y="2" width="12" height="9" rx="1.5" fill="white" opacity=".9"/><path d="M13 4h4.5l2 3v3.5H13V4z" fill="white" opacity=".7"/><circle cx="4.5" cy="12" r="1.8" fill="#1E293B" stroke="white" strokeWidth="1"/><circle cx="16" cy="12" r="1.8" fill="#1E293B" stroke="white" strokeWidth="1"/></svg>
+    </div>
+  </div>`
+  return L.divIcon({ html, className: '', iconSize: [36,36], iconAnchor: [18,18] })
+}
+
+// ── CamionCard ────────────────────────────────────
+function CamionCard({ camion: c, selected, onClick }) {
+  const color = c.statut === 'alerte' ? P.red : c.statut === 'arrive_attente' ? P.orange : P.green
+  const label = c.statut === 'en_cours' ? 'En route' : c.statut === 'arrive_attente' ? 'Attente QR' : 'Alerte'
+  const vit   = Math.round(c.vitesse_actuelle ?? 0)
+  const mins  = c.started_at ? Math.round((Date.now() - new Date(c.started_at)) / 60000) : 0
+  return (
+    <div onClick={onClick} style={{ padding: '12px 14px', borderBottom: `1px solid ${P.border}`, cursor: 'pointer', background: selected ? 'rgba(37,99,235,0.12)' : 'transparent', borderLeft: selected ? `3px solid ${P.blue}` : '3px solid transparent', transition: 'all 0.15s' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ width: 36, height: 36, borderRadius: '50%', background: P.bg, border: `2px solid ${color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16 }}>
+          {c.chauffeur_avatar ? <img src={c.chauffeur_avatar} style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} alt="" /> : '👤'}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: P.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.chauffeur_nom}</div>
+          <div style={{ fontSize: 11, color: P.sub }}>{c.citerne_code ?? 'Citerne'} · {mins}min</div>
+        </div>
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: vit > 90 ? P.red : P.text }}>{vit} <span style={{ fontSize: 10, color: P.sub }}>km/h</span></div>
+          <div style={{ fontSize: 10, color, fontWeight: 600 }}>{label}</div>
+        </div>
+      </div>
+      {c.statut !== 'alerte' && (
+        <div style={{ marginTop: 8, height: 3, background: P.border, borderRadius: 2 }}>
+          <div style={{ height: '100%', background: color, borderRadius: 2, width: `${Math.min(100, mins/120*100)}%`, transition: 'width 0.3s' }} />
+        </div>
+      )}
     </div>
   )
 }
@@ -80,92 +142,80 @@ function KpiCard({ label, value, color, icon, sub }) {
 // ─────────────────────────────────────────────────
 // TAB 1 : CARTE FLOTTE
 // ─────────────────────────────────────────────────
-function TabFlotte({ flotte, stats, loading }) {
-  const mapRef    = useRef(null)
-  const leafRef   = useRef(null)
-  const markersRef = useRef({})
-  const qc        = useQueryClient()
-  const { socket } = useSocket()
-  const [selected, setSelected] = useState(null)
-  const [search,   setSearch]   = useState('')
+function TabFlotte({ flotte, stats, loading, nightMode, onToggleNight }) {
+  const winW      = useWindowWidth()
+  const isMobile  = winW < 768
+  const sidebarW  = winW < 768 ? 0 : winW < 1024 ? 220 : 280
+
+  const mapRef      = useRef(null)
+  const leafRef     = useRef(null)
+  const markersRef  = useRef({})
+  const tileRef     = useRef(null)
+  const nightRef    = useRef(nightMode)
+  nightRef.current  = nightMode
+
+  const qc          = useQueryClient()
+  const { socket }  = useSocket()
+  const [selected,    setSelected]    = useState(null)
+  const [search,      setSearch]      = useState('')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const filtered = useMemo(() =>
     flotte.filter(c => c.chauffeur_nom?.toLowerCase().includes(search.toLowerCase()) || c.citerne_code?.toLowerCase().includes(search.toLowerCase())),
     [flotte, search]
   )
 
-  // Init Leaflet map
+  // Init map
   useEffect(() => {
     if (!mapRef.current) return
-    let map
-    const initMap = async () => {
+    const init = async () => {
       const L = (await import('leaflet')).default
       await import('leaflet/dist/leaflet.css')
       if (leafRef.current) return
-
-      map = L.map(mapRef.current, { zoomControl: false, attributionControl: false })
-        .setView([11.3, -13.5], 7)
-
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© CartoDB', maxZoom: 19,
-      }).addTo(map)
-
+      const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false }).setView([11.3, -13.5], 7)
+      tileRef.current = L.tileLayer(nightRef.current ? TILE_NIGHT : TILE_DAY, TILE_OPTS).addTo(map)
       L.control.zoom({ position: 'bottomright' }).addTo(map)
       leafRef.current = map
     }
-    initMap()
-    return () => {
-      if (leafRef.current) { leafRef.current.remove(); leafRef.current = null }
-      markersRef.current = {}
-    }
+    init()
+    return () => { if (leafRef.current) { leafRef.current.remove(); leafRef.current = null }; markersRef.current = {} }
   }, [])
 
-  // Mettre à jour les marqueurs camions
+  // Swap tiles
+  useEffect(() => { if (tileRef.current) tileRef.current.setUrl(nightMode ? TILE_NIGHT : TILE_DAY) }, [nightMode])
+
+  // Marqueurs
   useEffect(() => {
     if (!leafRef.current || flotte.length === 0) return
-    const L = window.L
-    if (!L) return
-
-    const map = leafRef.current
+    const L = window.L; if (!L) return
     const existing = new Set(Object.keys(markersRef.current))
-
     flotte.forEach(c => {
       if (!c.lat || !c.lng) return
       const id   = String(c.id)
       const icon = createTruckIcon(L, c.statut, c.vitesse_actuelle ?? 0)
-      const tip  = `<b>${c.chauffeur_nom}</b><br/>${Math.round(c.vitesse_actuelle ?? 0)} km/h<br/>${c.statut === 'en_cours' ? 'En route' : c.statut === 'arrive_attente' ? 'Arrivée — Attente QR' : 'Alerte'}`
-
+      const tip  = `<b>${c.chauffeur_nom}</b><br/>${Math.round(c.vitesse_actuelle ?? 0)} km/h`
       if (markersRef.current[id]) {
         markersRef.current[id].setLatLng([c.lat, c.lng])
         markersRef.current[id].setIcon(icon)
         markersRef.current[id].setTooltipContent(tip)
       } else {
-        const m = L.marker([c.lat, c.lng], { icon })
-          .addTo(map)
-          .bindTooltip(tip, { permanent: false, direction: 'top', offset: [0, -10] })
+        markersRef.current[id] = L.marker([c.lat, c.lng], { icon })
+          .addTo(leafRef.current)
+          .bindTooltip(tip, { permanent: false, direction: 'top', offset: [0,-10] })
           .on('click', () => setSelected(c))
-        markersRef.current[id] = m
       }
       existing.delete(id)
     })
-    existing.forEach(id => {
-      markersRef.current[id]?.remove()
-      delete markersRef.current[id]
-    })
+    existing.forEach(id => { markersRef.current[id]?.remove(); delete markersRef.current[id] })
   }, [flotte])
 
-  // Mise à jour temps réel via Socket.IO
+  // Socket.IO
   useEffect(() => {
     if (!socket) return
     const handler = (data) => {
-      qc.setQueryData(['flotte'], (old) => {
-        if (!old) return old
-        return old.map(c =>
-          c.id === data.trajet_id
-            ? { ...c, lat: data.lat, lng: data.lng, vitesse_actuelle: data.vitesse, cap: data.cap, derniere_pos_at: new Date().toISOString() }
-            : c
-        )
-      })
+      qc.setQueryData(['flotte'], old => old ? old.map(c =>
+        c.id === data.trajet_id ? { ...c, lat: data.lat, lng: data.lng, vitesse_actuelle: data.vitesse, cap: data.cap, derniere_pos_at: new Date().toISOString() } : c
+      ) : old)
     }
     socket.on('gps_update', handler)
     return () => socket.off('gps_update', handler)
@@ -175,55 +225,64 @@ function TabFlotte({ flotte, stats, loading }) {
     if (!leafRef.current || !camion.lat) return
     leafRef.current.setView([camion.lat, camion.lng], 14, { animate: true })
     setSelected(camion)
-  }, [])
+    if (isMobile) setSidebarOpen(false)
+  }, [isMobile])
+
+  const sidebarContent = (
+    <>
+      <div style={{ padding: '14px 16px', borderBottom: `1px solid ${P.border}`, flexShrink: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: P.text, marginBottom: 10 }}>
+          Flotte Active <span style={{ color: P.blue }}>({flotte.length})</span>
+        </div>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher chauffeur..."
+          style={{ width: '100%', background: P.bg, border: `1px solid ${P.border}`, borderRadius: 8, padding: '8px 12px', color: P.text, fontSize: 12, outline: 'none', boxSizing: 'border-box' }} />
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {loading && <div style={{ padding: 20, color: P.sub, fontSize: 13, textAlign: 'center' }}>Chargement...</div>}
+        {!loading && filtered.length === 0 && (
+          <div style={{ padding: 24, textAlign: 'center', color: P.sub, fontSize: 13 }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>🚚</div>Aucun camion actif
+          </div>
+        )}
+        {filtered.map(c => <CamionCard key={c.id} camion={c} selected={selected?.id === c.id} onClick={() => centrer(c)} />)}
+      </div>
+    </>
+  )
 
   return (
-    <div style={{ display: 'flex', height: '100%', gap: 0 }}>
-      {/* Sidebar flotte */}
-      <div style={{ width: 300, background: P.bgCard, borderRight: `1px solid ${P.border}`, display: 'flex', flexDirection: 'column', flexShrink: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '14px 16px', borderBottom: `1px solid ${P.border}` }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: P.text, marginBottom: 10 }}>
-            Flotte Active <span style={{ color: P.blue }}>({flotte.length})</span>
-          </div>
-          <input
-            value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Rechercher chauffeur..."
-            style={{ width: '100%', background: P.bg, border: `1px solid ${P.border}`, borderRadius: 8, padding: '8px 12px', color: P.text, fontSize: 12, outline: 'none', boxSizing: 'border-box' }}
-          />
-        </div>
-        <div style={{ flex: 1, overflowY: 'auto' }}>
-          {loading && <div style={{ padding: 20, color: P.sub, fontSize: 13, textAlign: 'center' }}>Chargement...</div>}
-          {!loading && filtered.length === 0 && (
-            <div style={{ padding: 24, textAlign: 'center', color: P.sub, fontSize: 13 }}>
-              <div style={{ fontSize: 32, marginBottom: 8 }}>🚚</div>
-              Aucun camion actif
-            </div>
-          )}
-          {filtered.map(c => (
-            <CamionCard key={c.id} camion={c} selected={selected?.id === c.id} onClick={() => centrer(c)} />
-          ))}
-        </div>
-      </div>
+    <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
 
-      {/* Carte principale */}
-      <div style={{ flex: 1, position: 'relative', background: '#0D1117' }}>
+      {/* Sidebar desktop/tablette */}
+      {!isMobile && (
+        <div style={{ width: sidebarW, background: P.bgCard, borderRight: `1px solid ${P.border}`, display: 'flex', flexDirection: 'column', flexShrink: 0, overflow: 'hidden', transition: 'width 0.3s' }}>
+          {sidebarContent}
+        </div>
+      )}
+
+      {/* Carte plein espace restant */}
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
 
-        {/* Overlay infos camion sélectionné */}
+        {/* Toggle nuit/jour — top right */}
+        <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 1000 }}>
+          <NightToggleBtn nightMode={nightMode} onToggle={onToggleNight} />
+        </div>
+
+        {/* Info camion sélectionné */}
         <AnimatePresence>
           {selected && (
             <motion.div initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:20 }}
-              style={{ position:'absolute', top:16, right:16, width:260, background:'rgba(17,24,39,0.95)', border:`1px solid ${P.border}`, borderRadius:14, padding:16, backdropFilter:'blur(10px)', zIndex:1000 }}>
+              style={{ position:'absolute', top: 72, right:16, width:260, background:'rgba(17,24,39,0.95)', border:`1px solid ${P.border}`, borderRadius:14, padding:16, backdropFilter:'blur(10px)', zIndex:999 }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
                 <div style={{ fontWeight:700, color:P.text, fontSize:14 }}>{selected.chauffeur_nom}</div>
-                <button onClick={() => setSelected(null)} style={{ background:'none', border:'none', color:P.sub, cursor:'pointer', fontSize:18, lineHeight:1 }}>×</button>
+                <button onClick={() => setSelected(null)} style={{ background:'none', border:'none', color:P.sub, cursor:'pointer', fontSize:20, lineHeight:1 }}>×</button>
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
                 {[
                   ['Vitesse', `${Math.round(selected.vitesse_actuelle ?? 0)} km/h`, selected.vitesse_actuelle > 90 ? P.red : P.green],
-                  ['Citerne',  selected.citerne_code ?? '—', P.sub],
-                  ['Statut',   selected.statut === 'en_cours' ? 'En route' : 'Attente QR', selected.statut === 'alerte' ? P.red : P.orange],
-                  ['Départ',   selected.qty_depart ? `${selected.qty_depart}L` : '—', P.sub],
+                  ['Citerne', selected.citerne_code ?? '—', P.sub],
+                  ['Statut',  selected.statut === 'en_cours' ? 'En route' : 'Attente QR', selected.statut === 'alerte' ? P.red : P.orange],
+                  ['Départ',  selected.qty_depart ? `${selected.qty_depart}L` : '—', P.sub],
                 ].map(([k,v,c]) => (
                   <div key={k} style={{ background:P.bg, borderRadius:8, padding:'8px 10px' }}>
                     <div style={{ fontSize:10, color:P.sub }}>{k}</div>
@@ -233,14 +292,14 @@ function TabFlotte({ flotte, stats, loading }) {
               </div>
               {selected.derniere_pos_at && (
                 <div style={{ marginTop:10, fontSize:11, color:P.sub }}>
-                  Dernière position : {new Date(selected.derniere_pos_at).toLocaleTimeString('fr-FR')}
+                  Dernière pos. : {new Date(selected.derniere_pos_at).toLocaleTimeString('fr-FR')}
                 </div>
               )}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Badge nb camions */}
+        {/* Badge en route — top left */}
         <div style={{ position:'absolute', top:16, left:16, background:'rgba(17,24,39,0.9)', border:`1px solid ${P.border}`, borderRadius:10, padding:'8px 14px', zIndex:500, backdropFilter:'blur(8px)' }}>
           <span style={{ fontSize:12, color:P.sub }}>🚚 </span>
           <span style={{ fontSize:13, fontWeight:600, color:P.text }}>{flotte.filter(c => c.statut==='en_cours').length} en route</span>
@@ -248,129 +307,104 @@ function TabFlotte({ flotte, stats, loading }) {
             <span style={{ marginLeft:10, fontSize:11, color:P.red, fontWeight:600 }}>⚠ Vitesse excessive</span>
           )}
         </div>
+
+        {/* Hamburger mobile — bottom left */}
+        {isMobile && (
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => setSidebarOpen(o => !o)}
+            style={{ position:'absolute', bottom:100, left:16, zIndex:1000, width:52, height:52, borderRadius:16, background:'rgba(17,24,39,0.95)', border:`1px solid ${P.border}`, backdropFilter:'blur(10px)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 4px 16px rgba(0,0,0,0.4)' }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={P.text} strokeWidth="2" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </motion.button>
+        )}
       </div>
+
+      {/* Bottom sheet mobile */}
+      <AnimatePresence>
+        {isMobile && sidebarOpen && (
+          <>
+            <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+              onClick={() => setSidebarOpen(false)}
+              style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:1400 }} />
+            <motion.div initial={{ y:'100%' }} animate={{ y:0 }} exit={{ y:'100%' }} transition={{ type:'spring', damping:28 }}
+              style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:1500, background:P.bgCard, borderRadius:'24px 24px 0 0', maxHeight:'70vh', display:'flex', flexDirection:'column', boxShadow:'0 -8px 40px rgba(0,0,0,0.5)', border:`1px solid ${P.border}`, borderBottom:'none' }}>
+              <div style={{ width:44, height:5, background:'rgba(255,255,255,0.15)', borderRadius:99, margin:'12px auto 0', flexShrink:0 }} />
+              <div style={{ display:'flex', justifyContent:'flex-end', padding:'8px 16px 0', flexShrink:0 }}>
+                <button onClick={() => setSidebarOpen(false)} style={{ background:'none', border:'none', color:P.sub, cursor:'pointer', fontSize:24, lineHeight:1 }}>×</button>
+              </div>
+              {sidebarContent}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
-}
-
-function CamionCard({ camion: c, selected, onClick }) {
-  const color = c.statut === 'alerte' ? P.red : c.statut === 'arrive_attente' ? P.orange : P.green
-  const label = c.statut === 'en_cours' ? 'En route' : c.statut === 'arrive_attente' ? 'Attente QR' : 'Alerte'
-  const vit   = Math.round(c.vitesse_actuelle ?? 0)
-  const mins  = c.started_at ? Math.round((Date.now() - new Date(c.started_at)) / 60000) : 0
-
-  return (
-    <div onClick={onClick} style={{ padding:'12px 14px', borderBottom:`1px solid ${P.border}`, cursor:'pointer', background: selected ? 'rgba(37,99,235,0.12)' : 'transparent', borderLeft: selected ? `3px solid ${P.blue}` : '3px solid transparent', transition:'all 0.15s' }}>
-      <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-        <div style={{ width:36, height:36, borderRadius:'50%', background:P.bg, border:`2px solid ${color}`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:16 }}>
-          {c.chauffeur_avatar ? <img src={c.chauffeur_avatar} style={{ width:32, height:32, borderRadius:'50%', objectFit:'cover' }} alt="" /> : '👤'}
-        </div>
-        <div style={{ flex:1, minWidth:0 }}>
-          <div style={{ fontSize:13, fontWeight:600, color:P.text, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{c.chauffeur_nom}</div>
-          <div style={{ fontSize:11, color:P.sub }}>{c.citerne_code ?? 'Citerne'} · {mins}min</div>
-        </div>
-        <div style={{ textAlign:'right', flexShrink:0 }}>
-          <div style={{ fontSize:13, fontWeight:700, color: vit > 90 ? P.red : P.text }}>{vit} <span style={{ fontSize:10, color:P.sub }}>km/h</span></div>
-          <div style={{ fontSize:10, color, fontWeight:600 }}>{label}</div>
-        </div>
-      </div>
-      {c.statut !== 'alerte' && (
-        <div style={{ marginTop:8, height:3, background:P.border, borderRadius:2 }}>
-          <div style={{ height:'100%', background:color, borderRadius:2, width:`${Math.min(100, mins/120*100)}%`, transition:'width 0.3s' }} />
-        </div>
-      )}
-    </div>
-  )
-}
-
-// Crée une icône Leaflet camion (appelé côté effet où L est global)
-function createTruckIcon(L, statut, vitesse) {
-  const color = statut === 'alerte' ? '#EF4444' : statut === 'arrive_attente' ? '#F59E0B' : '#10B981'
-  const anim  = statut === 'alerte' ? 'pulse-red 1s infinite' : statut === 'en_cours' ? 'pulse-green 2s infinite' : 'none'
-  const html  = `<div style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;animation:${anim};">
-    <div style="width:32px;height:32px;background:${color};border-radius:50%;border:3px solid #1E293B;display:flex;align-items:center;justify-content:center;box-shadow:0 0 ${statut==='alerte'?'12px':statut==='en_cours'?'8px':'4px'} ${color}80;">
-      <svg viewBox="0 0 20 14" width="18" height="12.6" fill="none"><rect x="1" y="2" width="12" height="9" rx="1.5" fill="white" opacity=".9"/><path d="M13 4h4.5l2 3v3.5H13V4z" fill="white" opacity=".7"/><circle cx="4.5" cy="12" r="1.8" fill="#1E293B" stroke="white" strokeWidth="1"/><circle cx="16" cy="12" r="1.8" fill="#1E293B" stroke="white" strokeWidth="1"/></svg>
-    </div>
-  </div>`
-  return L.divIcon({ html, className: '', iconSize: [36,36], iconAnchor: [18,18] })
 }
 
 // ─────────────────────────────────────────────────
 // TAB 2 : REPLAY TRAJET
 // ─────────────────────────────────────────────────
-function TabReplay({ trajets }) {
+function TabReplay({ trajets, nightMode, onToggleNight }) {
   const [trajetId, setTrajetId] = useState(null)
   const [playing,  setPlaying]  = useState(false)
   const [speed,    setSpeed]    = useState(1)
   const [frame,    setFrame]    = useState(0)
-  const mapRef  = useRef(null)
-  const leafRef = useRef(null)
+  const mapRef    = useRef(null)
+  const leafRef   = useRef(null)
+  const tileRef   = useRef(null)
   const markerRef = useRef(null)
   const timerRef  = useRef(null)
+  const nightRef  = useRef(nightMode)
+  nightRef.current = nightMode
 
   const { data } = useGpsPoints(trajetId)
   const points   = useMemo(() => data?.points ?? [], [data])
-
   const vitesseData = useMemo(() =>
     points.map((p, i) => ({ i, v: Math.round(parseFloat(p.vitesse) || 0), t: new Date(p.created_at).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) })),
     [points]
   )
 
-  // Init carte replay
   useEffect(() => {
     if (!mapRef.current) return
-    let map
     const init = async () => {
       const L = (await import('leaflet')).default
       await import('leaflet/dist/leaflet.css')
       if (leafRef.current) return
-      map = L.map(mapRef.current, { zoomControl: false, attributionControl: false }).setView([11.3,-13.5], 7)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom:19 }).addTo(map)
-      L.control.zoom({ position:'bottomright' }).addTo(map)
+      const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false }).setView([11.3,-13.5], 7)
+      tileRef.current = L.tileLayer(nightRef.current ? TILE_NIGHT : TILE_DAY, TILE_OPTS).addTo(map)
+      L.control.zoom({ position: 'bottomright' }).addTo(map)
       leafRef.current = map
     }
     init()
     return () => { if (leafRef.current) { leafRef.current.remove(); leafRef.current = null } }
   }, [])
 
-  // Dessiner le tracé quand points chargés
+  useEffect(() => { if (tileRef.current) tileRef.current.setUrl(nightMode ? TILE_NIGHT : TILE_DAY) }, [nightMode])
+
   useEffect(() => {
     if (!leafRef.current || points.length === 0) return
-    const L = window.L
-    if (!L) return
+    const L = window.L; if (!L) return
     const map = leafRef.current
     const lls = points.map(p => [parseFloat(p.lat), parseFloat(p.lng)])
     map.eachLayer(l => { if (l.options?.isRoute) l.remove() })
     if (markerRef.current) { markerRef.current.remove(); markerRef.current = null }
-
     L.polyline(lls, { color: P.blue, weight: 4, opacity: 0.6, dashArray: '8,4', isRoute: true }).addTo(map)
-    // Marqueurs départ/arrivée
-    const startIcon = L.divIcon({ html: `<div style="width:14px;height:14px;background:${P.green};border:3px solid white;border-radius:50%;"></div>`, className:'', iconAnchor:[7,7] })
-    const endIcon   = L.divIcon({ html: `<div style="width:14px;height:14px;background:${P.red};border:3px solid white;border-radius:50%;"></div>`, className:'', iconAnchor:[7,7] })
-    L.marker(lls[0], { icon: startIcon }).addTo(map)
-    L.marker(lls[lls.length-1], { icon: endIcon }).addTo(map)
-
-    // Marqueurs arrêts suspects
+    const mkI = (col) => L.divIcon({ html: `<div style="width:14px;height:14px;background:${col};border:3px solid white;border-radius:50%;"></div>`, className:'', iconAnchor:[7,7] })
+    L.marker(lls[0], { icon: mkI(P.green) }).addTo(map)
+    L.marker(lls[lls.length-1], { icon: mkI(P.red) }).addTo(map)
     points.forEach((p, i) => {
       if (i > 0 && parseFloat(p.vitesse||0) < 2) {
-        const stopIcon = L.divIcon({ html: `<div style="width:10px;height:10px;background:${P.orange};border:2px solid white;border-radius:50%;"></div>`, className:'', iconAnchor:[5,5] })
-        L.marker([parseFloat(p.lat), parseFloat(p.lng)], { icon: stopIcon }).addTo(map)
+        L.marker([parseFloat(p.lat), parseFloat(p.lng)], { icon: L.divIcon({ html: `<div style="width:10px;height:10px;background:${P.orange};border:2px solid white;border-radius:50%;"></div>`, className:'', iconAnchor:[5,5] }) }).addTo(map)
       }
     })
-
-    const camionIcon = createTruckIcon(L, 'en_cours', 0)
-    markerRef.current = L.marker(lls[0], { icon: camionIcon }).addTo(map)
+    markerRef.current = L.marker(lls[0], { icon: createTruckIcon(L, 'en_cours', 0) }).addTo(map)
     map.fitBounds(L.latLngBounds(lls), { padding: [40,40] })
-    setFrame(0)
-    setPlaying(false)
+    setFrame(0); setPlaying(false)
   }, [points])
 
-  // Animation replay
   useEffect(() => {
     if (!playing || !leafRef.current || points.length === 0) return
-    const L = window.L
-    if (!L) return
-    const interval = Math.max(50, 200 / speed)
+    const L = window.L; if (!L) return
     timerRef.current = setInterval(() => {
       setFrame(f => {
         const next = f + 1
@@ -382,7 +416,7 @@ function TabReplay({ trajets }) {
         }
         return next
       })
-    }, interval)
+    }, Math.max(50, 200 / speed))
     return () => clearInterval(timerRef.current)
   }, [playing, speed, points])
 
@@ -391,28 +425,27 @@ function TabReplay({ trajets }) {
 
   return (
     <div style={{ display:'flex', flexDirection:'column', height:'100%' }}>
-      {/* Sélecteur trajet */}
-      <div style={{ padding:'12px 16px', borderBottom:`1px solid ${P.border}`, display:'flex', alignItems:'center', gap:12, background:P.bgCard }}>
+      <div style={{ padding:'12px 16px', borderBottom:`1px solid ${P.border}`, display:'flex', alignItems:'center', gap:12, background:P.bgCard, flexShrink:0 }}>
         <label style={{ fontSize:12, color:P.sub, flexShrink:0 }}>Trajet :</label>
         <select value={trajetId ?? ''} onChange={e => setTrajetId(parseInt(e.target.value)||null)}
           style={{ background:P.bg, border:`1px solid ${P.border}`, color:P.text, borderRadius:8, padding:'6px 12px', fontSize:13, outline:'none', flex:1, maxWidth:400 }}>
           <option value="">-- Sélectionner un trajet terminé --</option>
           {trajets.filter(t => ['arrive','alerte'].includes(t.statut)).map(t => (
-            <option key={t.id} value={t.id}>
-              #{t.id} — {t.chauffeur_nom} — {t.citerne_code} — {new Date(t.started_at).toLocaleDateString('fr-FR')} {t.statut === 'alerte' ? '⚠' : '✓'}
-            </option>
+            <option key={t.id} value={t.id}>#{t.id} — {t.chauffeur_nom} — {t.citerne_code} — {new Date(t.started_at).toLocaleDateString('fr-FR')} {t.statut==='alerte'?'⚠':'✓'}</option>
           ))}
         </select>
-        <div style={{ fontSize:12, color:P.sub }}>{points.length} points GPS</div>
+        <div style={{ fontSize:12, color:P.sub }}>{points.length} pts GPS</div>
       </div>
 
-      <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
-        {/* Carte */}
-        <div ref={mapRef} style={{ flex:1, background:'#0D1117' }} />
+      <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', position:'relative' }}>
+        <div ref={mapRef} style={{ flex:1, background:'#0D1117', minHeight:0 }} />
 
-        {/* Graphique vitesse */}
+        <div style={{ position:'absolute', top:16, right:16, zIndex:1000 }}>
+          <NightToggleBtn nightMode={nightMode} onToggle={onToggleNight} />
+        </div>
+
         {vitesseData.length > 0 && (
-          <div style={{ height:90, background:P.bgCard, borderTop:`1px solid ${P.border}`, padding:'6px 16px' }}>
+          <div style={{ height:90, background:P.bgCard, borderTop:`1px solid ${P.border}`, padding:'6px 16px', flexShrink:0 }}>
             <div style={{ fontSize:10, color:P.sub, marginBottom:2 }}>Vitesse (km/h)</div>
             <ResponsiveContainer width="100%" height={66}>
               <AreaChart data={vitesseData} margin={{ top:0, right:0, bottom:0, left:0 }}>
@@ -424,7 +457,7 @@ function TabReplay({ trajets }) {
                 </defs>
                 <XAxis dataKey="t" tick={{ fill:P.sub, fontSize:9 }} axisLine={false} tickLine={false} interval={Math.floor(vitesseData.length/6)} />
                 <YAxis hide domain={[0,'auto']} />
-                <Tooltip contentStyle={{ background:P.bgCard2, border:`1px solid ${P.border}`, borderRadius:8, fontSize:11 }} formatter={v => [`${v} km/h`,'Vitesse']} labelStyle={{ color:P.sub }} />
+                <Tooltip contentStyle={{ background:P.bgCard2, border:`1px solid ${P.border}`, borderRadius:8, fontSize:11 }} formatter={v=>[`${v} km/h`,'Vitesse']} labelStyle={{ color:P.sub }} />
                 <ReferenceLine y={90} stroke={P.red} strokeDasharray="4 2" label={{ value:'90 km/h', fill:P.red, fontSize:9 }} />
                 <Area dataKey="v" stroke={P.blue} fill="url(#vGrad)" strokeWidth={2} dot={false} activeDot={{ r:3 }} />
                 <ReferenceLine x={vitesseData[frame]?.t} stroke="rgba(255,255,255,0.4)" strokeWidth={1.5} />
@@ -433,53 +466,37 @@ function TabReplay({ trajets }) {
           </div>
         )}
 
-        {/* Contrôles replay */}
         {points.length > 0 && (
-          <div style={{ background:P.bgCard2, borderTop:`1px solid ${P.border}`, padding:'10px 16px' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:8 }}>
-              <button onClick={() => { setFrame(0); setPlaying(false) }}
-                style={{ background:P.bg, border:`1px solid ${P.border}`, color:P.text, borderRadius:8, padding:'6px 12px', cursor:'pointer', fontSize:13 }}>⏮</button>
-              <button onClick={() => setPlaying(p => !p)}
-                style={{ background:P.blue, border:'none', color:'white', borderRadius:8, padding:'6px 16px', cursor:'pointer', fontSize:14, fontWeight:600 }}>
+          <div style={{ background:P.bgCard2, borderTop:`1px solid ${P.border}`, padding:'10px 16px', flexShrink:0 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8, flexWrap:'wrap' }}>
+              <button onClick={() => { setFrame(0); setPlaying(false) }} style={{ background:P.bg, border:`1px solid ${P.border}`, color:P.text, borderRadius:8, padding:'6px 12px', cursor:'pointer', fontSize:13 }}>⏮</button>
+              <button onClick={() => setPlaying(p => !p)} style={{ background:P.blue, border:'none', color:'white', borderRadius:8, padding:'6px 16px', cursor:'pointer', fontSize:14, fontWeight:600 }}>
                 {playing ? '⏸ Pause' : '▶ Rejouer'}
               </button>
-              <button onClick={() => { setFrame(points.length-1); setPlaying(false) }}
-                style={{ background:P.bg, border:`1px solid ${P.border}`, color:P.text, borderRadius:8, padding:'6px 12px', cursor:'pointer', fontSize:13 }}>⏭</button>
+              <button onClick={() => { setFrame(points.length-1); setPlaying(false) }} style={{ background:P.bg, border:`1px solid ${P.border}`, color:P.text, borderRadius:8, padding:'6px 12px', cursor:'pointer', fontSize:13 }}>⏭</button>
               <div style={{ display:'flex', gap:4 }}>
                 {[1,2,4].map(s => (
-                  <button key={s} onClick={() => setSpeed(s)}
-                    style={{ background: speed===s ? P.blue : P.bg, border:`1px solid ${P.border}`, color: speed===s ? 'white' : P.sub, borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11, fontWeight:600 }}>{s}×</button>
+                  <button key={s} onClick={() => setSpeed(s)} style={{ background:speed===s?P.blue:P.bg, border:`1px solid ${P.border}`, color:speed===s?'white':P.sub, borderRadius:6, padding:'4px 10px', cursor:'pointer', fontSize:11, fontWeight:600 }}>{s}×</button>
                 ))}
               </div>
-              <div style={{ marginLeft:'auto', fontSize:12, color:P.sub }}>
-                {curPoint && <span>{new Date(curPoint.created_at).toLocaleTimeString('fr-FR')} · {Math.round(parseFloat(curPoint.vitesse||0))} km/h</span>}
-              </div>
+              {curPoint && <div style={{ marginLeft:'auto', fontSize:12, color:P.sub }}>{new Date(curPoint.created_at).toLocaleTimeString('fr-FR')} · {Math.round(parseFloat(curPoint.vitesse||0))} km/h</div>}
             </div>
-            {/* Timeline */}
-            <div style={{ height:6, background:P.bg, borderRadius:3, cursor:'pointer', position:'relative' }}
+            <div style={{ height:6, background:P.bg, borderRadius:3, cursor:'pointer' }}
               onClick={e => {
                 const rect = e.currentTarget.getBoundingClientRect()
-                const pct  = (e.clientX - rect.left) / rect.width
-                const idx  = Math.round(pct * (points.length-1))
-                setFrame(Math.max(0, Math.min(points.length-1, idx)))
-                if (markerRef.current && leafRef.current && points[idx]) {
-                  markerRef.current.setLatLng([parseFloat(points[idx].lat), parseFloat(points[idx].lng)])
-                }
+                const idx  = Math.round((e.clientX - rect.left) / rect.width * (points.length-1))
+                const safe = Math.max(0, Math.min(points.length-1, idx))
+                setFrame(safe)
+                if (markerRef.current && points[safe]) markerRef.current.setLatLng([parseFloat(points[safe].lat), parseFloat(points[safe].lng)])
               }}>
               <div style={{ height:'100%', background:P.blue, borderRadius:3, width:`${pct}%`, transition:'width 0.1s' }} />
             </div>
             <div style={{ display:'flex', justifyContent:'space-between', marginTop:4, fontSize:10, color:P.sub }}>
-              <span>Départ</span>
-              <span>{frame+1}/{points.length} · {pct}%</span>
-              <span>Arrivée</span>
+              <span>Départ</span><span>{frame+1}/{points.length} · {pct}%</span><span>Arrivée</span>
             </div>
           </div>
         )}
-        {!trajetId && (
-          <div style={{ padding:32, textAlign:'center', color:P.sub, fontSize:13 }}>
-            Sélectionnez un trajet terminé pour rejouer la route
-          </div>
-        )}
+        {!trajetId && <div style={{ padding:32, textAlign:'center', color:P.sub, fontSize:13 }}>Sélectionnez un trajet terminé pour rejouer la route</div>}
       </div>
     </div>
   )
@@ -488,14 +505,22 @@ function TabReplay({ trajets }) {
 // ─────────────────────────────────────────────────
 // TAB 3 : GÉOFENCING
 // ─────────────────────────────────────────────────
-function TabGeofencing() {
+function TabGeofencing({ nightMode, onToggleNight }) {
+  const winW     = useWindowWidth()
+  const isMobile = winW < 768
+
   const { zones, loading, creer, modifier, supprimer } = useGeofencing()
-  const mapRef  = useRef(null)
-  const leafRef = useRef(null)
+  const mapRef        = useRef(null)
+  const leafRef       = useRef(null)
+  const tileRef       = useRef(null)
   const zonesLayerRef = useRef({})
-  const [drawing, setDrawing]   = useState(false)
-  const [newZone, setNewZone]   = useState({ nom:'', rayon_km:5, couleur:'#2563EB' })
-  const [clickPos, setClickPos] = useState(null)
+  const nightRef      = useRef(nightMode)
+  nightRef.current    = nightMode
+
+  const [drawing,     setDrawing]     = useState(false)
+  const [newZone,     setNewZone]     = useState({ nom:'', rayon_km:5, couleur:'#2563EB' })
+  const [clickPos,    setClickPos]    = useState(null)
+  const [panelOpen,   setPanelOpen]   = useState(false)
 
   useEffect(() => {
     if (!mapRef.current) return
@@ -503,9 +528,9 @@ function TabGeofencing() {
       const L = (await import('leaflet')).default
       await import('leaflet/dist/leaflet.css')
       if (leafRef.current) return
-      const map = L.map(mapRef.current, { zoomControl:false, attributionControl:false }).setView([11.3,-13.5], 7)
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom:19 }).addTo(map)
-      L.control.zoom({ position:'bottomright' }).addTo(map)
+      const map = L.map(mapRef.current, { zoomControl: false, attributionControl: false }).setView([11.3,-13.5], 7)
+      tileRef.current = L.tileLayer(nightRef.current ? TILE_NIGHT : TILE_DAY, TILE_OPTS).addTo(map)
+      L.control.zoom({ position: 'bottomright' }).addTo(map)
       map.on('click', e => setClickPos({ lat: e.latlng.lat, lng: e.latlng.lng }))
       leafRef.current = map
     }
@@ -513,36 +538,27 @@ function TabGeofencing() {
     return () => { if (leafRef.current) { leafRef.current.remove(); leafRef.current = null } }
   }, [])
 
-  // Redessiner les zones sur la carte
+  useEffect(() => { if (tileRef.current) tileRef.current.setUrl(nightMode ? TILE_NIGHT : TILE_DAY) }, [nightMode])
+
   useEffect(() => {
     if (!leafRef.current) return
-    const L = window.L
-    if (!L) return
-    const map = leafRef.current
-    // Supprimer anciens cercles
+    const L = window.L; if (!L) return
     Object.values(zonesLayerRef.current).forEach(l => l.remove())
     zonesLayerRef.current = {}
     zones.forEach(z => {
       if (!z.actif) return
       const circle = L.circle([parseFloat(z.centre_lat), parseFloat(z.centre_lng)], {
-        radius: z.rayon_km * 1000,
-        color:  z.couleur ?? P.blue,
-        fillColor: z.couleur ?? P.blue,
-        fillOpacity: 0.12,
-        weight: 2,
-        dashArray: '6,4',
-      }).addTo(map).bindTooltip(z.nom, { permanent: true, direction: 'center', className: 'geo-label' })
+        radius: z.rayon_km*1000, color: z.couleur??P.blue, fillColor: z.couleur??P.blue, fillOpacity:0.12, weight:2, dashArray:'6,4',
+      }).addTo(leafRef.current).bindTooltip(z.nom, { permanent:true, direction:'center', className:'geo-label' })
       zonesLayerRef.current[z.id] = circle
     })
-    // Prévisualisation zone en cours de dessin
     if (clickPos && drawing) {
-      const prev = L.circle([clickPos.lat, clickPos.lng], { radius: newZone.rayon_km*1000, color:'#8B5CF6', fillColor:'#8B5CF6', fillOpacity:0.1, weight:2, dashArray:'4,4' }).addTo(map)
-      zonesLayerRef.current['_preview'] = prev
+      zonesLayerRef.current['_preview'] = L.circle([clickPos.lat, clickPos.lng], { radius: newZone.rayon_km*1000, color:'#8B5CF6', fillColor:'#8B5CF6', fillOpacity:0.1, weight:2, dashArray:'4,4' }).addTo(leafRef.current)
     }
   }, [zones, clickPos, drawing, newZone.rayon_km])
 
   const sauvegarder = async () => {
-    if (!clickPos || !newZone.nom) { toast.error('Cliquez sur la carte pour définir le centre, puis saisissez un nom.'); return }
+    if (!clickPos || !newZone.nom) { toast.error('Cliquez sur la carte pour le centre, puis saisissez un nom.'); return }
     try {
       await creer.mutateAsync({ ...newZone, centre_lat: clickPos.lat, centre_lng: clickPos.lng })
       toast.success(`Zone "${newZone.nom}" créée`)
@@ -550,76 +566,97 @@ function TabGeofencing() {
     } catch { toast.error('Erreur création zone') }
   }
 
-  return (
-    <div style={{ display:'flex', height:'100%' }}>
-      {/* Panel zones */}
-      <div style={{ width:300, background:P.bgCard, borderRight:`1px solid ${P.border}`, display:'flex', flexDirection:'column', overflow:'hidden' }}>
-        <div style={{ padding:'14px 16px', borderBottom:`1px solid ${P.border}` }}>
-          <div style={{ fontSize:13, fontWeight:600, color:P.text, marginBottom:10 }}>Zones de géofencing</div>
-          <button onClick={() => setDrawing(d => !d)}
-            style={{ width:'100%', background: drawing ? P.purple : P.blue, border:'none', color:'white', borderRadius:8, padding:'8px 0', cursor:'pointer', fontSize:13, fontWeight:600 }}>
-            {drawing ? '✕ Annuler' : '+ Nouvelle zone'}
-          </button>
-        </div>
-
-        {/* Formulaire nouvelle zone */}
-        <AnimatePresence>
-          {drawing && (
-            <motion.div initial={{ height:0, opacity:0 }} animate={{ height:'auto', opacity:1 }} exit={{ height:0, opacity:0 }}
-              style={{ overflow:'hidden', borderBottom:`1px solid ${P.border}` }}>
-              <div style={{ padding:14, display:'flex', flexDirection:'column', gap:10 }}>
-                <div style={{ fontSize:11, color:P.sub }}>1. Cliquez sur la carte pour définir le centre</div>
-                {clickPos && <div style={{ fontSize:11, color:P.green }}>✓ Centre : {clickPos.lat.toFixed(4)}, {clickPos.lng.toFixed(4)}</div>}
-                <input placeholder="Nom de la zone *" value={newZone.nom} onChange={e => setNewZone(n => ({...n, nom:e.target.value}))}
-                  style={{ background:P.bg, border:`1px solid ${P.border}`, color:P.text, borderRadius:8, padding:'8px 10px', fontSize:12, outline:'none' }} />
-                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                  <label style={{ fontSize:11, color:P.sub, flexShrink:0 }}>Rayon (km)</label>
-                  <input type="range" min={0.5} max={50} step={0.5} value={newZone.rayon_km}
-                    onChange={e => setNewZone(n => ({...n, rayon_km:parseFloat(e.target.value)}))}
-                    style={{ flex:1 }} />
-                  <span style={{ fontSize:12, color:P.text, flexShrink:0, minWidth:30 }}>{newZone.rayon_km} km</span>
-                </div>
-                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                  <label style={{ fontSize:11, color:P.sub }}>Couleur</label>
-                  <input type="color" value={newZone.couleur} onChange={e => setNewZone(n => ({...n, couleur:e.target.value}))}
-                    style={{ width:36, height:28, border:'none', borderRadius:6, cursor:'pointer', background:'none' }} />
-                </div>
-                <button onClick={sauvegarder} disabled={creer.isPending}
-                  style={{ background:P.green, border:'none', color:'white', borderRadius:8, padding:'8px 0', cursor:'pointer', fontSize:13, fontWeight:600 }}>
-                  {creer.isPending ? 'Sauvegarde...' : '✓ Sauvegarder'}
-                </button>
+  const panelContent = (
+    <>
+      <div style={{ padding:'14px 16px', borderBottom:`1px solid ${P.border}`, flexShrink:0 }}>
+        <div style={{ fontSize:13, fontWeight:600, color:P.text, marginBottom:10 }}>Zones de géofencing</div>
+        <button onClick={() => setDrawing(d => !d)} style={{ width:'100%', background:drawing?P.purple:P.blue, border:'none', color:'white', borderRadius:8, padding:'8px 0', cursor:'pointer', fontSize:13, fontWeight:600 }}>
+          {drawing ? '✕ Annuler' : '+ Nouvelle zone'}
+        </button>
+      </div>
+      <AnimatePresence>
+        {drawing && (
+          <motion.div initial={{ height:0, opacity:0 }} animate={{ height:'auto', opacity:1 }} exit={{ height:0, opacity:0 }} style={{ overflow:'hidden', borderBottom:`1px solid ${P.border}` }}>
+            <div style={{ padding:14, display:'flex', flexDirection:'column', gap:10 }}>
+              <div style={{ fontSize:11, color:P.sub }}>1. Cliquez sur la carte pour le centre</div>
+              {clickPos && <div style={{ fontSize:11, color:P.green }}>✓ Centre : {clickPos.lat.toFixed(4)}, {clickPos.lng.toFixed(4)}</div>}
+              <input placeholder="Nom de la zone *" value={newZone.nom} onChange={e => setNewZone(n => ({...n, nom:e.target.value}))}
+                style={{ background:P.bg, border:`1px solid ${P.border}`, color:P.text, borderRadius:8, padding:'8px 10px', fontSize:12, outline:'none' }} />
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <label style={{ fontSize:11, color:P.sub, flexShrink:0 }}>Rayon (km)</label>
+                <input type="range" min={0.5} max={50} step={0.5} value={newZone.rayon_km} onChange={e => setNewZone(n => ({...n, rayon_km:parseFloat(e.target.value)}))} style={{ flex:1 }} />
+                <span style={{ fontSize:12, color:P.text, minWidth:30 }}>{newZone.rayon_km} km</span>
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Liste des zones */}
-        <div style={{ flex:1, overflowY:'auto' }}>
-          {loading && <div style={{ padding:20, color:P.sub, fontSize:13, textAlign:'center' }}>Chargement...</div>}
-          {!loading && zones.length === 0 && <div style={{ padding:24, textAlign:'center', color:P.sub, fontSize:13 }}>Aucune zone définie</div>}
-          {zones.map(z => (
-            <div key={z.id} style={{ padding:'12px 14px', borderBottom:`1px solid ${P.border}`, display:'flex', alignItems:'center', gap:10 }}>
-              <div style={{ width:12, height:12, borderRadius:'50%', background:z.couleur, flexShrink:0 }} />
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ fontSize:13, color:P.text, fontWeight:500 }}>{z.nom}</div>
-                <div style={{ fontSize:11, color:P.sub }}>{z.rayon_km} km</div>
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <label style={{ fontSize:11, color:P.sub }}>Couleur</label>
+                <input type="color" value={newZone.couleur} onChange={e => setNewZone(n => ({...n, couleur:e.target.value}))} style={{ width:36, height:28, border:'none', borderRadius:6, cursor:'pointer' }} />
               </div>
-              <button onClick={() => modifier.mutate({ id:z.id, actif:!z.actif })}
-                style={{ background: z.actif ? 'rgba(16,185,129,0.15)' : P.bg, border:`1px solid ${z.actif ? P.green : P.border}`, color: z.actif ? P.green : P.sub, borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:10 }}>
-                {z.actif ? 'Actif' : 'Inactif'}
+              <button onClick={sauvegarder} disabled={creer.isPending} style={{ background:P.green, border:'none', color:'white', borderRadius:8, padding:'8px 0', cursor:'pointer', fontSize:13, fontWeight:600 }}>
+                {creer.isPending ? 'Sauvegarde...' : '✓ Sauvegarder'}
               </button>
-              <button onClick={() => { if (confirm(`Supprimer "${z.nom}" ?`)) supprimer.mutate(z.id) }}
-                style={{ background:'none', border:'none', color:P.red, cursor:'pointer', fontSize:14 }}>✕</button>
             </div>
-          ))}
-        </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <div style={{ flex:1, overflowY:'auto' }}>
+        {loading && <div style={{ padding:20, color:P.sub, fontSize:13, textAlign:'center' }}>Chargement...</div>}
+        {!loading && zones.length === 0 && <div style={{ padding:24, textAlign:'center', color:P.sub, fontSize:13 }}>Aucune zone définie</div>}
+        {zones.map(z => (
+          <div key={z.id} style={{ padding:'12px 14px', borderBottom:`1px solid ${P.border}`, display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ width:12, height:12, borderRadius:'50%', background:z.couleur, flexShrink:0 }} />
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize:13, color:P.text, fontWeight:500 }}>{z.nom}</div>
+              <div style={{ fontSize:11, color:P.sub }}>{z.rayon_km} km</div>
+            </div>
+            <button onClick={() => modifier.mutate({ id:z.id, actif:!z.actif })} style={{ background:z.actif?'rgba(16,185,129,0.15)':P.bg, border:`1px solid ${z.actif?P.green:P.border}`, color:z.actif?P.green:P.sub, borderRadius:6, padding:'3px 8px', cursor:'pointer', fontSize:10 }}>
+              {z.actif ? 'Actif' : 'Inactif'}
+            </button>
+            <button onClick={() => { if (confirm(`Supprimer "${z.nom}" ?`)) supprimer.mutate(z.id) }} style={{ background:'none', border:'none', color:P.red, cursor:'pointer', fontSize:14 }}>✕</button>
+          </div>
+        ))}
+      </div>
+      <div style={{ padding:'10px 14px', borderTop:`1px solid ${P.border}`, fontSize:11, color:P.sub, flexShrink:0 }}>
+        Les zones actives déclenchent une alerte si un camion en sort.
+      </div>
+    </>
+  )
 
-        <div style={{ padding:'10px 14px', borderTop:`1px solid ${P.border}`, fontSize:11, color:P.sub }}>
-          Les zones actives déclenchent une alerte si un camion en sort.
+  return (
+    <div style={{ display:'flex', height:'100%', overflow:'hidden' }}>
+      {!isMobile && (
+        <div style={{ width: winW < 1024 ? 220 : 280, background:P.bgCard, borderRight:`1px solid ${P.border}`, display:'flex', flexDirection:'column', flexShrink:0, overflow:'hidden' }}>
+          {panelContent}
         </div>
+      )}
+
+      <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
+        <div ref={mapRef} style={{ width:'100%', height:'100%', cursor:drawing?'crosshair':'grab' }} />
+        <div style={{ position:'absolute', top:16, right:16, zIndex:1000 }}>
+          <NightToggleBtn nightMode={nightMode} onToggle={onToggleNight} />
+        </div>
+        {isMobile && (
+          <motion.button whileTap={{ scale:0.9 }} onClick={() => setPanelOpen(o => !o)}
+            style={{ position:'absolute', bottom:100, left:16, zIndex:1000, width:52, height:52, borderRadius:16, background:'rgba(17,24,39,0.95)', border:`1px solid ${P.border}`, backdropFilter:'blur(10px)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 4px 16px rgba(0,0,0,0.4)', fontSize:22 }}>
+            📍
+          </motion.button>
+        )}
       </div>
 
-      <div ref={mapRef} style={{ flex:1, background:'#0D1117', cursor: drawing ? 'crosshair' : 'grab' }} />
+      <AnimatePresence>
+        {isMobile && panelOpen && (
+          <>
+            <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} onClick={() => setPanelOpen(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:1400 }} />
+            <motion.div initial={{ y:'100%' }} animate={{ y:0 }} exit={{ y:'100%' }} transition={{ type:'spring', damping:28 }}
+              style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:1500, background:P.bgCard, borderRadius:'24px 24px 0 0', maxHeight:'75vh', display:'flex', flexDirection:'column', boxShadow:'0 -8px 40px rgba(0,0,0,0.5)', border:`1px solid ${P.border}`, borderBottom:'none' }}>
+              <div style={{ width:44, height:5, background:'rgba(255,255,255,0.15)', borderRadius:99, margin:'12px auto 0', flexShrink:0 }} />
+              <div style={{ display:'flex', justifyContent:'flex-end', padding:'8px 16px 0', flexShrink:0 }}>
+                <button onClick={() => setPanelOpen(false)} style={{ background:'none', border:'none', color:P.sub, cursor:'pointer', fontSize:24, lineHeight:1 }}>×</button>
+              </div>
+              {panelContent}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -641,35 +678,21 @@ function TabHistorique({ trajets, loading }) {
     return t
   }, [trajets, statut, search])
 
-  const dureeMin = (t) => {
-    if (!t.started_at || !t.ended_at) return null
-    return Math.round((new Date(t.ended_at) - new Date(t.started_at)) / 60000)
-  }
+  const dureeMin = (t) => (!t.started_at || !t.ended_at) ? null : Math.round((new Date(t.ended_at) - new Date(t.started_at)) / 60000)
 
   const vmoy = useMemo(() => {
     if (!points.length) return 0
-    const s = points.reduce((a, p) => a + parseFloat(p.vitesse||0), 0)
-    return Math.round(s / points.length)
+    return Math.round(points.reduce((a, p) => a + parseFloat(p.vitesse||0), 0) / points.length)
   }, [points])
-
-  const vmax = useMemo(() =>
-    points.reduce((m, p) => Math.max(m, parseFloat(p.vitesse||0)), 0),
-    [points]
-  )
-
-  const spData = useMemo(() =>
-    points.map((p, i) => ({ i, v: Math.round(parseFloat(p.vitesse)||0) })),
-    [points]
-  )
+  const vmax = useMemo(() => points.reduce((m, p) => Math.max(m, parseFloat(p.vitesse||0)), 0), [points])
+  const spData = useMemo(() => points.map((p, i) => ({ i, v: Math.round(parseFloat(p.vitesse)||0) })), [points])
 
   return (
     <div style={{ display:'flex', height:'100%' }}>
-      {/* Table trajets */}
       <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden' }}>
-        {/* Filtres */}
-        <div style={{ padding:'12px 16px', borderBottom:`1px solid ${P.border}`, display:'flex', gap:10, alignItems:'center', background:P.bgCard }}>
+        <div style={{ padding:'12px 16px', borderBottom:`1px solid ${P.border}`, display:'flex', gap:10, alignItems:'center', background:P.bgCard, flexShrink:0, flexWrap:'wrap' }}>
           <input placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)}
-            style={{ background:P.bg, border:`1px solid ${P.border}`, color:P.text, borderRadius:8, padding:'7px 12px', fontSize:12, outline:'none', width:200 }} />
+            style={{ background:P.bg, border:`1px solid ${P.border}`, color:P.text, borderRadius:8, padding:'7px 12px', fontSize:12, outline:'none', width:180 }} />
           <select value={statut} onChange={e => setStatut(e.target.value)}
             style={{ background:P.bg, border:`1px solid ${P.border}`, color:P.text, borderRadius:8, padding:'7px 12px', fontSize:12, outline:'none' }}>
             <option value="">Tous les statuts</option>
@@ -691,19 +714,18 @@ function TabHistorique({ trajets, loading }) {
             <tbody>
               {loading && <tr><td colSpan={8} style={{ padding:24, color:P.sub, textAlign:'center' }}>Chargement...</td></tr>}
               {filtered.map(t => {
-                const d = dureeMin(t)
-                const statutCfg = { en_cours:{ c:P.green,l:'En cours' }, arrive_attente:{ c:P.orange,l:'Attente QR' }, arrive:{ c:P.blue,l:'Arrivé' }, alerte:{ c:P.red,l:'Alerte' } }
-                const sc = statutCfg[t.statut] ?? { c:P.sub, l:t.statut }
+                const d  = dureeMin(t)
+                const sc = ({ en_cours:{c:P.green,l:'En cours'}, arrive_attente:{c:P.orange,l:'Attente QR'}, arrive:{c:P.blue,l:'Arrivé'}, alerte:{c:P.red,l:'Alerte'} })[t.statut] ?? { c:P.sub, l:t.statut }
                 return (
                   <tr key={t.id} onClick={() => setSelected(selected === t.id ? null : t.id)}
-                    style={{ borderBottom:`1px solid ${P.border}`, cursor:'pointer', background: selected===t.id ? 'rgba(37,99,235,0.1)' : 'transparent', transition:'background 0.1s' }}>
+                    style={{ borderBottom:`1px solid ${P.border}`, cursor:'pointer', background:selected===t.id?'rgba(37,99,235,0.1)':'transparent', transition:'background 0.1s' }}>
                     <td style={{ padding:'10px 12px', color:P.sub }}>#{t.id}</td>
                     <td style={{ padding:'10px 12px', color:P.text, fontWeight:500 }}>{t.chauffeur_nom}</td>
                     <td style={{ padding:'10px 12px', color:P.sub }}>{t.citerne_code ?? '—'}</td>
                     <td style={{ padding:'10px 12px', color:P.sub }}>{t.started_at ? new Date(t.started_at).toLocaleDateString('fr-FR') : '—'}</td>
                     <td style={{ padding:'10px 12px', color:P.sub }}>{t.ended_at ? new Date(t.ended_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}) : '—'}</td>
                     <td style={{ padding:'10px 12px', color:P.text }}>{d != null ? `${d} min` : '—'}</td>
-                    <td style={{ padding:'10px 12px', color: t.ecart > 0 ? P.red : P.text }}>{t.ecart != null ? `${parseFloat(t.ecart).toFixed(1)}L` : '—'}</td>
+                    <td style={{ padding:'10px 12px', color:t.ecart>0?P.red:P.text }}>{t.ecart != null ? `${parseFloat(t.ecart).toFixed(1)}L` : '—'}</td>
                     <td style={{ padding:'10px 12px' }}>
                       <span style={{ background:`${sc.c}22`, color:sc.c, borderRadius:6, padding:'3px 8px', fontSize:11, fontWeight:600 }}>{sc.l}</span>
                     </td>
@@ -715,7 +737,6 @@ function TabHistorique({ trajets, loading }) {
         </div>
       </div>
 
-      {/* Panel détail trajet sélectionné */}
       <AnimatePresence>
         {selected && (
           <motion.div initial={{ width:0, opacity:0 }} animate={{ width:280, opacity:1 }} exit={{ width:0, opacity:0 }}
@@ -728,8 +749,8 @@ function TabHistorique({ trajets, loading }) {
                     {[
                       ['Points GPS', points.length, P.blue],
                       ['Vitesse moy.', `${vmoy} km/h`, P.green],
-                      ['Vitesse max', `${Math.round(vmax)} km/h`, vmax > 90 ? P.red : P.text],
-                      ['Arrêts', points.filter(p => parseFloat(p.vitesse||0) < 2).length, P.orange],
+                      ['Vitesse max', `${Math.round(vmax)} km/h`, vmax>90?P.red:P.text],
+                      ['Arrêts', points.filter(p => parseFloat(p.vitesse||0)<2).length, P.orange],
                     ].map(([k,v,c]) => (
                       <div key={k} style={{ background:P.bg, borderRadius:8, padding:'10px 12px' }}>
                         <div style={{ fontSize:10, color:P.sub }}>{k}</div>
@@ -763,12 +784,25 @@ function TabHistorique({ trajets, loading }) {
 // COMPOSANT PRINCIPAL
 // ─────────────────────────────────────────────────
 export default function GpsFlottePage() {
-  const [tab, setTab] = useState('flotte')
-  const { data: flotte = [], isLoading: loadFlotte } = useFlotte()
-  const { data: stats }  = useFlotteStats()
-  const { trajets, loading: loadTrajets } = { trajets: [], loading: false }
+  const winW     = useWindowWidth()
+  const isMobile = winW < 768
 
-  // Injecter les CSS animations une seule fois
+  const [tab, setTab] = useState('flotte')
+  const [nightMode, setNightMode] = useState(() => {
+    try { return localStorage.getItem('fuelo-map-mode') !== 'day' } catch { return true }
+  })
+
+  const { data: flotte = [], isLoading: loadFlotte } = useFlotte()
+  const { data: stats } = useFlotteStats()
+
+  const toggleNightMode = useCallback(() => {
+    setNightMode(m => {
+      const next = !m
+      try { localStorage.setItem('fuelo-map-mode', next ? 'night' : 'day') } catch {}
+      return next
+    })
+  }, [])
+
   useEffect(() => {
     if (document.getElementById('fuelo-gps-css')) return
     const s = document.createElement('style')
@@ -778,7 +812,6 @@ export default function GpsFlottePage() {
     return () => s.remove()
   }, [])
 
-  // Injecter Leaflet globalement pour les fonctions helper
   useEffect(() => {
     const injectL = async () => {
       if (window.L) return
@@ -789,37 +822,41 @@ export default function GpsFlottePage() {
   }, [])
 
   const kpis = [
-    { label:'Camions actifs',    value: stats?.actifs ?? flotte.length,            color:P.blue,   icon:'🚚' },
-    { label:'En route',          value: stats?.en_route ?? flotte.filter(c=>c.statut==='en_cours').length,  color:P.green,  icon:'▶' },
-    { label:'Alertes aujourd\'hui', value: stats?.alertes_jour ?? 0,              color:P.red,    icon:'⚠' },
-    { label:'Km aujourd\'hui',   value: stats?.km_jour ? `${stats.km_jour} km` : '—', color:P.orange, icon:'📍' },
-    { label:'Livrés aujourd\'hui', value: stats?.termines_jour ?? 0,              color:P.purple, icon:'✓' },
+    { label: 'Camions actifs',       value: stats?.actifs ?? flotte.length,                                       color: P.blue,   icon: '🚚' },
+    { label: 'En route',             value: stats?.en_route ?? flotte.filter(c => c.statut==='en_cours').length,  color: P.green,  icon: '▶' },
+    { label: 'Alertes aujourd\'hui', value: stats?.alertes_jour ?? 0,                                             color: P.red,    icon: '⚠' },
+    { label: 'Km aujourd\'hui',      value: stats?.km_jour ? `${stats.km_jour} km` : '—',                         color: P.orange, icon: '📍' },
+    { label: 'Livrés aujourd\'hui',  value: stats?.termines_jour ?? 0,                                            color: P.purple, icon: '✓' },
   ]
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', height:'100%', background:P.bg, color:P.text, fontFamily:'DM Sans, sans-serif' }}>
-      {/* Header KPIs */}
-      <div style={{ padding:'12px 16px', borderBottom:`1px solid ${P.border}`, background:P.bgCard, display:'flex', gap:10, flexWrap:'wrap', flexShrink:0 }}>
-        {kpis.map(k => <KpiCard key={k.label} {...k} />)}
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: P.bg, color: P.text, fontFamily: 'DM Sans, sans-serif' }}>
+
+      {/* KPI Header — scroll horizontal sur mobile */}
+      <div style={{ padding: '10px 14px', borderBottom: `1px solid ${P.border}`, background: P.bgCard, flexShrink: 0, overflowX: 'auto' }}>
+        <div style={{ display: 'flex', gap: 10, minWidth: 'max-content' }}>
+          {kpis.map(k => <KpiCard key={k.label} {...k} />)}
+        </div>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display:'flex', gap:2, padding:'8px 12px', borderBottom:`1px solid ${P.border}`, background:P.bgCard, flexShrink:0 }}>
+      {/* Tabs — icônes seules sur mobile */}
+      <div style={{ display: 'flex', gap: 2, padding: isMobile ? '6px 10px' : '8px 12px', borderBottom: `1px solid ${P.border}`, background: P.bgCard, flexShrink: 0, overflowX: 'auto' }}>
         {TABS_GPS.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
-            style={{ padding:'7px 16px', borderRadius:8, border:'none', cursor:'pointer', fontSize:12, fontWeight:500, transition:'all 0.15s',
+            style={{ padding: isMobile ? '8px 12px' : '7px 16px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: isMobile ? 18 : 12, fontWeight: 500, transition: 'all 0.15s', whiteSpace: 'nowrap', flexShrink: 0,
               background: tab===t.key ? P.blue : 'transparent',
-              color:      tab===t.key ? 'white' : P.sub }}>
-            {t.icon} {t.label}
+              color:      tab===t.key ? 'white' : P.sub }}
+            title={t.label}>
+            {isMobile ? t.icon : `${t.icon} ${t.label}`}
           </button>
         ))}
       </div>
 
-      {/* Contenu */}
-      <div style={{ flex:1, overflow:'hidden' }}>
-        {tab === 'flotte'     && <TabFlotte    flotte={flotte}   stats={stats}        loading={loadFlotte}  />}
-        {tab === 'replay'     && <TabReplay    trajets={[]}  />}
-        {tab === 'geofencing' && <TabGeofencing />}
+      {/* Contenu plein espace */}
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        {tab === 'flotte'     && <TabFlotte    flotte={flotte} stats={stats} loading={loadFlotte} nightMode={nightMode} onToggleNight={toggleNightMode} />}
+        {tab === 'replay'     && <TabReplay    trajets={[]} nightMode={nightMode} onToggleNight={toggleNightMode} />}
+        {tab === 'geofencing' && <TabGeofencing nightMode={nightMode} onToggleNight={toggleNightMode} />}
         {tab === 'historique' && <TabHistorique trajets={[]} loading={false} />}
       </div>
     </div>
