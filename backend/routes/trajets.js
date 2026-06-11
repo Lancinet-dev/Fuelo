@@ -10,7 +10,7 @@ const { checkPlan } = require('../middleware/checkPlan')
 const upload      = require('../middleware/upload')
 const {
   demarrerTrajet, ajouterPosition, arriverDestination, validerQrArrivee,
-  getTrajetActif, getTrajets, getGpsPoints, exportCSV,
+  getTrajetActif, getTrajets, getGpsPoints, exportCSV, getFlotte, getFlotteStats,
 } = require('../controllers/trajetController')
 
 const isChauffeur = checkRole(['chauffeur'])
@@ -21,11 +21,13 @@ router.post('/:id/position',   verifyToken, isChauffeur,  ajouterPosition)
 router.post('/:id/arriver',    verifyToken, isChauffeur,  upload.single('photo'), arriverDestination)
 router.get('/actif',           verifyToken, isChauffeur,  getTrajetActif)
 
-// Logisticien / Owner — validation QR à l'arrivée
+// Logisticien / Owner — validation QR
 router.post('/valider-qr',     verifyToken, isTransport,  validerQrArrivee)
 
 const planTrajets = checkPlan('trajets')
-// Owner + gérant + logisticien — routes spécifiques avant paramétrées
+// Routes spécifiques avant paramétrées
+router.get('/flotte',          verifyToken, isTransport, planTrajets, getFlotte)
+router.get('/flotte/stats',    verifyToken, isTransport, planTrajets, getFlotteStats)
 router.get('/export/csv',      verifyToken, isTransport, planTrajets, exportCSV)
 router.get('/',                verifyToken, isTransport, planTrajets, getTrajets)
 router.get('/:id/points',      verifyToken, isTransport, planTrajets, getGpsPoints)

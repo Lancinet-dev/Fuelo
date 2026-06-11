@@ -95,6 +95,27 @@ pool.query(`
   ALTER TABLE couts_transport  ADD COLUMN IF NOT EXISTS date_transport         DATE;
   ALTER TABLE couts_transport  ADD COLUMN IF NOT EXISTS distance_km            DECIMAL(8,2);
   ALTER TABLE couts_transport  ADD COLUMN IF NOT EXISTS reference_trajet       VARCHAR(100);
+  ALTER TABLE gps_points       ADD COLUMN IF NOT EXISTS precision_gps          DECIMAL(8,2);
+  ALTER TABLE gps_points       ADD COLUMN IF NOT EXISTS cap                    DECIMAL(5,2);
+  ALTER TABLE trajets          ADD COLUMN IF NOT EXISTS distance_km            DECIMAL(8,2) DEFAULT 0;
+  ALTER TABLE trajets          ADD COLUMN IF NOT EXISTS vitesse_moyenne        DECIMAL(5,2);
+  ALTER TABLE trajets          ADD COLUMN IF NOT EXISTS vitesse_max            DECIMAL(5,2);
+  ALTER TABLE trajets          ADD COLUMN IF NOT EXISTS nb_arrets              INT DEFAULT 0;
+  CREATE TABLE IF NOT EXISTS zones_geofencing (
+    id          SERIAL PRIMARY KEY,
+    station_id  INT REFERENCES stations(id) ON DELETE CASCADE,
+    nom         VARCHAR(100) NOT NULL,
+    type        VARCHAR(30) DEFAULT 'cercle',
+    centre_lat  DECIMAL(10,7) NOT NULL,
+    centre_lng  DECIMAL(10,7) NOT NULL,
+    rayon_km    DECIMAL(6,3) DEFAULT 5,
+    couleur     VARCHAR(20) DEFAULT '#2563EB',
+    actif       BOOLEAN DEFAULT TRUE,
+    created_by  INT REFERENCES users(id),
+    created_at  TIMESTAMP DEFAULT NOW()
+  );
+  CREATE INDEX IF NOT EXISTS idx_zones_geofencing_station ON zones_geofencing(station_id, actif);
+  CREATE INDEX IF NOT EXISTS idx_gps_points_trajet_time   ON gps_points(trajet_id, created_at DESC);
   CREATE INDEX IF NOT EXISTS idx_ventes_station      ON ventes(station_id, deleted_at);
   CREATE INDEX IF NOT EXISTS idx_ventes_station_date ON ventes(station_id, created_at DESC);
   CREATE INDEX IF NOT EXISTS idx_alertes_station     ON alertes(station_id, created_at DESC);
@@ -263,6 +284,7 @@ const searchRoutes          = require('./routes/search')
 const antiFraudeRoutes      = require('./routes/antiFraude')
 const assistantRoutes       = require('./routes/assistant')
 const comptableRoutes       = require('./routes/comptable')
+const geofencingRoutes      = require('./routes/geofencing')
 
 app.use('/api/auth',      limiterAuth, authRoutes)
 app.use('/api/stock',     stockRoutes)
@@ -281,6 +303,7 @@ app.use('/api/performances',  performanceRoutes)
 app.use('/api/anti-fraude',   antiFraudeRoutes)
 app.use('/api/assistant',     assistantRoutes)
 app.use('/api/comptable',     comptableRoutes)
+app.use('/api/geofencing',    geofencingRoutes)
 
 // ── Route test ────────────────────────────────────────
 app.get('/', (req, res) => {

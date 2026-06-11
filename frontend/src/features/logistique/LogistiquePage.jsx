@@ -2,7 +2,7 @@
 // FUELO — Interface logisticien
 // ================================================
 
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react'
 import { useAuth }    from '../../context/AuthContext'
 import { useTheme }   from '../../context/ThemeContext'
 import { PlanGatePage } from '../../ui/PlanGate'
@@ -16,18 +16,22 @@ import { formatRelative } from '../../utils/format'
 import { exportTrajetsExcel } from '../../utils/export'
 import theme from '../../config/theme'
 
+const GpsFlottePage = lazy(() => import('./GpsFlottePage'))
+
 const ORANGE = '#F59E0B'
 const TABS   = [
-  { key: 'trajets',      label: 'Trajets'  },
-  { key: 'citernes',     label: 'Citernes' },
+  { key: 'gps',          label: 'GPS Flotte' },
+  { key: 'trajets',      label: 'Trajets'    },
+  { key: 'citernes',     label: 'Citernes'   },
   { key: 'chauffeurs',   label: 'Chauffeurs' },
-  { key: 'alertes',      label: 'Alertes'  },
-  { key: 'performances', label: 'Primes'   },
-  { key: 'rapports',     label: 'Rapports' },
+  { key: 'alertes',      label: 'Alertes'    },
+  { key: 'performances', label: 'Primes'     },
+  { key: 'rapports',     label: 'Rapports'   },
 ]
 
 function TabIcon({ tabKey, size = 15, color = 'currentColor' }) {
   const p = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }
+  if (tabKey === 'gps')          return <svg {...p}><circle cx="12" cy="10" r="3"/><path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 10-16 0c0 3 2.7 6.9 8 11.7z"/></svg>
   if (tabKey === 'trajets')      return <svg {...p}><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
   if (tabKey === 'citernes')     return <svg {...p}><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
   if (tabKey === 'chauffeurs')   return <svg {...p}><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -983,15 +987,23 @@ function LogistiquePageContent() {
         ))}
       </div>
 
-      {/* Contenu */}
-      <div style={{ flex: 1, padding: '16px', overflowY: 'auto', maxWidth: 600, margin: '0 auto', width: '100%' }}>
-        {onglet === 'trajets'    && <TabTrajets    palette={palette} isDark={isDark} />}
-        {onglet === 'citernes'   && <TabCiternes   palette={palette} isDark={isDark} />}
-        {onglet === 'chauffeurs' && <TabChauffeurs  palette={palette} isDark={isDark} />}
-        {onglet === 'alertes'       && <TabAlertes      palette={palette} />}
-        {onglet === 'performances'  && <TabPerformances palette={palette} isDark={isDark} />}
-        {onglet === 'rapports'      && <TabRapports     palette={palette} isDark={isDark} />}
-      </div>
+      {/* Contenu — GPS en plein écran, autres onglets en colonne centrée */}
+      {onglet === 'gps' ? (
+        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <Suspense fallback={<div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', color:'#94A3B8', fontSize:13 }}>Chargement GPS...</div>}>
+            <GpsFlottePage />
+          </Suspense>
+        </div>
+      ) : (
+        <div style={{ flex: 1, padding: '16px', overflowY: 'auto', maxWidth: 600, margin: '0 auto', width: '100%' }}>
+          {onglet === 'trajets'       && <TabTrajets      palette={palette} isDark={isDark} />}
+          {onglet === 'citernes'      && <TabCiternes     palette={palette} isDark={isDark} />}
+          {onglet === 'chauffeurs'    && <TabChauffeurs   palette={palette} isDark={isDark} />}
+          {onglet === 'alertes'       && <TabAlertes      palette={palette} />}
+          {onglet === 'performances'  && <TabPerformances palette={palette} isDark={isDark} />}
+          {onglet === 'rapports'      && <TabRapports     palette={palette} isDark={isDark} />}
+        </div>
+      )}
 
       <style>{`
         @keyframes spin    { to { transform: rotate(360deg); } }

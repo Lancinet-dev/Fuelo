@@ -7,6 +7,26 @@ const cloudinary    = require('../config/cloudinary')
 const logger        = require('../utils/logger')
 const erreurServeur = require('../utils/erreurServeur')
 
+const getFlotte = async (req, res) => {
+  try {
+    const data = await trajetService.getFlotte(req.user.station_id)
+    res.json({ flotte: data })
+  } catch (err) {
+    logger.error('getFlotte', err)
+    res.status(500).json({ error: erreurServeur(err) })
+  }
+}
+
+const getFlotteStats = async (req, res) => {
+  try {
+    const stats = await trajetService.getFlotteStats(req.user.station_id)
+    res.json(stats)
+  } catch (err) {
+    logger.error('getFlotteStats', err)
+    res.status(500).json({ error: erreurServeur(err) })
+  }
+}
+
 const uploadPhoto = async (buffer, folder, publicId) => {
   const b64     = buffer.toString('base64')
   const dataUri = `data:image/jpeg;base64,${b64}`
@@ -125,4 +145,4 @@ const exportCSV = async (req, res) => {
   }
 }
 
-module.exports = { demarrerTrajet, ajouterPosition, arriverDestination, validerQrArrivee, getTrajetActif, getTrajets, getGpsPoints, exportCSV }
+module.exports = { demarrerTrajet, ajouterPosition, arriverDestination, validerQrArrivee, getTrajetActif, getTrajets, getGpsPoints, exportCSV, getFlotte, getFlotteStats }

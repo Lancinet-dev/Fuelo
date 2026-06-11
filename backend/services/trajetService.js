@@ -57,7 +57,7 @@ const demarrerTrajet = async (user, { citerne_id, qty_depart, station_destinatio
 }
 
 // ── Enregistrer une position GPS ─────────────────
-const ajouterPosition = async (trajet_id, chauffeur_id, { lat, lng, vitesse }, app) => {
+const ajouterPosition = async (trajet_id, chauffeur_id, { lat, lng, vitesse, precision, cap }, app) => {
   const trajetResult = await pool.query(
     `SELECT t.*, s.id as station_id FROM trajets t
      JOIN stations s ON s.id = t.station_destination_id
@@ -67,15 +67,50 @@ const ajouterPosition = async (trajet_id, chauffeur_id, { lat, lng, vitesse }, a
   const trajet = trajetResult.rows[0]
   if (!trajet) throw new Error('Trajet introuvable ou déjà terminé')
 
+  const vit = parseFloat(vitesse ?? 0)
   await pool.query(
-    `INSERT INTO gps_points (trajet_id, lat, lng, vitesse) VALUES ($1, $2, $3, $4)`,
-    [trajet_id, lat, lng, vitesse ?? 0]
+    `INSERT INTO gps_points (trajet_id, lat, lng, vitesse, precision_gps, cap) VALUES ($1, $2, $3, $4, $5, $6)`,
+    [trajet_id, lat, lng, vit, precision ?? null, cap ?? null]
   )
+  if (app) notifyGps(app, trajet.station_id, { trajet_id, lat, lng, vitesse: vit, cap })
 
-  // Émettre la position en temps réel
-  if (app) notifyGps(app, trajet.station_id, { trajet_id, lat, lng, vitesse })
+  const chauffeurResult = await pool.query(`SELECT nom FROM users WHERE id = $1`, [trajet.chauffeur_id])
+  const nomChauffeur = chauffeurResult.rows[0]?.nom ?? `Chauffeur #${trajet.chauffeur_id}`
 
-  // Détecter arrêt suspect (pas de mouvement > 300m sur 10 min)
+  // Alerte vitesse excessive > 90 km/h (cooldown 10 min)
+  if (vit > 90) {
+    const dejaVitesse = await pool.query(
+      `SELECT id FROM alertes WHERE station_id=$1 AND type='VITESSE_EXCESSIVE'
+       AND message LIKE $2 AND created_at > NOW() - INTERVAL '10 minutes'`,
+      [trajet.station_id, `%Trajet #${trajet_id}%`]
+    )
+    if (dejaVitesse.rows.length === 0) {
+      const msg = `Vitesse excessive — ${nomChauffeur} — ${Math.round(vit)} km/h (Trajet #${trajet_id})`
+      await pool.query(`INSERT INTO alertes (station_id, type, message) VALUES ($1, 'VITESSE_EXCESSIVE', $2)`, [trajet.station_id, msg])
+      if (app) notifyAlerte(app, trajet.station_id, { type: 'VITESSE_EXCESSIVE', message: msg })
+    }
+  }
+
+  // Vérification géofencing (cooldown 30 min par zone)
+  const zones = await pool.query(`SELECT * FROM zones_geofencing WHERE station_id=$1 AND actif=true`, [trajet.station_id])
+  for (const zone of zones.rows) {
+    const distZone = distanceM(lat, lng, parseFloat(zone.centre_lat), parseFloat(zone.centre_lng))
+    if (distZone > zone.rayon_km * 1000) {
+      const dejaGeo = await pool.query(
+        `SELECT id FROM alertes WHERE station_id=$1 AND type='SORTIE_GEOFENCING'
+         AND message LIKE $2 AND created_at > NOW() - INTERVAL '30 minutes'`,
+        [trajet.station_id, `%"${zone.nom}"%`]
+      )
+      if (dejaGeo.rows.length === 0) {
+        const msg = `Sortie de zone — ${nomChauffeur} — Zone "${zone.nom}" — ${(distZone/1000).toFixed(1)} km du centre (Trajet #${trajet_id})`
+        await pool.query(`INSERT INTO alertes (station_id, type, message) VALUES ($1, 'SORTIE_GEOFENCING', $2)`, [trajet.station_id, msg])
+        if (app) notifyAlerte(app, trajet.station_id, { type: 'SORTIE_GEOFENCING', message: msg })
+        logger.warn(`Géofencing — Trajet ${trajet_id} hors zone "${zone.nom}"`)
+      }
+    }
+  }
+
+  // Arrêt suspect : immobile < 300m sur 15 min (cooldown 30 min)
   const pointsResult = await pool.query(
     `SELECT lat, lng, created_at FROM gps_points
      WHERE trajet_id = $1 AND created_at > NOW() - INTERVAL '15 minutes'
@@ -83,34 +118,70 @@ const ajouterPosition = async (trajet_id, chauffeur_id, { lat, lng, vitesse }, a
     [trajet_id]
   )
   const points = pointsResult.rows
-
   if (points.length >= 3) {
     const oldest  = points[0]
     const newest  = points[points.length - 1]
     const spanMin = (new Date(newest.created_at) - new Date(oldest.created_at)) / 60000
     const dist    = distanceM(oldest.lat, oldest.lng, newest.lat, newest.lng)
-
     if (dist < 300 && spanMin > 10) {
-      // Éviter les alertes répétées — une seule alerte par arrêt (30 min de cooldown)
-      const dejaAlerteResult = await pool.query(
+      const dejaArret = await pool.query(
         `SELECT id FROM trajets WHERE id = $1 AND alerte_arret_at > NOW() - INTERVAL '30 minutes'`,
         [trajet_id]
       )
-      if (dejaAlerteResult.rows.length === 0) {
-        const chauffeurResult = await pool.query(`SELECT nom FROM users WHERE id = $1`, [trajet.chauffeur_id])
-        const nom = chauffeurResult.rows[0]?.nom ?? `Chauffeur #${trajet.chauffeur_id}`
-        const msg = `Arrêt suspect — ${nom} — Immobile depuis ${Math.round(spanMin)} min (${dist.toFixed(0)}m en ${Math.round(spanMin)} min)`
-
-        await pool.query(
-          `INSERT INTO alertes (station_id, type, message) VALUES ($1, 'ARRET_SUSPECT', $2)`,
-          [trajet.station_id, msg]
-        )
+      if (dejaArret.rows.length === 0) {
+        const msg = `Arrêt suspect — ${nomChauffeur} — Immobile ${Math.round(spanMin)} min (Trajet #${trajet_id})`
+        await pool.query(`INSERT INTO alertes (station_id, type, message) VALUES ($1, 'ARRET_SUSPECT', $2)`, [trajet.station_id, msg])
         await pool.query(`UPDATE trajets SET alerte_arret_at = NOW() WHERE id = $1`, [trajet_id])
-
         if (app) notifyAlerte(app, trajet.station_id, { type: 'ARRET_SUSPECT', message: msg })
-        logger.warn(`Arrêt suspect — Trajet ${trajet_id}: ${msg}`)
+        logger.warn(`Arrêt suspect — Trajet ${trajet_id}`)
       }
     }
+  }
+}
+
+// ── Flotte temps réel ───────────────────────────
+const getFlotte = async (station_id) => {
+  const result = await pool.query(
+    `SELECT
+       t.id, t.statut, t.qty_depart, t.started_at, t.alerte_arret_at, t.distance_km,
+       u.id AS chauffeur_id, u.nom AS chauffeur_nom, u.avatar AS chauffeur_avatar,
+       c.code AS citerne_code, c.capacite,
+       sd.nom AS station_dest_nom,
+       gp.lat, gp.lng, gp.vitesse AS vitesse_actuelle, gp.cap, gp.created_at AS derniere_pos_at,
+       (SELECT COUNT(*) FROM gps_points WHERE trajet_id = t.id) AS nb_points
+     FROM trajets t
+     LEFT JOIN users    u  ON u.id = t.chauffeur_id
+     LEFT JOIN citernes c  ON c.id = t.citerne_id
+     LEFT JOIN stations sd ON sd.id = t.station_destination_id
+     LEFT JOIN LATERAL (
+       SELECT lat, lng, vitesse, cap, created_at
+       FROM gps_points WHERE trajet_id = t.id
+       ORDER BY created_at DESC LIMIT 1
+     ) gp ON true
+     WHERE t.station_destination_id = $1 AND t.statut IN ('en_cours', 'arrive_attente')
+     ORDER BY t.started_at DESC`,
+    [station_id]
+  )
+  return result.rows
+}
+
+// ── Stats dashboard flotte ───────────────────────
+const getFlotteStats = async (station_id) => {
+  const [actifs, terminesJour, distanceJour, alertesJour] = await Promise.all([
+    pool.query(`SELECT statut, COUNT(*) AS nb FROM trajets WHERE station_destination_id=$1 AND statut IN ('en_cours','arrive_attente') GROUP BY statut`, [station_id]),
+    pool.query(`SELECT COUNT(*) AS nb FROM trajets WHERE station_destination_id=$1 AND statut IN ('arrive','alerte') AND DATE(ended_at)=CURRENT_DATE`, [station_id]),
+    pool.query(`SELECT COALESCE(SUM(distance_km),0) AS km FROM trajets WHERE station_destination_id=$1 AND DATE(started_at)=CURRENT_DATE`, [station_id]),
+    pool.query(`SELECT COUNT(*) AS nb FROM alertes WHERE station_id=$1 AND type IN ('ARRET_SUSPECT','VITESSE_EXCESSIVE','SORTIE_GEOFENCING','FRAUDE_CITERNE') AND DATE(created_at)=CURRENT_DATE`, [station_id]),
+  ])
+  const statuts = { en_cours: 0, arrive_attente: 0 }
+  for (const r of actifs.rows) statuts[r.statut] = parseInt(r.nb)
+  return {
+    actifs:             statuts.en_cours + statuts.arrive_attente,
+    en_route:           statuts.en_cours,
+    attente_validation: statuts.arrive_attente,
+    termines_jour:      parseInt(terminesJour.rows[0].nb),
+    km_jour:            parseFloat(distanceJour.rows[0].km).toFixed(1),
+    alertes_jour:       parseInt(alertesJour.rows[0].nb),
   }
 }
 
@@ -248,4 +319,4 @@ const getGpsPoints = async (trajet_id, station_id) => {
   return result.rows
 }
 
-module.exports = { demarrerTrajet, ajouterPosition, arriverDestination, validerQrArrivee, getTrajetActif, getTrajets, getGpsPoints }
+module.exports = { demarrerTrajet, ajouterPosition, arriverDestination, validerQrArrivee, getTrajetActif, getTrajets, getGpsPoints, getFlotte, getFlotteStats }
