@@ -19,6 +19,23 @@ import theme from '../../config/theme'
 const GpsFlottePage = lazy(() => import('./GpsFlottePage'))
 
 const ORANGE = '#F59E0B'
+
+// Palette dark fixe — identité Fleet Ops, indépendante du ThemeContext
+const LOG_PALETTE = {
+  bg:          '#0C0F1A',
+  card:        '#111827',
+  card2:       '#1A2235',
+  cardBorder:  'rgba(255,255,255,0.08)',
+  text:        '#F1F5F9',
+  textSub:     '#94A3B8',
+  textMuted:   '#64748B',
+  inputBg:     'rgba(255,255,255,0.06)',
+  hover:       'rgba(255,255,255,0.05)',
+  successLight:'rgba(16,185,129,0.15)',
+  dangerLight: 'rgba(239,68,68,0.15)',
+  infoLight:   'rgba(245,158,11,0.15)',
+  warningLight:'rgba(245,158,11,0.12)',
+}
 const TABS   = [
   { key: 'gps',          label: 'GPS Flotte' },
   { key: 'trajets',      label: 'Trajets'    },
@@ -42,10 +59,10 @@ function TabIcon({ tabKey, size = 15, color = 'currentColor' }) {
 }
 
 const STATUT_CFG = {
-  en_cours:       { label: 'En cours',    color: theme.colors.success, bg: theme.colors.successLight },
+  en_cours:       { label: 'En cours',    color: '#10B981', bg: 'rgba(16,185,129,0.15)' },
   arrive_attente: { label: 'Attente QR',  color: '#D97706',            bg: '#FEF3C7'                 },
-  alerte:         { label: 'Fraude',      color: theme.colors.danger,  bg: theme.colors.dangerLight  },
-  arrive:         { label: 'Arrivé',      color: theme.colors.info,    bg: theme.colors.infoLight    },
+  alerte:         { label: 'Fraude',      color: '#EF4444',  bg: 'rgba(239,68,68,0.15)'  },
+  arrive:         { label: 'Arrivé',      color: '#38BDF8',    bg: 'rgba(56,189,248,0.15)'    },
 }
 
 // ── Carte Leaflet ─────────────────────────────────
@@ -66,7 +83,7 @@ function MiniMap({ trajetId, isDark }) {
       const map    = L.map(mapRef.current, { zoomControl: true, attributionControl: false }).setView(center, 13)
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map)
       const latlngs = points.map(p => [p.lat, p.lng])
-      L.polyline(latlngs, { color: theme.colors.primary, weight: 4, opacity: 0.8 }).addTo(map)
+      L.polyline(latlngs, { color: ORANGE, weight: 4, opacity: 0.8 }).addTo(map)
       const startIcon = L.divIcon({ html: '<div style="width:10px;height:10px;background:#10B981;border:2px solid #fff;border-radius:50%"></div>', className: '', iconAnchor: [5,5] })
       const lastIcon  = L.divIcon({ html: '<div style="width:12px;height:12px;background:#2563EB;border:2px solid #fff;border-radius:50%"></div>', className: '', iconAnchor: [6,6] })
       L.marker([points[0].lat, points[0].lng], { icon: startIcon }).addTo(map)
@@ -107,7 +124,7 @@ function ModalQR({ onClose, onConfirm, loading, palette, isDark }) {
       }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={ORANGE} strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
           </div>
           <div style={{ fontSize: 18, fontWeight: 800, color: palette.text, marginBottom: 6 }}>Valider l'arrivée</div>
           <div style={{ fontSize: 13, color: palette.textSub, lineHeight: 1.6 }}>
@@ -126,7 +143,7 @@ function ModalQR({ onClose, onConfirm, loading, palette, isDark }) {
           style={{
             width: '100%', height: 76, boxSizing: 'border-box',
             background: isDark ? 'rgba(255,255,255,0.06)' : '#F9FAFB',
-            border: `2px solid ${canSubmit ? theme.colors.primary : palette.cardBorder}`,
+            border: `2px solid ${canSubmit ? ORANGE : palette.cardBorder}`,
             borderRadius: 16, padding: '0 20px',
             fontSize: 40, fontWeight: 800, fontFamily: theme.font.mono,
             color: palette.text, outline: 'none', textAlign: 'center',
@@ -141,7 +158,7 @@ function ModalQR({ onClose, onConfirm, loading, palette, isDark }) {
           <button onClick={() => onConfirm(code)} disabled={!canSubmit || loading}
             style={{
               height: 48, borderRadius: 12, border: 'none',
-              background: canSubmit && !loading ? theme.colors.primary : (isDark ? 'rgba(255,255,255,0.08)' : '#E5E7EB'),
+              background: canSubmit && !loading ? ORANGE : (isDark ? 'rgba(255,255,255,0.08)' : '#E5E7EB'),
               color: canSubmit && !loading ? '#fff' : palette.textMuted,
               fontSize: 14, fontWeight: 700, cursor: canSubmit && !loading ? 'pointer' : 'not-allowed',
               fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -189,10 +206,10 @@ function TabTrajets({ palette, isDark }) {
         <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
           {[
             { l: 'Total',    v: stats.total,   color: palette.text },
-            { l: 'En route', v: stats.enCours, color: theme.colors.success },
-            { l: 'Alertes',  v: stats.alertes, color: stats.alertes > 0 ? theme.colors.danger : theme.colors.success },
+            { l: 'En route', v: stats.enCours, color: '#10B981' },
+            { l: 'Alertes',  v: stats.alertes, color: stats.alertes > 0 ? '#EF4444' : '#10B981' },
           ].map(({ l, v, color }) => (
-            <div key={l} style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 12, padding: '12px', textAlign: 'center', boxShadow: theme.shadow.sm }}>
+            <div key={l} style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 12, padding: '12px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
               <div style={{ fontSize: 20, fontWeight: 800, color, fontFamily: theme.font.mono }}>{v}</div>
               <div style={{ fontSize: 10, color: palette.textMuted, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{l}</div>
             </div>
@@ -207,7 +224,7 @@ function TabTrajets({ palette, isDark }) {
           transition: 'all 0.2s', position: 'relative',
         }}>
           {nbAttenteQR > 0 && (
-            <span style={{ position: 'absolute', top: 6, right: 6, background: theme.colors.danger, color: '#fff', fontSize: 9, fontWeight: 700, borderRadius: 99, padding: '1px 5px', minWidth: 14, textAlign: 'center' }}>{nbAttenteQR}</span>
+            <span style={{ position: 'absolute', top: 6, right: 6, background: '#EF4444', color: '#fff', fontSize: 9, fontWeight: 700, borderRadius: 99, padding: '1px 5px', minWidth: 14, textAlign: 'center' }}>{nbAttenteQR}</span>
           )}
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
@@ -221,7 +238,7 @@ function TabTrajets({ palette, isDark }) {
       <div style={{ display: 'flex', gap: 6, marginBottom: 14, overflowX: 'auto' }}>
         {[{ k: null, l: 'Tous' }, { k: 'en_cours', l: 'En cours' }, { k: 'arrive_attente', l: 'Attente QR' }, { k: 'alerte', l: 'Alertes' }, { k: 'arrive', l: 'Arrivés' }].map(({ k, l }) => (
           <button key={String(k)} onClick={() => setFiltre(k)}
-            style={{ padding: '5px 14px', borderRadius: 99, border: `1px solid ${filtre === k ? 'transparent' : palette.cardBorder}`, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', background: filtre === k ? (k === 'alerte' ? theme.colors.danger : theme.colors.primary) : palette.card, color: filtre === k ? '#fff' : palette.textSub, transition: 'all 0.15s' }}>
+            style={{ padding: '5px 14px', borderRadius: 99, border: `1px solid ${filtre === k ? 'transparent' : palette.cardBorder}`, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', background: filtre === k ? (k === 'alerte' ? '#EF4444' : ORANGE) : palette.card, color: filtre === k ? '#fff' : palette.textSub, transition: 'all 0.15s' }}>
             {l}
           </button>
         ))}
@@ -240,15 +257,15 @@ function TabTrajets({ palette, isDark }) {
             const sc = STATUT_CFG[t.statut] ?? STATUT_CFG.arrive
             const isOpen = selected === t.id
             return (
-              <div key={t.id} style={{ background: palette.card, border: `1px solid ${t.statut === 'alerte' ? theme.colors.danger + '40' : palette.cardBorder}`, borderRadius: 12, overflow: 'hidden', boxShadow: theme.shadow.sm }}>
+              <div key={t.id} style={{ background: palette.card, border: `1px solid ${t.statut === 'alerte' ? '#EF4444' + '40' : palette.cardBorder}`, borderRadius: 12, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
                 <div onClick={() => setSelected(isOpen ? null : t.id)} style={{ padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: t.statut === 'alerte' ? theme.colors.dangerLight : t.statut === 'en_cours' ? theme.colors.successLight : theme.colors.infoLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: t.statut === 'alerte' ? 'rgba(239,68,68,0.15)' : t.statut === 'en_cours' ? 'rgba(16,185,129,0.15)' : 'rgba(56,189,248,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       {t.statut === 'en_cours'
-                        ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.colors.success} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                        ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={'#10B981'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
                         : t.statut === 'alerte'
-                        ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.colors.danger} strokeWidth="2" strokeLinecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-                        : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.colors.info} strokeWidth="2.5" strokeLinecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+                        ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={'#EF4444'} strokeWidth="2" strokeLinecap="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+                        : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={'#38BDF8'} strokeWidth="2.5" strokeLinecap="round"><path d="M20 6L9 17l-5-5"/></svg>
                       }
                     </div>
                     <div>
@@ -258,7 +275,7 @@ function TabTrajets({ palette, isDark }) {
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
                     <span style={{ fontSize: 9, fontWeight: 700, color: sc.color, background: sc.bg, padding: '2px 8px', borderRadius: 99, textTransform: 'uppercase' }}>{sc.label}</span>
-                    {t.ecart != null && <span style={{ fontSize: 11, fontWeight: 700, color: t.ecart > (t.seuil_fraude ?? 50) ? theme.colors.danger : theme.colors.success, fontFamily: theme.font.mono }}>{t.ecart > 0 ? '+' : ''}{parseFloat(t.ecart).toFixed(1)}L</span>}
+                    {t.ecart != null && <span style={{ fontSize: 11, fontWeight: 700, color: t.ecart > (t.seuil_fraude ?? 50) ? '#EF4444' : '#10B981', fontFamily: theme.font.mono }}>{t.ecart > 0 ? '+' : ''}{parseFloat(t.ecart).toFixed(1)}L</span>}
                   </div>
                 </div>
                 {isOpen && (
@@ -351,7 +368,7 @@ function TabCiternes({ palette, isDark }) {
     await ajouter({ code: form.code.trim().toUpperCase(), capacite: parseFloat(form.capacite), chauffeur_id: form.chauffeur_id ? parseInt(form.chauffeur_id) : null })
   }
 
-  const inputSt = (err) => ({ width: '100%', height: 44, background: isDark ? 'rgba(255,255,255,0.05)' : '#F9FAFB', border: `1.5px solid ${err ? theme.colors.danger : palette.cardBorder}`, borderRadius: 10, padding: '0 12px', fontSize: 14, color: palette.text, fontFamily: theme.font.family, outline: 'none' })
+  const inputSt = (err) => ({ width: '100%', height: 44, background: isDark ? 'rgba(255,255,255,0.05)' : '#F9FAFB', border: `1.5px solid ${err ? '#EF4444' : palette.cardBorder}`, borderRadius: 10, padding: '0 12px', fontSize: 14, color: palette.text, fontFamily: theme.font.family, outline: 'none' })
 
   return (
     <div>
@@ -373,7 +390,7 @@ function TabCiternes({ palette, isDark }) {
               </div>
               <button onClick={() => supprimer(c.id)}
                 style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: palette.textMuted, transition: 'all 0.15s' }}
-                onMouseEnter={e => { e.currentTarget.style.background = theme.colors.dangerLight; e.currentTarget.style.color = theme.colors.danger }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.15)'; e.currentTarget.style.color = '#EF4444' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = palette.textMuted }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
               </button>
@@ -390,12 +407,12 @@ function TabCiternes({ palette, isDark }) {
             <div>
               <div style={{ fontSize: 11, color: palette.textSub, marginBottom: 5 }}>Code</div>
               <input value={form.code} onChange={e => { setForm(p => ({ ...p, code: e.target.value })); setErrors(p => ({ ...p, code: '' })) }} placeholder="ex: C001" style={inputSt(errors.code)} />
-              {errors.code && <div style={{ fontSize: 10, color: theme.colors.danger, marginTop: 3 }}>{errors.code}</div>}
+              {errors.code && <div style={{ fontSize: 10, color: '#EF4444', marginTop: 3 }}>{errors.code}</div>}
             </div>
             <div>
               <div style={{ fontSize: 11, color: palette.textSub, marginBottom: 5 }}>Capacité (L)</div>
               <input type="number" value={form.capacite} onChange={e => { setForm(p => ({ ...p, capacite: e.target.value })); setErrors(p => ({ ...p, capacite: '' })) }} placeholder="ex: 15000" style={inputSt(errors.capacite)} />
-              {errors.capacite && <div style={{ fontSize: 10, color: theme.colors.danger, marginTop: 3 }}>{errors.capacite}</div>}
+              {errors.capacite && <div style={{ fontSize: 10, color: '#EF4444', marginTop: 3 }}>{errors.capacite}</div>}
             </div>
           </div>
           <div style={{ marginBottom: 14 }}>
@@ -406,7 +423,7 @@ function TabCiternes({ palette, isDark }) {
             </select>
           </div>
           <button type="submit" disabled={ajoutLoading}
-            style={{ width: '100%', height: 44, borderRadius: 10, border: 'none', background: ajoutLoading ? theme.colors.primaryDark : theme.colors.primary, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            style={{ width: '100%', height: 44, borderRadius: 10, border: 'none', background: ajoutLoading ? '#B45309' : ORANGE, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             {ajoutLoading ? '...' : '+ Ajouter la citerne'}
           </button>
         </form>
@@ -432,7 +449,7 @@ function TabAlertes({ palette }) {
   }
 
   const CFG = {
-    FRAUDE_CITERNE: { type: 'truck',  label: 'Fraude citerne', color: theme.colors.danger },
+    FRAUDE_CITERNE: { type: 'truck',  label: 'Fraude citerne', color: '#EF4444' },
     ARRET_SUSPECT:  { type: 'pause',  label: 'Arrêt suspect',  color: '#D97706' },
   }
   const renderCfgIcon = (cfgType, color) => {
@@ -449,7 +466,7 @@ function TabAlertes({ palette }) {
         </span>
         {nonLues > 0 && (
           <button onClick={async () => { await api.put('/alertes/toutes/lire'); queryClient.invalidateQueries({ queryKey: ['alertes-transport'] }) }}
-            style={{ fontSize: 11, color: theme.colors.primary, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 }}>
+            style={{ fontSize: 11, color: ORANGE, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600 }}>
             Tout marquer lu
           </button>
         )}
@@ -462,7 +479,7 @@ function TabAlertes({ palette }) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {alertes.map(a => {
-            const cfg = CFG[a.type] ?? { type: 'warning', label: a.type, color: theme.colors.warning }
+            const cfg = CFG[a.type] ?? { type: 'warning', label: a.type, color: ORANGE }
             return (
               <div key={a.id} style={{ background: a.lu ? palette.card : `${cfg.color}10`, border: `1px solid ${a.lu ? palette.cardBorder : cfg.color + '30'}`, borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                 <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>{renderCfgIcon(cfg.type, a.lu ? palette.textMuted : cfg.color)}</div>
@@ -552,7 +569,7 @@ function TabChauffeurs({ palette, isDark }) {
   const inputSt = (err) => ({
     width: '100%', height: 46, boxSizing: 'border-box',
     background: isDark ? 'rgba(255,255,255,0.05)' : '#F9FAFB',
-    border: `1.5px solid ${err ? theme.colors.danger : palette.cardBorder}`,
+    border: `1.5px solid ${err ? '#EF4444' : palette.cardBorder}`,
     borderRadius: 12, padding: '0 14px',
     fontSize: 14, color: palette.text,
     fontFamily: theme.font.family, outline: 'none',
@@ -566,13 +583,13 @@ function TabChauffeurs({ palette, isDark }) {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', padding: 16 }}>
           <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 20, padding: '28px 24px', maxWidth: 380, width: '100%', boxShadow: '0 24px 60px rgba(0,0,0,0.25)' }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={theme.colors.danger} strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={'#EF4444'} strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             </div>
             <div style={{ fontSize: 15, fontWeight: 700, color: palette.text, textAlign: 'center', marginBottom: 8 }}>Supprimer {toDelete.nom} ?</div>
             <div style={{ fontSize: 12, color: palette.textSub, textAlign: 'center', marginBottom: 22, lineHeight: 1.6 }}>Cette action est irréversible.</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               <button onClick={() => setToDelete(null)} style={{ padding: '11px', borderRadius: 12, border: `1px solid ${palette.cardBorder}`, background: 'transparent', color: palette.textSub, cursor: 'pointer', fontFamily: theme.font.family, fontSize: 13 }}>Annuler</button>
-              <button onClick={() => handleDelete(toDelete.id)} style={{ padding: '11px', borderRadius: 12, border: 'none', background: theme.colors.danger, color: '#fff', cursor: 'pointer', fontFamily: theme.font.family, fontSize: 13, fontWeight: 700 }}>Supprimer</button>
+              <button onClick={() => handleDelete(toDelete.id)} style={{ padding: '11px', borderRadius: 12, border: 'none', background: '#EF4444', color: '#fff', cursor: 'pointer', fontFamily: theme.font.family, fontSize: 13, fontWeight: 700 }}>Supprimer</button>
             </div>
           </div>
         </div>
@@ -585,7 +602,7 @@ function TabChauffeurs({ palette, isDark }) {
           <div style={{ fontSize: 12, color: palette.textSub, marginTop: 2 }}>{chauffeurs.length} chauffeur{chauffeurs.length > 1 ? 's' : ''} créé{chauffeurs.length > 1 ? 's' : ''}</div>
         </div>
         <button onClick={() => setShowForm(v => !v)}
-          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: 'none', background: theme.colors.primary, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: theme.font.family }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: 'none', background: ORANGE, color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: theme.font.family }}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
           Ajouter
         </button>
@@ -600,12 +617,12 @@ function TabChauffeurs({ palette, isDark }) {
               <div>
                 <div style={{ fontSize: 11, color: palette.textSub, marginBottom: 5 }}>Nom complet</div>
                 <input value={form.nom} onChange={e => { setForm(p => ({ ...p, nom: e.target.value })); setErrors(p => ({ ...p, nom: '' })) }} placeholder="Mamadou Bah" style={inputSt(errors.nom)} />
-                {errors.nom && <div style={{ fontSize: 10, color: theme.colors.danger, marginTop: 3 }}>{errors.nom}</div>}
+                {errors.nom && <div style={{ fontSize: 10, color: '#EF4444', marginTop: 3 }}>{errors.nom}</div>}
               </div>
               <div>
                 <div style={{ fontSize: 11, color: palette.textSub, marginBottom: 5 }}>Email</div>
                 <input type="email" value={form.email} onChange={e => { setForm(p => ({ ...p, email: e.target.value })); setErrors(p => ({ ...p, email: '' })) }} placeholder="chauffeur@mastation.com" style={inputSt(errors.email)} />
-                {errors.email && <div style={{ fontSize: 10, color: theme.colors.danger, marginTop: 3 }}>{errors.email}</div>}
+                {errors.email && <div style={{ fontSize: 10, color: '#EF4444', marginTop: 3 }}>{errors.email}</div>}
               </div>
               <div>
                 <div style={{ fontSize: 11, color: palette.textSub, marginBottom: 5 }}>Mot de passe</div>
@@ -617,12 +634,12 @@ function TabChauffeurs({ palette, isDark }) {
                     </svg>
                   </button>
                 </div>
-                {errors.password && <div style={{ fontSize: 10, color: theme.colors.danger, marginTop: 3 }}>{errors.password}</div>}
+                {errors.password && <div style={{ fontSize: 10, color: '#EF4444', marginTop: 3 }}>{errors.password}</div>}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button type="submit" disabled={creating}
-                style={{ flex: 1, height: 44, borderRadius: 10, border: 'none', background: creating ? theme.colors.primaryDark : theme.colors.primary, color: '#fff', fontSize: 13, fontWeight: 700, cursor: creating ? 'not-allowed' : 'pointer', fontFamily: theme.font.family, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                style={{ flex: 1, height: 44, borderRadius: 10, border: 'none', background: creating ? '#B45309' : ORANGE, color: '#fff', fontSize: 13, fontWeight: 700, cursor: creating ? 'not-allowed' : 'pointer', fontFamily: theme.font.family, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                 {creating && <div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />}
                 {creating ? 'Création...' : 'Créer le compte'}
               </button>
@@ -655,7 +672,7 @@ function TabChauffeurs({ palette, isDark }) {
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
               padding: '12px 14px',
               background: palette.card,
-              border: `1px solid ${c.actif === false ? theme.colors.dangerLight : palette.cardBorder}`,
+              border: `1px solid ${c.actif === false ? 'rgba(239,68,68,0.15)' : palette.cardBorder}`,
               borderRadius: 12, gap: 10,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
@@ -665,7 +682,7 @@ function TabChauffeurs({ palette, isDark }) {
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: palette.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.nom}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: c.actif !== false ? theme.colors.success : theme.colors.danger, background: c.actif !== false ? theme.colors.successLight : theme.colors.dangerLight, padding: '1px 7px', borderRadius: 99 }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: c.actif !== false ? '#10B981' : '#EF4444', background: c.actif !== false ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)', padding: '1px 7px', borderRadius: 99 }}>
                       {c.actif !== false ? 'Actif' : 'Désactivé'}
                     </span>
                     <span style={{ fontSize: 10, color: palette.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.email}</span>
@@ -674,7 +691,7 @@ function TabChauffeurs({ palette, isDark }) {
               </div>
               <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                 <button onClick={() => handleToggle(c.id, c.nom)} title={c.actif !== false ? 'Désactiver' : 'Activer'}
-                  style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.actif !== false ? theme.colors.warning : theme.colors.success, transition: 'all 0.15s' }}
+                  style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.actif !== false ? ORANGE : '#10B981', transition: 'all 0.15s' }}
                   onMouseEnter={e => e.currentTarget.style.background = palette.hover}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -682,8 +699,8 @@ function TabChauffeurs({ palette, isDark }) {
                   </svg>
                 </button>
                 <button onClick={() => setToDelete(c)} title="Supprimer"
-                  style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: theme.colors.danger, transition: 'all 0.15s' }}
-                  onMouseEnter={e => e.currentTarget.style.background = theme.colors.dangerLight}
+                  style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#EF4444', transition: 'all 0.15s' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(239,68,68,0.15)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" /></svg>
                 </button>
@@ -726,7 +743,7 @@ function TabPerformances({ palette, isDark }) {
           return (
             <button key={m} onClick={() => setMois(m)} style={{
               padding: '4px 9px', borderRadius: 99, border: `1px solid ${mois === m ? 'transparent' : palette.cardBorder}`,
-              background: mois === m ? theme.colors.primary : palette.card,
+              background: mois === m ? ORANGE : palette.card,
               color: mois === m ? '#fff' : palette.textSub,
               fontSize: 10, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
             }}>{MOIS_S[m]}</button>
@@ -783,11 +800,11 @@ function TabPerformances({ palette, isDark }) {
                     {p.prime_proposee && (
                       <div style={{
                         padding: '10px 12px', borderRadius: 10,
-                        background: p.prime_validee === true ? theme.colors.successLight : p.prime_validee === false ? theme.colors.dangerLight : '#FEF3C7',
+                        background: p.prime_validee === true ? 'rgba(16,185,129,0.15)' : p.prime_validee === false ? 'rgba(239,68,68,0.15)' : '#FEF3C7',
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
                       }}>
                         <div>
-                          <div style={{ fontSize: 9, fontWeight: 700, color: p.prime_validee === true ? theme.colors.success : p.prime_validee === false ? theme.colors.danger : '#D97706', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+                          <div style={{ fontSize: 9, fontWeight: 700, color: p.prime_validee === true ? '#10B981' : p.prime_validee === false ? '#EF4444' : '#D97706', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
                             {p.prime_validee === true ? 'Prime validée' : p.prime_validee === false ? 'Prime refusée' : 'Prime proposée'}
                           </div>
                           <div style={{ fontSize: 15, fontWeight: 900, color: palette.text, fontFamily: theme.font.mono }}>{fmtLog(p.prime_montant)} GNF</div>
@@ -795,11 +812,11 @@ function TabPerformances({ palette, isDark }) {
                         {enAtt && (
                           <div style={{ display: 'flex', gap: 6 }}>
                             <button onClick={() => valider({ userId: p.id, mois, annee, action: 'valider' })} disabled={isPending}
-                              style={{ padding: '6px 12px', borderRadius: 8, border: 'none', background: theme.colors.success, color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                              style={{ padding: '6px 12px', borderRadius: 8, border: 'none', background: '#10B981', color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                               ✓
                             </button>
                             <button onClick={() => valider({ userId: p.id, mois, annee, action: 'refuser' })} disabled={isPending}
-                              style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${theme.colors.danger}`, background: 'transparent', color: theme.colors.danger, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                              style={{ padding: '6px 12px', borderRadius: 8, border: `1px solid ${'#EF4444'}`, background: 'transparent', color: '#EF4444', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                               ✗
                             </button>
                           </div>
@@ -848,11 +865,11 @@ function TabRapports({ palette}) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
         {[
           { l: 'Total trajets',   v: String(stats.total),           color: palette.text },
-          { l: 'Trajets terminés',v: String(termines.length),       color: theme.colors.info },
-          { l: 'Alertes fraude',  v: String(nbFraudes),             color: nbFraudes > 0 ? theme.colors.danger : theme.colors.success },
-          { l: 'Écart total',     v: `${totalEcart > 0 ? '+' : ''}${totalEcart.toFixed(1)} L`, color: totalEcart > 0 ? theme.colors.danger : theme.colors.success },
+          { l: 'Trajets terminés',v: String(termines.length),       color: '#38BDF8' },
+          { l: 'Alertes fraude',  v: String(nbFraudes),             color: nbFraudes > 0 ? '#EF4444' : '#10B981' },
+          { l: 'Écart total',     v: `${totalEcart > 0 ? '+' : ''}${totalEcart.toFixed(1)} L`, color: totalEcart > 0 ? '#EF4444' : '#10B981' },
         ].map(({ l, v, color }) => (
-          <div key={l} style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 12, padding: '14px 12px', textAlign: 'center', boxShadow: theme.shadow.sm }}>
+          <div key={l} style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 12, padding: '14px 12px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
             <div style={{ fontSize: 18, fontWeight: 800, color, fontFamily: theme.font.mono }}>{v}</div>
             <div style={{ fontSize: 10, color: palette.textMuted, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{l}</div>
           </div>
@@ -866,7 +883,7 @@ function TabRapports({ palette}) {
           Téléchargez l'historique complet des trajets au format Excel/CSV.
         </div>
         <button onClick={handleExportExcel} disabled={exporting}
-          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 10, border: 'none', background: exporting ? theme.colors.primaryDark : theme.colors.primary, color: '#fff', fontSize: 13, fontWeight: 700, cursor: exporting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 10, border: 'none', background: exporting ? '#B45309' : ORANGE, color: '#fff', fontSize: 13, fontWeight: 700, cursor: exporting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
           {exporting
             ? <div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
             : <span>📊</span>
@@ -899,7 +916,7 @@ function TabRapports({ palette}) {
                       <td style={{ padding: '9px 12px', color: palette.text, fontFamily: theme.font.mono }}>{t.citerne_code}</td>
                       <td style={{ padding: '9px 12px', color: palette.text, fontFamily: theme.font.mono }}>{t.qty_depart} L</td>
                       <td style={{ padding: '9px 12px', color: palette.text, fontFamily: theme.font.mono }}>{t.qty_arrivee ?? '—'}</td>
-                      <td style={{ padding: '9px 12px', fontWeight: 700, fontFamily: theme.font.mono, color: t.ecart > (t.seuil_fraude ?? 50) ? theme.colors.danger : theme.colors.success }}>
+                      <td style={{ padding: '9px 12px', fontWeight: 700, fontFamily: theme.font.mono, color: t.ecart > (t.seuil_fraude ?? 50) ? '#EF4444' : '#10B981' }}>
                         {t.ecart != null ? `${t.ecart > 0 ? '+' : ''}${parseFloat(t.ecart).toFixed(1)} L` : '—'}
                       </td>
                       <td style={{ padding: '9px 12px' }}>
@@ -919,10 +936,14 @@ function TabRapports({ palette}) {
 
 // ── Page principale — identité Fleet Operations Center ─
 function LogistiquePageContent() {
-  const { user, logout }            = useAuth()
-  const { isDark, toggle, palette } = useTheme()
-  const { parametres }              = useParametres()
-  const [onglet, setOnglet]         = useState('gps')
+  const { user, logout }  = useAuth()
+  const { toggle }        = useTheme()
+  const { parametres }    = useParametres()
+  const [onglet, setOnglet] = useState('gps')
+
+  // Palette et mode fixés — dark always, orange primary (Fleet Ops ≠ gérant)
+  const palette = LOG_PALETTE
+  const isDark  = true
 
   const { data: alertesData } = useQuery({
     queryKey: ['alertes-transport'],
