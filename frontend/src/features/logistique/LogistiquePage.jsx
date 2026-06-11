@@ -917,85 +917,145 @@ function TabRapports({ palette}) {
   )
 }
 
-// ── Page principale ────────────────────────────────
+// ── Page principale — identité Fleet Operations Center ─
 function LogistiquePageContent() {
   const { user, logout }            = useAuth()
   const { isDark, toggle, palette } = useTheme()
   const { parametres }              = useParametres()
-  const [onglet, setOnglet]         = useState('trajets')
+  const [onglet, setOnglet]         = useState('gps')
 
   const { data: alertesData } = useQuery({
     queryKey: ['alertes-transport'],
     queryFn:  () => api.get('/alertes/transport').then(r => r.data),
     staleTime: 30_000, refetchInterval: 60_000,
   })
-  const nbAlertes = alertesData?.non_lues ?? 0
+  const { trajets } = useTrajets({})
+  const nbAlertes   = alertesData?.non_lues ?? 0
+  const nbEnRoute   = trajets.filter(t => t.statut === 'en_cours').length
+  const nbAttente   = trajets.filter(t => t.statut === 'arrive_attente').length
 
-  const BG = isDark ? '#0D1B2A' : '#F0F4FF'
+  // Palette fixe dark charcoal — identité transport distincte du gérant
+  const SHELL_BG      = isDark ? '#0C0F1A' : '#F4F6FB'
+  const HEADER_BG     = 'linear-gradient(135deg, #0B1120 0%, #131C2E 100%)'
+  const TABBAR_BG     = isDark ? '#111827' : '#FFFFFF'
+  const TABBAR_BORDER = isDark ? 'rgba(245,158,11,0.15)' : 'rgba(245,158,11,0.2)'
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, fontFamily: theme.font.family, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: SHELL_BG, fontFamily: theme.font.family, display: 'flex', flexDirection: 'column' }}>
 
-      {/* Header */}
-      <div style={{ background: '#0A1628', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 20px rgba(0,0,0,0.25)', position: 'sticky', top: 0, zIndex: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {parametres?.logo_url ? (
-            <img src={parametres.logo_url} alt="logo" style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }} />
-          ) : (
-            <div style={{ width: 32, height: 32, background: ORANGE, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: 16 }}>🚛</span>
+      {/* ── Header Fleet Operations ─────────────────── */}
+      <div style={{ background: HEADER_BG, position: 'sticky', top: 0, zIndex: 20, borderBottom: `2px solid ${ORANGE}30`, boxShadow: `0 2px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(245,158,11,0.08)` }}>
+
+        {/* Bande orange fine en haut */}
+        <div style={{ height: 3, background: `linear-gradient(90deg, ${ORANGE}, #FCD34D, ${ORANGE})`, backgroundSize: '200% 100%', animation: 'shimmerBar 3s linear infinite' }} />
+
+        <div style={{ padding: '10px 16px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+
+          {/* Logo + titre */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+            {parametres?.logo_url ? (
+              <img src={parametres.logo_url} alt="logo" style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover', border: `1px solid ${ORANGE}40` }} />
+            ) : (
+              <div style={{ width: 34, height: 34, background: `linear-gradient(135deg, ${ORANGE}, #D97706)`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 16px ${ORANGE}50` }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              </div>
+            )}
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', lineHeight: 1.1 }}>
+                {parametres?.nom ?? <span style={{ color: '#fff' }}>Fuelo</span>}
+              </div>
+              <div style={{ fontSize: 10, color: ORANGE, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 1 }}>Fleet Operations</div>
             </div>
-          )}
-          <div>
-            <span style={{ fontSize: 15, fontWeight: 800, color: '#fff' }}>
-              {parametres?.nom ?? <span>fuel<span style={{ color: ORANGE }}>o</span></span>}
-            </span>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginLeft: 6 }}>Logistique</span>
+          </div>
+
+          {/* KPIs live inline */}
+          <div style={{ display: 'flex', gap: 6, flex: 1, justifyContent: 'center', overflow: 'hidden' }}>
+            {[
+              { v: nbEnRoute,  label: 'en route', color: '#10B981', icon: <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="10" strokeOpacity=".3"/></svg> },
+              { v: nbAttente,  label: 'attente QR', color: ORANGE, icon: <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> },
+              { v: nbAlertes,  label: 'alertes', color: '#EF4444', icon: <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg> },
+            ].map(({ v, label, color, icon }) => (
+              <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, background: `${color}15`, border: `1px solid ${color}30`, borderRadius: 8, padding: '4px 10px', flexShrink: 0 }}>
+                <span style={{ color }}>{icon}</span>
+                <span style={{ fontSize: 14, fontWeight: 800, color, fontFamily: theme.font.mono, lineHeight: 1 }}>{v}</span>
+                <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', fontWeight: 500, whiteSpace: 'nowrap' }}>{label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Actions droite */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            <button onClick={toggle} style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                {isDark ? <><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></> : <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>}
+              </svg>
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: 'rgba(245,158,11,0.1)', borderRadius: 8, border: `1px solid ${ORANGE}25` }}>
+              <div style={{ width: 22, height: 22, borderRadius: '50%', background: `${ORANGE}25`, border: `1px solid ${ORANGE}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: ORANGE }}>
+                {(user?.nom || 'L').charAt(0).toUpperCase()}
+              </div>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>{user?.nom}</span>
+            </div>
+
+            <button onClick={logout}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'rgba(239,68,68,0.8)', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', padding: '5px 10px', transition: 'all 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.18)'; e.currentTarget.style.color = '#EF4444' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; e.currentTarget.style.color = 'rgba(239,68,68,0.8)' }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+              <span style={{ display: 'none' }} className="log-label">Déconnexion</span>
+            </button>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button onClick={toggle} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', fontSize: 12, fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              {isDark ? <><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></> : <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>}
-            </svg>
-          </button>
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>{user?.nom}</span>
-          <button
-            onClick={logout}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'rgba(239,68,68,0.85)', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', padding: '5px 11px', transition: 'all 0.15s' }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.18)'; e.currentTarget.style.color = '#EF4444' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.color = 'rgba(239,68,68,0.85)' }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-            Déconnexion
-          </button>
-        </div>
       </div>
 
-      {/* Tabs navigation */}
-      <div style={{ background: isDark ? '#0F1E30' : '#fff', borderBottom: `1px solid ${palette.cardBorder}`, display: 'flex', overflowX: 'auto' }}>
-        {TABS.map(tab => (
-          <button key={tab.key} onClick={() => setOnglet(tab.key)}
-            style={{ flex: 1, minWidth: 80, padding: '12px 8px', border: 'none', background: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, position: 'relative', transition: 'all 0.15s', borderBottom: `2px solid ${onglet === tab.key ? theme.colors.primary : 'transparent'}` }}>
-            <div style={{ position: 'relative' }}>
-              <TabIcon tabKey={tab.key} size={18} color={onglet === tab.key ? theme.colors.primary : palette.textMuted} />
+      {/* ── Barre de tabs — style pill orange ────────── */}
+      <div style={{ background: TABBAR_BG, borderBottom: `1px solid ${TABBAR_BORDER}`, padding: '6px 12px', display: 'flex', gap: 4, overflowX: 'auto', flexShrink: 0 }}>
+        {TABS.map(tab => {
+          const isActive = onglet === tab.key
+          return (
+            <button key={tab.key} onClick={() => setOnglet(tab.key)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '7px 14px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                fontFamily: 'inherit', whiteSpace: 'nowrap', position: 'relative',
+                transition: 'all 0.15s',
+                background: isActive
+                  ? `linear-gradient(135deg, ${ORANGE}22, ${ORANGE}14)`
+                  : 'transparent',
+                boxShadow: isActive ? `inset 0 0 0 1px ${ORANGE}50` : 'none',
+              }}>
+              <span style={{ color: isActive ? ORANGE : palette.textMuted, display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                <TabIcon tabKey={tab.key} size={14} color={isActive ? ORANGE : palette.textMuted} />
+              </span>
+              <span style={{ fontSize: 12, fontWeight: isActive ? 700 : 400, color: isActive ? ORANGE : palette.textMuted }}>
+                {tab.label}
+              </span>
               {tab.key === 'alertes' && nbAlertes > 0 && (
-                <span style={{ position: 'absolute', top: -4, right: -8, background: theme.colors.danger, color: '#fff', fontSize: 8, fontWeight: 700, borderRadius: 99, padding: '1px 4px', minWidth: 14, textAlign: 'center' }}>{nbAlertes}</span>
+                <span style={{ background: '#EF4444', color: '#fff', fontSize: 9, fontWeight: 700, borderRadius: 99, padding: '1px 5px', minWidth: 14, textAlign: 'center', lineHeight: 1.6 }}>{nbAlertes}</span>
               )}
-            </div>
-            <span style={{ fontSize: 10, fontWeight: onglet === tab.key ? 700 : 400, color: onglet === tab.key ? theme.colors.primary : palette.textMuted, whiteSpace: 'nowrap' }}>{tab.label}</span>
-          </button>
-        ))}
+              {tab.key === 'trajets' && nbAttente > 0 && (
+                <span style={{ background: ORANGE, color: '#000', fontSize: 9, fontWeight: 700, borderRadius: 99, padding: '1px 5px', minWidth: 14, textAlign: 'center', lineHeight: 1.6 }}>{nbAttente}</span>
+              )}
+            </button>
+          )
+        })}
       </div>
 
-      {/* Contenu — GPS en plein écran, autres onglets en colonne centrée */}
+      {/* ── Contenu — GPS plein écran, autres en colonne ─ */}
       {onglet === 'gps' ? (
         <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-          <Suspense fallback={<div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', color:'#94A3B8', fontSize:13 }}>Chargement GPS...</div>}>
+          <Suspense fallback={
+            <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, color:'#94A3B8' }}>
+              <div style={{ width:32, height:32, border:`3px solid ${ORANGE}30`, borderTopColor:ORANGE, borderRadius:'50%', animation:'spin 1s linear infinite' }}/>
+              <span style={{ fontSize:13 }}>Chargement GPS...</span>
+            </div>
+          }>
             <GpsFlottePage />
           </Suspense>
         </div>
       ) : (
-        <div style={{ flex: 1, padding: '16px', overflowY: 'auto', maxWidth: 600, margin: '0 auto', width: '100%' }}>
+        <div style={{ flex: 1, padding: '16px', overflowY: 'auto', maxWidth: 640, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
           {onglet === 'trajets'       && <TabTrajets      palette={palette} isDark={isDark} />}
           {onglet === 'citernes'      && <TabCiternes     palette={palette} isDark={isDark} />}
           {onglet === 'chauffeurs'    && <TabChauffeurs   palette={palette} isDark={isDark} />}
@@ -1006,8 +1066,9 @@ function LogistiquePageContent() {
       )}
 
       <style>{`
-        @keyframes spin    { to { transform: rotate(360deg); } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: translateY(0) } }
+        @keyframes spin       { to { transform: rotate(360deg); } }
+        @keyframes slideUp    { from { opacity:0; transform:translateY(20px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes shimmerBar { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
         select { appearance: none; }
