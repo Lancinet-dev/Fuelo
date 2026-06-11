@@ -20,6 +20,7 @@ const http         = require('http')
 const { Server }   = require('socket.io')
 const cors         = require('cors')
 const helmet       = require('helmet')
+const compression  = require('compression')
 const cookieParser = require('cookie-parser')
 const passport     = require('./config/passport')
 const logger       = require('./utils/logger')
@@ -60,6 +61,9 @@ io.on('connection', (socket) => {
     logger.info(`🔌 Socket déconnecté: ${socket.id}`)
   })
 })
+
+// ── Compression gzip/brotli ───────────────────────────
+app.use(compression())
 
 // ── Sécurité ──────────────────────────────────────────
 app.use(helmet())

@@ -4,7 +4,8 @@
 // ================================================
 
 import { memo, useState, useEffect, useCallback } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import Sidebar from './Sidebar'
 import { useAlertes }       from '../hooks/useAlertes'
 import { useTheme }         from '../context/ThemeContext'
@@ -15,10 +16,18 @@ import OnboardingModal      from './OnboardingModal'
 import SearchModal          from './SearchModal'
 import AssistantFuelo       from './AssistantFuelo'
 
+const PAGE_TRANSITION = {
+  initial:    { opacity: 0, y: 14 },
+  animate:    { opacity: 1, y: 0 },
+  exit:       { opacity: 0, y: -8 },
+  transition: { duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] },
+}
+
 const AppLayout = memo(function AppLayout() {
   const { nonLues } = useAlertes()
   const { palette }  = useTheme()
   const { user }     = useAuth()
+  const location     = useLocation()
   useNotifications()
 
   const [showSplash, setShowSplash] = useState(() => {
@@ -41,6 +50,9 @@ const AppLayout = memo(function AppLayout() {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault()
         setSearchOpen(v => !v)
+      }
+      if (e.key === 'Escape') {
+        setSearchOpen(false)
       }
     }
     window.addEventListener('keydown', handler)
@@ -72,7 +84,15 @@ const AppLayout = memo(function AppLayout() {
           overflowX:  'hidden',
           transition: 'background 0.3s ease',
         }}>
-          <Outlet />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              {...PAGE_TRANSITION}
+              style={{ minHeight: '100%' }}
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
 

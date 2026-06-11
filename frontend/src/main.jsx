@@ -1,18 +1,8 @@
-// ================================================
-// FUELO V2 — Point d'entrée principal
-// Fichier : frontend/src/main.jsx
-// ================================================
 import * as Sentry from '@sentry/react'
 Sentry.init({
   dsn: "https://287284428f711e01eeb5b4f031afec39@o4511425920565248.ingest.de.sentry.io/4511425923252304",
   environment: import.meta.env.MODE,
-  tracesSampleRate: 1.0,
-})
-
-Sentry.init({
-  dsn: "https://287284428f711e01eeb5b4f031afec39@o4511425920565248.ingest.de.sentry.io/4511425923252304",
-  environment: import.meta.env.MODE,
-  tracesSampleRate: 1.0,
+  tracesSampleRate: 0.2,
   replaysOnErrorSampleRate: 1.0,
 })
 
@@ -22,15 +12,18 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster }       from 'react-hot-toast'
 import { AuthProvider }  from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
+import NetworkStatus     from './ui/NetworkStatus'
 import Router            from './app/router'
 
 // ── React Query ───────────────────────────────────────
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry:                0,
+      retry:                3,
+      retryDelay:           (i) => Math.min(1000 * 2 ** i, 30_000),
       refetchOnWindowFocus: false,
-      staleTime:            15_000,
+      staleTime:            5 * 60_000,
+      gcTime:               10 * 60_000,
     },
     mutations: { retry: 0 },
   },
@@ -61,6 +54,34 @@ const globalStyles = `
   ::-webkit-scrollbar-track { background: #F3F4F6; }
   ::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: #9CA3AF; }
+
+  /* Accessibilité — focus visible uniquement au clavier */
+  :focus-visible {
+    outline: 2px solid #2563EB;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  :focus:not(:focus-visible) { outline: none; }
+
+  /* Tableaux mobiles scrollables */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Boutons minimum touch target */
+  @media (max-width: 768px) {
+    button, a[role="button"] { min-height: 44px; }
+  }
+
+  /* Shimmer animation pour skeletons */
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position:  200% 0; }
+  }
+  .skeleton {
+    background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.6s infinite;
+    border-radius: 6px;
+  }
 `
 const styleEl = document.createElement('style')
 styleEl.textContent = globalStyles
@@ -77,6 +98,7 @@ createRoot(document.getElementById('root')).render(
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <AuthProvider>
+          <NetworkStatus />
           <Router />
           <Toaster
             position="top-right"
@@ -91,8 +113,9 @@ createRoot(document.getElementById('root')).render(
                 boxShadow:    '0 4px 12px rgba(0,0,0,0.08)',
                 fontFamily:   "'DM Sans', system-ui, sans-serif",
               },
-              success: { iconTheme: { primary: '#10B981', secondary: '#fff' } },
-              error:   { iconTheme: { primary: '#EF4444', secondary: '#fff' } },
+              success: { iconTheme: { primary: '#10B981', secondary: '#fff' }, duration: 3000 },
+              error:   { iconTheme: { primary: '#EF4444', secondary: '#fff' }, duration: 4000 },
+              loading: { iconTheme: { primary: '#2563EB', secondary: '#fff' } },
             }}
           />
         </AuthProvider>

@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import AppLayout from '../ui/AppLayout'
 import PageLoader from '../ui/PageLoader'
+import ErrorBoundary from '../ui/ErrorBoundary'
 import ComptableLayout from '../features/comptable/ComptableLayout'
 
 const normalizeRole = (value = '') => {
@@ -82,6 +83,7 @@ function PublicRoute({ children }) {
 export default function Router() {
   return (
     <BrowserRouter>
+      <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
         <Routes>
 
@@ -169,6 +171,7 @@ export default function Router() {
 
         </Routes>
       </Suspense>
+      </ErrorBoundary>
     </BrowserRouter>
   )
 }
