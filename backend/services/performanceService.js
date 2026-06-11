@@ -18,10 +18,11 @@ const getNiveau = (score) => NIVEAUX.find(n => score >= n.min) ?? NIVEAUX[NIVEAU
 // ── Calcul automatique — appelé par le cron ───────
 const calculerPerformances = async (mois, annee) => {
   const usersResult = await pool.query(
-    `SELECT u.id, u.role, su.station_id
+    `SELECT DISTINCT ON (u.id) u.id, u.role, su.station_id
      FROM users u
      JOIN station_users su ON su.user_id = u.id
-     WHERE u.role IN ('pompiste', 'chauffeur') AND u.deleted_at IS NULL AND u.actif = true`
+     WHERE u.role IN ('pompiste', 'chauffeur') AND u.deleted_at IS NULL AND u.actif = true
+     ORDER BY u.id, su.station_id`
   )
 
   // Moyenne mensuelle ventes par station (pour comparaison pompistes)
@@ -137,7 +138,10 @@ const getPerformances = async (user, mois, annee) => {
   const role = user.role
   let whereUser, params
 
-  if (role === 'owner' || role === 'superadmin') {
+  if (role === 'superadmin') {
+    whereUser = `u.role IN ('pompiste','chauffeur')`
+    params = [mois, annee]
+  } else if (role === 'owner') {
     whereUser = `EXISTS (SELECT 1 FROM station_users su WHERE su.user_id = u.id AND su.station_id = $3) AND u.role IN ('pompiste','chauffeur')`
     params = [mois, annee, user.station_id]
   } else if (role === 'gerant') {
@@ -237,7 +241,10 @@ const getAnneesDisponibles = async (user) => {
   const role = user.role
   let whereUser, params
 
-  if (role === 'owner' || role === 'superadmin') {
+  if (role === 'superadmin') {
+    whereUser = `u.role IN ('pompiste', 'chauffeur')`
+    params = []
+  } else if (role === 'owner') {
     whereUser = `EXISTS (SELECT 1 FROM station_users su WHERE su.user_id = u.id AND su.station_id = $1)`
     params = [user.station_id]
   } else if (role === 'gerant') {
@@ -266,7 +273,10 @@ const countPrimesEnAttente = async (user) => {
   const role = user.role
   let whereUser, params
 
-  if (role === 'owner' || role === 'superadmin') {
+  if (role === 'superadmin') {
+    whereUser = `u.role IN ('pompiste', 'chauffeur')`
+    params = []
+  } else if (role === 'owner') {
     whereUser = `EXISTS (SELECT 1 FROM station_users su WHERE su.user_id = u.id AND su.station_id = $1)`
     params = [user.station_id]
   } else if (role === 'gerant') {
