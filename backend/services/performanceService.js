@@ -18,8 +18,10 @@ const getNiveau = (score) => NIVEAUX.find(n => score >= n.min) ?? NIVEAUX[NIVEAU
 // ── Calcul automatique — appelé par le cron ───────
 const calculerPerformances = async (mois, annee) => {
   const usersResult = await pool.query(
-    `SELECT id, role, station_id FROM users
-     WHERE role IN ('pompiste', 'chauffeur') AND deleted_at IS NULL AND actif = true`
+    `SELECT u.id, u.role, su.station_id
+     FROM users u
+     JOIN station_users su ON su.user_id = u.id
+     WHERE u.role IN ('pompiste', 'chauffeur') AND u.deleted_at IS NULL AND u.actif = true`
   )
 
   // Moyenne mensuelle ventes par station (pour comparaison pompistes)
@@ -136,7 +138,7 @@ const getPerformances = async (user, mois, annee) => {
   let whereUser, params
 
   if (role === 'owner' || role === 'superadmin') {
-    whereUser = `u.station_id = $3 AND u.role IN ('pompiste','chauffeur')`
+    whereUser = `EXISTS (SELECT 1 FROM station_users su WHERE su.user_id = u.id AND su.station_id = $3) AND u.role IN ('pompiste','chauffeur')`
     params = [mois, annee, user.station_id]
   } else if (role === 'gerant') {
     whereUser = `u.created_by = $3 AND u.role = 'pompiste'`
@@ -170,15 +172,17 @@ const getPerformanceEmploye = async (userId, user) => {
   const role = user.role
 
   const emp = await pool.query(
-    `SELECT id, role, station_id, created_by FROM users WHERE id = $1 AND deleted_at IS NULL`,
-    [userId]
+    `SELECT u.id, u.role, u.created_by,
+            EXISTS (SELECT 1 FROM station_users su WHERE su.user_id = u.id AND su.station_id = $2) AS in_station
+     FROM users u WHERE u.id = $1 AND u.deleted_at IS NULL`,
+    [userId, user.station_id]
   )
   if (!emp.rows[0]) throw new Error('Employé introuvable')
   const e = emp.rows[0]
 
   if (role === 'gerant'      && e.created_by !== user.id) throw new Error('Accès refusé')
   if (role === 'logisticien' && e.created_by !== user.id) throw new Error('Accès refusé')
-  if (role === 'owner'       && e.station_id !== user.station_id) throw new Error('Accès refusé')
+  if (role === 'owner'       && !e.in_station)            throw new Error('Accès refusé')
 
   const result = await pool.query(
     `SELECT p.*, vp.nom AS valideur_nom
@@ -197,15 +201,17 @@ const validerPrime = async (userId, mois, annee, user, action) => {
   if (!['valider', 'refuser'].includes(action)) throw new Error('Action invalide')
 
   const emp = await pool.query(
-    `SELECT id, role, station_id, created_by FROM users WHERE id = $1 AND deleted_at IS NULL`,
-    [userId]
+    `SELECT u.id, u.role, u.created_by,
+            EXISTS (SELECT 1 FROM station_users su WHERE su.user_id = u.id AND su.station_id = $2) AS in_station
+     FROM users u WHERE u.id = $1 AND u.deleted_at IS NULL`,
+    [userId, user.station_id]
   )
   if (!emp.rows[0]) throw new Error('Employé introuvable')
   const e = emp.rows[0]
 
-  if (user.role === 'gerant'      && e.created_by !== user.id)      throw new Error('Accès refusé')
-  if (user.role === 'logisticien' && e.created_by !== user.id)      throw new Error('Accès refusé')
-  if (user.role === 'owner'       && e.station_id !== user.station_id) throw new Error('Accès refusé')
+  if (user.role === 'gerant'      && e.created_by !== user.id) throw new Error('Accès refusé')
+  if (user.role === 'logisticien' && e.created_by !== user.id) throw new Error('Accès refusé')
+  if (user.role === 'owner'       && !e.in_station)            throw new Error('Accès refusé')
 
   const updated = await pool.query(
     `UPDATE performances
@@ -232,7 +238,7 @@ const getAnneesDisponibles = async (user) => {
   let whereUser, params
 
   if (role === 'owner' || role === 'superadmin') {
-    whereUser = `u.station_id = $1`
+    whereUser = `EXISTS (SELECT 1 FROM station_users su WHERE su.user_id = u.id AND su.station_id = $1)`
     params = [user.station_id]
   } else if (role === 'gerant') {
     whereUser = `u.created_by = $1 AND u.role = 'pompiste'`
@@ -261,7 +267,7 @@ const countPrimesEnAttente = async (user) => {
   let whereUser, params
 
   if (role === 'owner' || role === 'superadmin') {
-    whereUser = `u.station_id = $1`
+    whereUser = `EXISTS (SELECT 1 FROM station_users su WHERE su.user_id = u.id AND su.station_id = $1)`
     params = [user.station_id]
   } else if (role === 'gerant') {
     whereUser = `u.created_by = $1 AND u.role = 'pompiste'`
