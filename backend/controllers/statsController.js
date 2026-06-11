@@ -124,6 +124,7 @@ const getStatsSemaine = async (req, res) => {
        FROM ventes
        WHERE station_id = $1
          AND created_at >= NOW() - INTERVAL '7 days'
+         AND deleted_at IS NULL
        GROUP BY DATE(created_at), TO_CHAR(created_at, 'Day')
        ORDER BY jour ASC`,
       [station_id]
@@ -150,6 +151,7 @@ const getStatsMois = async (req, res) => {
        WHERE station_id = $1
          AND EXTRACT(MONTH FROM created_at) = EXTRACT(MONTH FROM NOW())
          AND EXTRACT(YEAR  FROM created_at) = EXTRACT(YEAR  FROM NOW())
+         AND deleted_at IS NULL
        GROUP BY DATE(created_at)
        ORDER BY jour ASC`,
       [station_id]
@@ -165,7 +167,8 @@ const getStatsMois = async (req, res) => {
        FROM ventes
        WHERE station_id = $1
          AND EXTRACT(MONTH FROM created_at) = EXTRACT(MONTH FROM NOW())
-         AND EXTRACT(YEAR  FROM created_at) = EXTRACT(YEAR  FROM NOW())`,
+         AND EXTRACT(YEAR  FROM created_at) = EXTRACT(YEAR  FROM NOW())
+         AND deleted_at IS NULL`,
       [station_id]
     )
 
@@ -196,6 +199,7 @@ const getActivite = async (req, res) => {
        FROM ventes v
        LEFT JOIN users u ON u.id = v.user_id
        WHERE v.station_id = $1
+         AND v.deleted_at IS NULL
        ORDER BY v.created_at DESC
        LIMIT 5`,
       [station_id]
@@ -244,7 +248,7 @@ const getStatsEmploye = async (req, res) => {
          COALESCE(AVG(montant_gnf), 0) as moyenne_vente,
          MAX(created_at) as derniere_vente
        FROM ventes
-       WHERE station_id = $1 AND user_id = $2`,
+       WHERE station_id = $1 AND user_id = $2 AND deleted_at IS NULL`,
       [station_id, id]
     )
 

@@ -4,6 +4,7 @@
 
 const { getDashboard, marquerResolu } = require('../services/antiFraudeService')
 const logger = require('../utils/logger')
+const erreurServeur = require('../utils/erreurServeur')
 
 const dashboard = async (req, res) => {
   try {
@@ -11,7 +12,8 @@ const dashboard = async (req, res) => {
     res.json(data)
   } catch (err) {
     logger.error('antiFraude dashboard', err)
-    res.status(err.message === 'Accès refusé' ? 403 : 500).json({ error: err.message })
+    if (err.message === 'Accès refusé') return res.status(403).json({ error: 'Accès refusé' })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
@@ -23,8 +25,9 @@ const resoudreHandler = async (req, res) => {
     res.json({ message: 'Cas marqué comme résolu', cas: data })
   } catch (err) {
     logger.error('antiFraude resoudre', err)
-    const code = err.message === 'Accès refusé' ? 403 : err.message === 'Cas introuvable' ? 404 : 400
-    res.status(code).json({ error: err.message })
+    if (err.message === 'Accès refusé')   return res.status(403).json({ error: 'Accès refusé' })
+    if (err.message === 'Cas introuvable') return res.status(404).json({ error: 'Cas introuvable' })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 

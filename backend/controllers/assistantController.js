@@ -4,6 +4,7 @@
 
 const { repondre } = require('../services/assistantService')
 const logger       = require('../utils/logger')
+const erreurServeur = require('../utils/erreurServeur')
 
 const chat = async (req, res) => {
   try {
@@ -16,11 +17,10 @@ const chat = async (req, res) => {
     res.json({ reponse })
   } catch (err) {
     logger.error('Assistant IA chat', err)
-    const code = err.message === 'Accès refusé' ? 403
-               : err.message === 'Message vide'  ? 400
-               : err.message === 'Assistant IA non configuré (clé API manquante)' ? 503
-               : 500
-    res.status(code).json({ error: err.message })
+    if (err.message === 'Accès refusé')  return res.status(403).json({ error: 'Accès refusé' })
+    if (err.message === 'Message vide')  return res.status(400).json({ error: 'Message vide' })
+    if (err.message === 'Assistant IA non configuré (clé API manquante)') return res.status(503).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 }
 
