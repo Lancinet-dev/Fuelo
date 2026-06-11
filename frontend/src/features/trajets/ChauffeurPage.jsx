@@ -1,43 +1,109 @@
 // ================================================
-// FUELO — Interface Chauffeur GPS (premium mobile)
+// FUELO — ChauffeurPage PREMIUM (dark orange identity)
 // ================================================
 
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { useAuth }        from '../../context/AuthContext'
-import { useTheme }       from '../../context/ThemeContext'
-import { useTrajet }      from '../../hooks/useTrajet'
-import { useCiternes }    from '../../hooks/useTrajets'
-import { useParametres }  from '../../hooks/useParametres'
-import theme from '../../config/theme'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useAuth }       from '../../context/AuthContext'
+import { useTrajet }     from '../../hooks/useTrajet'
+import { useCiternes }   from '../../hooks/useTrajets'
+import { useParametres } from '../../hooks/useParametres'
 
-const GREEN  = '#10B981'
-const BLUE   = '#2563EB'
-const ORANGE = '#F59E0B'
-
-// ── Durée depuis started_at ───────────────────────
-function useElapsed(startedAt) {
-  const [elapsed, setElapsed] = useState('')
-  useEffect(() => {
-    if (!startedAt) return
-    const update = () => {
-      const diff = Math.floor((Date.now() - new Date(startedAt)) / 1000)
-      const h = Math.floor(diff / 3600)
-      const m = Math.floor((diff % 3600) / 60)
-      setElapsed(h > 0 ? `${h}h${String(m).padStart(2, '0')}` : `${m} min`)
-    }
-    update()
-    const t = setInterval(update, 30_000)
-    return () => clearInterval(t)
-  }, [startedAt])
-  return elapsed
+// ── Palette dark fixe — identité chauffeur ────────
+const C = {
+  bg:     '#080B14',
+  card:   '#0F1622',
+  card2:  '#162032',
+  border: 'rgba(255,255,255,0.08)',
+  text:   '#F1F5F9',
+  sub:    '#94A3B8',
+  muted:  '#64748B',
+  orange: '#F59E0B',
+  green:  '#10B981',
+  red:    '#EF4444',
+  blue:   '#38BDF8',
 }
 
-// ── Carte GPS live (Leaflet) ──────────────────────
-function LiveMap({ lastPos, isDark }) {
+const fmt = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+
+// ── Timer ─────────────────────────────────────────
+function useElapsed(startedAt) {
+  const [secs, setSecs] = useState(0)
+  useEffect(() => {
+    if (!startedAt) { setSecs(0); return }
+    const tick = () => setSecs(Math.floor((Date.now() - new Date(startedAt)) / 1000))
+    tick()
+    const t = setInterval(tick, 1000)
+    return () => clearInterval(t)
+  }, [startedAt])
+  const h = Math.floor(secs / 3600)
+  const m = Math.floor((secs % 3600) / 60)
+  const s = secs % 60
+  return {
+    secs,
+    label: h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`,
+    pct: Math.min(1, secs / (10 * 3600)),
+  }
+}
+
+// ── Ring Timer ────────────────────────────────────
+function RingTimer({ pct, label }) {
+  const R   = 52
+  const cir = 2 * Math.PI * R
+  const off = cir * (1 - pct)
+  return (
+    <div style={{ position: 'relative', width: 128, height: 128, flexShrink: 0 }}>
+      <svg width="128" height="128" style={{ position: 'absolute', inset: 0, transform: 'rotate(-90deg)' }}>
+        <circle cx="64" cy="64" r={R} fill="none" stroke="rgba(245,158,11,0.1)" strokeWidth="6" />
+        <circle cx="64" cy="64" r={R} fill="none" stroke={C.orange} strokeWidth="6"
+          strokeDasharray={cir} strokeDashoffset={off} strokeLinecap="round"
+          style={{ filter: `drop-shadow(0 0 6px ${C.orange}80)`, transition: 'stroke-dashoffset 1s linear' }} />
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: 22, fontWeight: 900, color: C.orange, fontFamily: 'monospace', lineHeight: 1, letterSpacing: '-1px' }}>{label}</div>
+        <div style={{ fontSize: 9, color: C.sub, textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 3 }}>En route</div>
+      </div>
+    </div>
+  )
+}
+
+// ── Carte GPS live — CartoDB Dark Matter ──────────
+function LiveMap({ lastPos }) {
   const containerRef = useRef(null)
   const mapRef       = useRef(null)
   const markerRef    = useRef(null)
   const leafletRef   = useRef(null)
+
+  const makeTruckIcon = (L, cap) => {
+    const rot = cap != null ? cap : 0
+    const html = `
+      <div style="position:relative;width:40px;height:40px">
+        <div style="
+          position:absolute;inset:0;
+          background:${C.orange};
+          border:3px solid #fff;
+          border-radius:50%;
+          box-shadow:0 0 18px ${C.orange}80;
+          display:flex;align-items:center;justify-content:center;
+          transform:rotate(${rot}deg);
+        ">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0A0B14" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M12 2L8 8h8L12 2z"/>
+            <circle cx="12" cy="14" r="3" fill="#0A0B14" stroke="none"/>
+          </svg>
+        </div>
+        <div style="
+          position:absolute;top:-8px;left:50%;transform:translateX(-50%);
+          width:0;height:0;
+          border-left:5px solid transparent;
+          border-right:5px solid transparent;
+          border-bottom:8px solid ${C.orange};
+          filter:drop-shadow(0 0 4px ${C.orange}80);
+          transform:translateX(-50%) rotate(${rot}deg);transform-origin:50% 200%;
+        "></div>
+      </div>`
+    return L.divIcon({ html, className: '', iconAnchor: [20, 20] })
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -49,17 +115,19 @@ function LiveMap({ lastPos, isDark }) {
       leafletRef.current = L
       const center = lastPos ? [lastPos.lat, lastPos.lng] : [9.537, -13.677]
       const map = L.map(containerRef.current, {
-        zoomControl: true, attributionControl: false,
+        zoomControl: false, attributionControl: false,
       }).setView(center, 15)
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map)
+      L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png', {
+        subdomains: 'abcd', maxZoom: 20,
+      }).addTo(map)
+
+      L.control.zoom({ position: 'bottomright' }).addTo(map)
 
       if (lastPos) {
-        const icon = L.divIcon({
-          html: `<div style="width:22px;height:22px;background:${BLUE};border:3px solid #fff;border-radius:50%;box-shadow:0 0 14px rgba(37,99,235,0.65)"></div>`,
-          className: '', iconAnchor: [11, 11],
-        })
-        markerRef.current = L.marker([lastPos.lat, lastPos.lng], { icon }).addTo(map)
+        markerRef.current = L.marker([lastPos.lat, lastPos.lng], {
+          icon: makeTruckIcon(L, lastPos.cap),
+        }).addTo(map)
       }
 
       mapRef.current = map
@@ -70,15 +138,12 @@ function LiveMap({ lastPos, isDark }) {
   useEffect(() => {
     if (!mapRef.current || !leafletRef.current || !lastPos) return
     const L = leafletRef.current
-
+    const icon = makeTruckIcon(L, lastPos.cap)
     if (markerRef.current) {
       markerRef.current.setLatLng([lastPos.lat, lastPos.lng])
+      markerRef.current.setIcon(icon)
       mapRef.current.panTo([lastPos.lat, lastPos.lng], { animate: true, duration: 1 })
     } else {
-      const icon = L.divIcon({
-        html: `<div style="width:22px;height:22px;background:${BLUE};border:3px solid #fff;border-radius:50%;box-shadow:0 0 14px rgba(37,99,235,0.65)"></div>`,
-        className: '', iconAnchor: [11, 11],
-      })
       markerRef.current = L.marker([lastPos.lat, lastPos.lng], { icon }).addTo(mapRef.current)
       mapRef.current.setView([lastPos.lat, lastPos.lng], 15)
     }
@@ -89,84 +154,56 @@ function LiveMap({ lastPos, isDark }) {
   }, [])
 
   return (
-    <div style={{ position: 'relative' }}>
-      <div ref={containerRef} style={{
-        height: 240, borderRadius: 18, overflow: 'hidden',
-        border: `2px solid ${isDark ? 'rgba(37,99,235,0.35)' : 'rgba(37,99,235,0.22)'}`,
-        boxShadow: '0 8px 32px rgba(37,99,235,0.15)',
-      }} />
+    <div style={{ position: 'relative', borderRadius: 22, overflow: 'hidden', border: `2px solid ${C.orange}30`, boxShadow: `0 8px 40px rgba(245,158,11,0.12)` }}>
+      <div ref={containerRef} style={{ height: 400 }} />
       {!lastPos && (
-        <div style={{
-          position: 'absolute', inset: 0, borderRadius: 18,
-          background: isDark ? 'rgba(13,27,42,0.75)' : 'rgba(240,244,255,0.75)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
-        }}>
-          <div style={{ width: 36, height: 36, border: '3px solid rgba(37,99,235,0.3)', borderTopColor: BLUE, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-          <span style={{ fontSize: 12, fontWeight: 600, color: BLUE }}>Acquisition GPS...</span>
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(8,11,20,0.8)', backdropFilter: 'blur(4px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+            style={{ width: 40, height: 40, border: `3px solid ${C.orange}30`, borderTopColor: C.orange, borderRadius: '50%' }} />
+          <span style={{ fontSize: 13, fontWeight: 700, color: C.orange }}>Acquisition GPS...</span>
         </div>
       )}
     </div>
   )
 }
 
-// ── Sélecteur photo (caméra) ──────────────────────
-function PhotoInput({ label, btnLabel, photoFile, onChange, palette, isDark }) {
+// ── Photo Input ──────────────────────────────────
+function PhotoInput({ label, btnLabel, photoFile, onChange }) {
   const inputRef = useRef(null)
-
-  // Mémoïsée sur `photoFile` — sinon chaque re-render (ex: mise à jour GPS
-  // pendant un trajet actif) crée une nouvelle blob URL, fait recharger
-  // l'<img> en boucle et fuit la mémoire
-  const preview = useMemo(() => (photoFile ? URL.createObjectURL(photoFile) : null), [photoFile])
+  const preview  = useMemo(() => photoFile ? URL.createObjectURL(photoFile) : null, [photoFile])
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview) }, [preview])
 
   return (
     <div>
-      <div style={{ fontSize: 11, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 8 }}>
-        {label} <span style={{ color: theme.colors.danger }}>*</span>
+      <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 8 }}>
+        {label} <span style={{ color: C.red }}>*</span>
       </div>
-      <div
-        onClick={() => inputRef.current?.click()}
-        style={{
-          height: preview ? 'auto' : 96, borderRadius: 14, overflow: 'hidden',
-          border: `2px dashed ${photoFile ? GREEN : BLUE + '60'}`,
-          background: isDark ? 'rgba(37,99,235,0.06)' : 'rgba(37,99,235,0.04)',
-          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexDirection: 'column', gap: 8, transition: 'all 0.15s',
-        }}
-      >
-        {preview ? (
-          <img src={preview} alt="aperçu" style={{ width: '100%', maxHeight: 200, objectFit: 'cover', display: 'block' }} />
-        ) : (
-          <>
-            <div style={{
-              width: 48, height: 48, borderRadius: 14,
-              background: isDark ? 'rgba(37,99,235,0.15)' : 'rgba(37,99,235,0.10)',
-              border: `1.5px solid ${BLUE}40`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={BLUE} strokeWidth="1.8" strokeLinecap="round">
-                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>
-              </svg>
-            </div>
-            <span style={{ fontSize: 14, fontWeight: 700, color: BLUE }}>{btnLabel || 'Prendre une photo'}</span>
-            <span style={{ fontSize: 11, color: palette.textMuted }}>Appuyez pour ouvrir la caméra</span>
-          </>
-        )}
+      <div onClick={() => inputRef.current?.click()} style={{
+        height: preview ? 'auto' : 96, borderRadius: 16, overflow: 'hidden',
+        border: `2px dashed ${photoFile ? C.green : C.orange + '50'}`,
+        background: photoFile ? `${C.green}08` : `${C.orange}06`,
+        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexDirection: 'column', gap: 8, transition: 'all 0.15s',
+      }}>
+        {preview
+          ? <img src={preview} alt="" style={{ width: '100%', maxHeight: 180, objectFit: 'cover', display: 'block' }} />
+          : <>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: `${C.orange}12`, border: `1.5px solid ${C.orange}40`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.orange} strokeWidth="1.8" strokeLinecap="round">
+                  <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 700, color: C.orange }}>{btnLabel || 'Prendre une photo'}</span>
+              <span style={{ fontSize: 11, color: C.muted }}>Appuyez pour ouvrir la caméra</span>
+            </>
+        }
       </div>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        style={{ display: 'none' }}
-        onChange={e => onChange(e.target.files?.[0] ?? null)}
-      />
+      <input ref={inputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
+        onChange={e => onChange(e.target.files?.[0] ?? null)} />
       {preview && (
-        <button
-          onClick={e => { e.stopPropagation(); onChange(null) }}
-          style={{ marginTop: 6, fontSize: 11, color: theme.colors.danger, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
-        >
+        <button onClick={e => { e.stopPropagation(); onChange(null) }}
+          style={{ marginTop: 6, fontSize: 11, color: C.red, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
           Supprimer la photo
         </button>
       )}
@@ -174,202 +211,142 @@ function PhotoInput({ label, btnLabel, photoFile, onChange, palette, isDark }) {
   )
 }
 
-// ── Modal Démarrer un trajet ──────────────────────
-function ModalDemarrer({ citernes, onClose, onConfirm, loading, palette, isDark }) {
+// ── Modal Démarrer ────────────────────────────────
+function ModalDemarrer({ citernes, onClose, onConfirm, loading }) {
   const [citerneId, setCiterneId] = useState('')
   const [qty,       setQty]       = useState('')
   const [photoFile, setPhotoFile] = useState(null)
-  const canSubmit = citerneId && qty && parseFloat(qty) > 0 && photoFile
+  const ok = citerneId && qty && parseFloat(qty) > 0 && photoFile
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 200,
-      background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
-      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-    }} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div style={{
-        background: isDark ? '#0D1B2A' : '#fff',
-        borderRadius: '28px 28px 0 0',
-        padding: '12px 24px 48px',
-        width: '100%', maxWidth: 520,
-        animation: 'slideUp 0.3s ease',
-        boxShadow: '0 -12px 48px rgba(0,0,0,0.25)',
-        maxHeight: '90vh', overflowY: 'auto',
-      }}>
-        <div style={{ width: 44, height: 5, background: palette.cardBorder, borderRadius: 99, margin: '0 auto 24px', opacity: 0.5 }} />
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <motion.div initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }} transition={{ type: 'spring', damping: 25 }}
+        style={{ background: C.card, borderRadius: '28px 28px 0 0', padding: '12px 22px 52px', width: '100%', maxWidth: 520, boxShadow: '0 -16px 64px rgba(0,0,0,0.5)', maxHeight: '92vh', overflowY: 'auto', border: `1px solid ${C.border}`, borderBottom: 'none' }}>
+
+        <div style={{ width: 44, height: 5, background: 'rgba(255,255,255,0.15)', borderRadius: 99, margin: '0 auto 24px' }} />
 
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{ fontSize: 36, marginBottom: 10 }}>🚚</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: palette.text, letterSpacing: '-0.3px' }}>Démarrer un trajet</div>
-          <div style={{ fontSize: 13, color: palette.textSub, marginTop: 4 }}>Photo du compteur obligatoire</div>
+          <div style={{ width: 68, height: 68, borderRadius: '50%', background: `${C.orange}15`, border: `2px solid ${C.orange}40`, margin: '0 auto 14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke={C.orange} strokeWidth="2" strokeLinecap="round">
+              <path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM18.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/>
+            </svg>
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: C.text }}>Démarrer un trajet</div>
+          <div style={{ fontSize: 13, color: C.sub, marginTop: 6 }}>Photo du compteur jauge obligatoire</div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 22 }}>
           {/* Citerne */}
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 8 }}>Citerne</div>
-            <select value={citerneId} onChange={e => setCiterneId(e.target.value)} style={{
-              width: '100%', height: 52, background: palette.inputBg,
-              border: `1.5px solid ${citerneId ? BLUE : palette.cardBorder}`,
-              borderRadius: 14, padding: '0 16px',
-              fontSize: 15, color: palette.text,
-              fontFamily: theme.font.family, outline: 'none', cursor: 'pointer',
-              transition: 'border-color 0.15s',
-            }}>
-              <option value="">Sélectionner une citerne</option>
-              {citernes.map(c => <option key={c.id} value={c.id}>{c.code} — {c.capacite.toLocaleString('fr-FR')} L</option>)}
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 8 }}>Citerne</div>
+            <select value={citerneId} onChange={e => setCiterneId(e.target.value)}
+              style={{ width: '100%', height: 54, background: 'rgba(255,255,255,0.05)', border: `1.5px solid ${citerneId ? C.orange : C.border}`, borderRadius: 14, padding: '0 16px', fontSize: 15, color: C.text, outline: 'none', cursor: 'pointer', transition: 'border-color 0.15s', appearance: 'none', fontFamily: 'inherit' }}>
+              <option value="" style={{ background: C.card }}>Sélectionner une citerne</option>
+              {citernes.map(c => <option key={c.id} value={c.id} style={{ background: C.card }}>{c.code} — {fmt(c.capacite)} L</option>)}
             </select>
           </div>
 
           {/* Quantité */}
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 8 }}>
-              Quantité chargée (litres)
-            </div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 8 }}>Quantité chargée (litres)</div>
             <input type="number" min="0" step="100" placeholder="15 000" value={qty}
               onChange={e => setQty(e.target.value)}
-              onFocus={e => { e.target.style.borderColor = BLUE; e.target.style.boxShadow = `0 0 0 3px rgba(37,99,235,0.15)` }}
-              onBlur={e  => { e.target.style.borderColor = qty ? BLUE : palette.cardBorder; e.target.style.boxShadow = 'none' }}
-              style={{
-                width: '100%', height: 72, boxSizing: 'border-box',
-                background: palette.inputBg, border: `1.5px solid ${qty ? BLUE : palette.cardBorder}`,
-                borderRadius: 14, padding: '0 16px',
-                fontSize: 36, fontWeight: 800, fontFamily: theme.font.mono,
-                color: palette.text, outline: 'none',
-                textAlign: 'center', transition: 'all 0.15s',
-              }} />
+              onFocus={e => { e.target.style.borderColor = C.orange; e.target.style.boxShadow = `0 0 0 3px ${C.orange}20` }}
+              onBlur={e  => { e.target.style.borderColor = C.border; e.target.style.boxShadow = 'none' }}
+              style={{ width: '100%', height: 76, boxSizing: 'border-box', background: 'rgba(255,255,255,0.04)', border: `1.5px solid ${C.border}`, borderRadius: 14, padding: '0 16px', fontSize: 40, fontWeight: 800, fontFamily: 'monospace', color: C.text, outline: 'none', textAlign: 'center', transition: 'all 0.15s' }} />
           </div>
 
-          {/* Photo départ */}
-          <PhotoInput
-            label="Photo jauge au départ"
-            btnLabel="Prendre photo jauge"
-            photoFile={photoFile}
-            onChange={setPhotoFile}
-            palette={palette}
-            isDark={isDark}
-          />
+          <PhotoInput label="Photo jauge au départ" btnLabel="Prendre photo jauge" photoFile={photoFile} onChange={setPhotoFile} />
         </div>
 
-        <button onClick={() => onConfirm(citerneId, qty, photoFile)} disabled={!canSubmit || loading}
-          style={{
-            width: '100%', height: 58, borderRadius: 16, border: 'none',
-            background: canSubmit && !loading
-              ? `linear-gradient(135deg, ${GREEN}, #059669)`
-              : (isDark ? 'rgba(255,255,255,0.08)' : '#E5E7EB'),
-            color: canSubmit && !loading ? '#fff' : palette.textMuted,
-            fontSize: 16, fontWeight: 800, fontFamily: 'inherit', cursor: canSubmit && !loading ? 'pointer' : 'not-allowed',
-            boxShadow: canSubmit && !loading ? '0 8px 24px rgba(16,185,129,0.4)' : 'none',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            transition: 'all 0.2s',
+        <button onClick={() => onConfirm(citerneId, qty, photoFile)} disabled={!ok || loading}
+          style={{ width: '100%', height: 60, borderRadius: 18, border: 'none', fontSize: 16, fontWeight: 800, fontFamily: 'inherit',
+            background: ok && !loading ? `linear-gradient(135deg, ${C.green}, #059669)` : 'rgba(255,255,255,0.06)',
+            color: ok && !loading ? '#fff' : C.muted,
+            cursor: ok && !loading ? 'pointer' : 'not-allowed',
+            boxShadow: ok && !loading ? '0 8px 24px rgba(16,185,129,0.4)' : 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, transition: 'all 0.2s',
           }}>
           {loading
             ? <div style={{ width: 22, height: 22, border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-            : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6"/></svg>
+            : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           }
           {loading ? 'Démarrage...' : 'Démarrer et activer le GPS'}
         </button>
-        <button onClick={onClose} style={{ display: 'block', width: '100%', marginTop: 12, padding: '12px 0', background: 'none', border: 'none', color: palette.textMuted, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
+        <button onClick={onClose}
+          style={{ display: 'block', width: '100%', marginTop: 12, padding: '12px 0', background: 'none', border: 'none', color: C.muted, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
           Annuler
         </button>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }
 
-// ── Modal Arriver à destination ───────────────────
-function ModalArriver({ trajetActif, onClose, onConfirm, loading, palette, isDark }) {
+// ── Modal Arriver ─────────────────────────────────
+function ModalArriver({ trajetActif, onClose, onConfirm, loading }) {
   const [qty,       setQty]       = useState('')
   const [photoFile, setPhotoFile] = useState(null)
-  const depart     = trajetActif?.qty_depart ?? 0
-  const arrivee    = parseFloat(qty) || 0
-  const ecart      = depart - arrivee
-  const seuil      = trajetActif?.seuil_fraude ?? 50
-  const isFraude   = ecart > seuil
-  const canSubmit  = qty && arrivee > 0 && photoFile
+  const depart   = trajetActif?.qty_depart ?? 0
+  const arrivee  = parseFloat(qty) || 0
+  const ecart    = depart - arrivee
+  const seuil    = trajetActif?.seuil_fraude ?? 50
+  const isFraude = ecart > seuil
+  const ok       = qty && arrivee > 0 && photoFile
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 200,
-      background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
-      display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-    }} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div style={{
-        background: isDark ? '#0D1B2A' : '#fff',
-        borderRadius: '28px 28px 0 0',
-        padding: '12px 24px 48px',
-        width: '100%', maxWidth: 520,
-        animation: 'slideUp 0.3s ease',
-        boxShadow: '0 -12px 48px rgba(0,0,0,0.25)',
-        maxHeight: '90vh', overflowY: 'auto',
-      }}>
-        <div style={{ width: 44, height: 5, background: palette.cardBorder, borderRadius: 99, margin: '0 auto 24px', opacity: 0.5 }} />
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}>
+      <motion.div initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }} transition={{ type: 'spring', damping: 25 }}
+        style={{ background: C.card, borderRadius: '28px 28px 0 0', padding: '12px 22px 52px', width: '100%', maxWidth: 520, boxShadow: '0 -16px 64px rgba(0,0,0,0.5)', maxHeight: '92vh', overflowY: 'auto', border: `1px solid ${C.border}`, borderBottom: 'none' }}>
+
+        <div style={{ width: 44, height: 5, background: 'rgba(255,255,255,0.15)', borderRadius: 99, margin: '0 auto 24px' }} />
 
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <div style={{ fontSize: 36, marginBottom: 10 }}>📍</div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: palette.text, letterSpacing: '-0.3px' }}>Arrivée à destination</div>
-          <div style={{ fontSize: 13, color: palette.textSub, marginTop: 4 }}>
-            Chargement départ : <strong style={{ color: BLUE }}>{depart.toLocaleString('fr-FR')} L</strong>
+          <div style={{ width: 68, height: 68, borderRadius: '50%', background: `${C.blue}12`, border: `2px solid ${C.blue}35`, margin: '0 auto 14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke={C.blue} strokeWidth="2" strokeLinecap="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
+            </svg>
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: C.text }}>Arrivée à destination</div>
+          <div style={{ fontSize: 13, color: C.sub, marginTop: 6 }}>
+            Chargement départ : <strong style={{ color: C.orange }}>{fmt(depart)} L</strong>
           </div>
         </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 8 }}>
-            Quantité livrée (litres)
-          </div>
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 8 }}>Quantité livrée (litres)</div>
           <input type="number" min="0" step="100" placeholder="14 800" value={qty}
             onChange={e => setQty(e.target.value)}
-            onFocus={e => { e.target.style.borderColor = BLUE; e.target.style.boxShadow = `0 0 0 3px rgba(37,99,235,0.15)` }}
-            onBlur={e  => { e.target.style.borderColor = palette.cardBorder; e.target.style.boxShadow = 'none' }}
-            style={{
-              width: '100%', height: 80, boxSizing: 'border-box',
-              background: palette.inputBg, border: `1.5px solid ${palette.cardBorder}`,
-              borderRadius: 14, padding: '0 16px',
-              fontSize: 40, fontWeight: 800, fontFamily: theme.font.mono,
-              color: palette.text, outline: 'none',
-              textAlign: 'center', transition: 'all 0.15s',
-            }} />
+            onFocus={e => { e.target.style.borderColor = C.blue; e.target.style.boxShadow = `0 0 0 3px ${C.blue}20` }}
+            onBlur={e  => { e.target.style.borderColor = C.border; e.target.style.boxShadow = 'none' }}
+            style={{ width: '100%', height: 80, boxSizing: 'border-box', background: 'rgba(255,255,255,0.04)', border: `1.5px solid ${C.border}`, borderRadius: 14, padding: '0 16px', fontSize: 44, fontWeight: 800, fontFamily: 'monospace', color: C.text, outline: 'none', textAlign: 'center', transition: 'all 0.15s' }} />
         </div>
 
-        {qty && (
-          <div style={{
-            borderRadius: 14, padding: '14px 18px', marginBottom: 16, textAlign: 'center',
-            background: isFraude ? theme.colors.dangerLight : theme.colors.successLight,
-            border: `1.5px solid ${isFraude ? theme.colors.danger + '40' : theme.colors.success + '40'}`,
-            transition: 'all 0.3s',
-          }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: isFraude ? theme.colors.danger : GREEN, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>
-              Écart constaté
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 900, fontFamily: theme.font.mono, color: isFraude ? theme.colors.danger : GREEN }}>
-              {ecart > 0 ? '+' : ''}{ecart.toFixed(1)} L
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {qty && (
+            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+              style={{ borderRadius: 14, padding: '14px 18px', marginBottom: 14, textAlign: 'center', background: isFraude ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)', border: `1.5px solid ${isFraude ? C.red + '40' : C.green + '40'}` }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: isFraude ? C.red : C.green, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Écart constaté {isFraude ? '⚠' : '✓'}</div>
+              <div style={{ fontSize: 30, fontWeight: 900, fontFamily: 'monospace', color: isFraude ? C.red : C.green }}>{ecart > 0 ? '+' : ''}{ecart.toFixed(1)} L</div>
+              {isFraude && <div style={{ fontSize: 11, color: C.red, marginTop: 4 }}>Alerte fraude automatique ({seuil}L seuil)</div>}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Photo arrivée */}
-        <div style={{ marginBottom: 20 }}>
-          <PhotoInput
-            label="Photo jauge à l'arrivée"
-            btnLabel="Prendre photo jauge arrivée"
-            photoFile={photoFile}
-            onChange={setPhotoFile}
-            palette={palette}
-            isDark={isDark}
-          />
+        <div style={{ marginBottom: 22 }}>
+          <PhotoInput label="Photo jauge à l'arrivée" btnLabel="Prendre photo jauge arrivée" photoFile={photoFile} onChange={setPhotoFile} />
         </div>
 
-        <button onClick={() => onConfirm(qty, photoFile)} disabled={!canSubmit || loading}
-          style={{
-            width: '100%', height: 58, borderRadius: 16, border: 'none',
-            background: canSubmit && !loading
-              ? `linear-gradient(135deg, ${BLUE}, #1D4ED8)`
-              : (isDark ? 'rgba(255,255,255,0.08)' : '#E5E7EB'),
-            color: canSubmit && !loading ? '#fff' : palette.textMuted,
-            fontSize: 16, fontWeight: 800, fontFamily: 'inherit', cursor: canSubmit && !loading ? 'pointer' : 'not-allowed',
-            boxShadow: canSubmit && !loading ? '0 8px 24px rgba(37,99,235,0.4)' : 'none',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            transition: 'all 0.2s',
+        <button onClick={() => onConfirm(qty, photoFile)} disabled={!ok || loading}
+          style={{ width: '100%', height: 60, borderRadius: 18, border: 'none', fontSize: 16, fontWeight: 800, fontFamily: 'inherit',
+            background: ok && !loading ? `linear-gradient(135deg, ${C.blue}, #0284C7)` : 'rgba(255,255,255,0.06)',
+            color: ok && !loading ? '#fff' : C.muted,
+            cursor: ok && !loading ? 'pointer' : 'not-allowed',
+            boxShadow: ok && !loading ? `0 8px 24px ${C.blue}40` : 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, transition: 'all 0.2s',
           }}>
           {loading
             ? <div style={{ width: 22, height: 22, border: '3px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
@@ -377,115 +354,75 @@ function ModalArriver({ trajetActif, onClose, onConfirm, loading, palette, isDar
           }
           {loading ? 'Enregistrement...' : "Confirmer l'arrivée"}
         </button>
-        <button onClick={onClose} style={{ display: 'block', width: '100%', marginTop: 12, padding: '12px 0', background: 'none', border: 'none', color: palette.textMuted, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
+        <button onClick={onClose}
+          style={{ display: 'block', width: '100%', marginTop: 12, padding: '12px 0', background: 'none', border: 'none', color: C.muted, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>
           Annuler
         </button>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }
 
 // ── Écran Attente validation QR ───────────────────
-function EcranAttenteQR({ trajetActif, palette, isDark }) {
+function EcranAttenteQR({ trajetActif }) {
   const qr = trajetActif?.qr_code ?? '------'
   const [copied, setCopied] = useState(false)
 
   const handleCopy = () => {
     navigator.clipboard.writeText(qr.toString()).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2500)
+      setCopied(true); setTimeout(() => setCopied(false), 2500)
     }).catch(() => {})
   }
 
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-      {/* Carte principale */}
-      <div style={{
-        width: '100%',
-        background: isDark ? 'rgba(37,99,235,0.12)' : 'rgba(37,99,235,0.06)',
-        border: `2px solid ${BLUE}40`,
-        borderRadius: 24, padding: '32px 24px',
-        textAlign: 'center',
-        boxShadow: '0 8px 32px rgba(37,99,235,0.12)',
-      }}>
-        <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
-        <div style={{ fontSize: 20, fontWeight: 800, color: palette.text, marginBottom: 6 }}>
-          Arrivée déclarée
-        </div>
-        <div style={{ fontSize: 14, color: palette.textSub, marginBottom: 28, lineHeight: 1.7 }}>
+      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+        style={{ width: '100%', background: `linear-gradient(135deg, ${C.orange}12, ${C.orange}06)`, border: `2px solid ${C.orange}40`, borderRadius: 24, padding: '32px 24px', textAlign: 'center', boxShadow: `0 8px 40px ${C.orange}15` }}>
+
+        <motion.div animate={{ scale: [1, 1.04, 1] }} transition={{ duration: 2.5, repeat: Infinity }}
+          style={{ width: 80, height: 80, borderRadius: '50%', background: `${C.green}15`, border: `2px solid ${C.green}40`, margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 30px ${C.green}20` }}>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2" strokeLinecap="round">
+            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+        </motion.div>
+
+        <div style={{ fontSize: 22, fontWeight: 900, color: C.text, marginBottom: 8 }}>Arrivée déclarée</div>
+        <div style={{ fontSize: 14, color: C.sub, marginBottom: 28, lineHeight: 1.7 }}>
           Montrez ce code au logisticien<br/>pour valider la livraison
         </div>
 
-        {/* Code PIN style */}
-        <div style={{
-          background: isDark ? '#0D1B2A' : '#fff',
-          border: `3px solid ${BLUE}`,
-          borderRadius: 24, padding: '24px 28px 20px',
-          display: 'inline-block',
-          boxShadow: `0 0 40px ${BLUE}35`,
-        }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: BLUE, textTransform: 'uppercase', letterSpacing: '0.25em', marginBottom: 14 }}>
-            Code de validation
-          </div>
-          <div style={{
-            fontSize: 62, fontWeight: 900, fontFamily: theme.font.mono,
-            color: BLUE, letterSpacing: '0.22em',
-            textShadow: `0 0 28px ${BLUE}55`,
-            lineHeight: 1,
-          }}>
+        {/* QR Code display */}
+        <div style={{ background: '#020409', border: `3px solid ${C.orange}`, borderRadius: 24, padding: '24px 28px 20px', display: 'inline-block', boxShadow: `0 0 50px ${C.orange}30` }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: C.orange, textTransform: 'uppercase', letterSpacing: '0.25em', marginBottom: 14 }}>Code de validation</div>
+          <div style={{ fontSize: 58, fontWeight: 900, fontFamily: 'monospace', color: C.orange, letterSpacing: '0.22em', textShadow: `0 0 28px ${C.orange}60`, lineHeight: 1 }}>
             {qr.toString().split('').join(' ')}
           </div>
         </div>
 
-        {/* Bouton copier */}
-        <div style={{ marginTop: 18 }}>
-          <button
-            onClick={handleCopy}
-            style={{
-              height: 46, borderRadius: 12, border: `1.5px solid ${copied ? GREEN + '60' : BLUE + '50'}`,
-              background: copied
-                ? (isDark ? 'rgba(16,185,129,0.12)' : 'rgba(16,185,129,0.08)')
-                : (isDark ? 'rgba(37,99,235,0.12)' : 'rgba(37,99,235,0.08)'),
-              color: copied ? GREEN : BLUE,
-              fontSize: 14, fontWeight: 700, fontFamily: 'inherit',
-              cursor: 'pointer', padding: '0 24px',
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              transition: 'all 0.2s',
-            }}>
-            {copied ? (
-              <>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M20 6L9 17l-5-5"/></svg>
-                Copié !
-              </>
-            ) : (
-              <>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                Copier le code
-              </>
-            )}
+        <div style={{ marginTop: 20 }}>
+          <button onClick={handleCopy}
+            style={{ height: 48, borderRadius: 14, border: `1.5px solid ${copied ? C.green + '60' : C.orange + '50'}`, background: copied ? `${C.green}12` : `${C.orange}10`, color: copied ? C.green : C.orange, fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', padding: '0 24px', display: 'inline-flex', alignItems: 'center', gap: 8, transition: 'all 0.2s' }}>
+            {copied
+              ? <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M20 6L9 17l-5-5"/></svg>Copié !</>
+              : <><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copier le code</>
+            }
           </button>
         </div>
 
-        <div style={{ fontSize: 11, color: palette.textMuted, marginTop: 14 }}>
-          Valide 24 heures
-        </div>
-      </div>
+        <div style={{ fontSize: 11, color: C.muted, marginTop: 14 }}>Valide 24 heures</div>
+      </motion.div>
 
       {/* Infos trajet */}
       <div style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         {[
-          { label: 'Chargement',  value: `${(trajetActif.qty_depart ?? 0).toLocaleString('fr-FR')} L` },
-          { label: 'Livraison',   value: trajetActif.qty_arrivee ? `${parseFloat(trajetActif.qty_arrivee).toLocaleString('fr-FR')} L` : '—' },
+          { label: 'Chargement',  value: `${fmt(trajetActif.qty_depart ?? 0)} L` },
+          { label: 'Livraison',   value: trajetActif.qty_arrivee ? `${fmt(parseFloat(trajetActif.qty_arrivee))} L` : '—' },
           { label: 'Citerne',     value: trajetActif.citerne_code ?? '—' },
           { label: 'Destination', value: trajetActif.station_nom ?? '—' },
         ].map(({ label, value }) => (
-          <div key={label} style={{
-            background: palette.card, border: `1px solid ${palette.cardBorder}`,
-            borderRadius: 14, padding: '12px 10px', textAlign: 'center',
-            boxShadow: theme.shadow.sm,
-          }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: palette.text, fontFamily: theme.font.mono, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
-            <div style={{ fontSize: 9, color: palette.textMuted, marginTop: 3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
+          <div key={label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '12px 10px', textAlign: 'center' }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: C.text, fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
+            <div style={{ fontSize: 9, color: C.muted, marginTop: 3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
           </div>
         ))}
       </div>
@@ -496,21 +433,19 @@ function EcranAttenteQR({ trajetActif, palette, isDark }) {
 // ── Page principale ───────────────────────────────
 export default function ChauffeurPage() {
   const { user, logout }            = useAuth()
-  const { isDark, toggle, palette } = useTheme()
   const { trajetActif, loading, demarrer, demarrerLoading, envoyerPosition, arriver, arriverLoading } = useTrajet()
   const { data: citernesData }      = useCiternes()
   const { parametres }              = useParametres()
-  const citernes = citernesData?.citernes ?? []
+  const citernes  = citernesData?.citernes ?? []
 
-  const [modal,     setModal]     = useState(null) // 'demarrer' | 'arriver'
+  const [modal,     setModal]     = useState(null)
   const [gpsStatus, setGpsStatus] = useState('inactif')
   const [lastPos,   setLastPos]   = useState(null)
   const watchRef = useRef(null)
-  const elapsed  = useElapsed(trajetActif?.started_at)
+  const timer    = useElapsed(trajetActif?.started_at)
 
   const isAttenteQR = trajetActif?.statut === 'arrive_attente'
 
-  // Watchposition GPS quand trajet en cours (pas en attente QR)
   useEffect(() => {
     if (!trajetActif || isAttenteQR) {
       if (watchRef.current != null) {
@@ -525,11 +460,12 @@ export default function ChauffeurPage() {
 
     watchRef.current = navigator.geolocation.watchPosition(
       (pos) => {
-        const { latitude: lat, longitude: lng, speed } = pos.coords
+        const { latitude: lat, longitude: lng, speed, heading } = pos.coords
         const vitesse = speed ? Math.round(speed * 3.6) : 0
-        setLastPos({ lat, lng, vitesse })
+        const cap     = (heading != null && !isNaN(heading)) ? Math.round(heading) : null
+        setLastPos({ lat, lng, vitesse, cap })
         setGpsStatus('actif')
-        envoyerPosition({ id: trajetActif.id, lat, lng, vitesse })
+        envoyerPosition({ id: trajetActif.id, lat, lng, vitesse, cap })
       },
       () => setGpsStatus('erreur'),
       { enableHighAccuracy: true, maximumAge: 10_000, timeout: 30_000 }
@@ -553,218 +489,159 @@ export default function ChauffeurPage() {
     setModal(null)
   }
 
-  const BG = isDark ? '#0D1B2A' : '#F0F4FF'
-
-  const GPS_ICON_COLOR = { actif: GREEN, erreur: theme.colors.danger, inactif: '#94A3B8' }[gpsStatus]
-  const GPS_LABEL      = { actif: 'GPS actif', erreur: 'GPS indisponible', inactif: 'Acquisition GPS...' }[gpsStatus]
+  const GPS_COLOR = { actif: C.green, erreur: C.red, inactif: C.muted }[gpsStatus]
+  const GPS_LABEL = { actif: 'GPS actif', erreur: 'GPS indisponible', inactif: 'Acquisition GPS...' }[gpsStatus]
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, fontFamily: theme.font.family, display: 'flex', flexDirection: 'column', transition: 'background 0.3s' }}>
+    <div style={{ minHeight: '100vh', background: C.bg, fontFamily: 'DM Sans, sans-serif', display: 'flex', flexDirection: 'column' }}>
 
       {/* ── Header ─────────────────────────────── */}
-      <div style={{ background: '#0A1628', padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 24px rgba(0,0,0,0.3)', position: 'sticky', top: 0, zIndex: 10 }}>
+      <div style={{ background: 'linear-gradient(135deg, #090D1A, #111827)', borderBottom: `1px solid ${C.orange}20`, padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 10, boxShadow: '0 2px 20px rgba(0,0,0,0.4)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {parametres?.logo_url ? (
-            <img src={parametres.logo_url} alt="logo" style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.12)' }} />
-          ) : (
-            <div style={{ width: 32, height: 32, background: ORANGE, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 12px rgba(245,158,11,0.4)' }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0A1628" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM18.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/>
-              </svg>
-            </div>
-          )}
+          {parametres?.logo_url
+            ? <img src={parametres.logo_url} alt="" style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover', border: `1px solid ${C.orange}40` }} />
+            : <div style={{ width: 34, height: 34, background: `linear-gradient(135deg, ${C.orange}, #D97706)`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 16px ${C.orange}40` }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#090D1A" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM18.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/>
+                </svg>
+              </div>
+          }
           <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>
-              {parametres?.nom ?? <span>fuel<span style={{ color: ORANGE }}>o</span></span>}
-            </div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.05em' }}>Chauffeur</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#fff' }}>{parametres?.nom ?? 'Fuelo'}</div>
+            <div style={{ fontSize: 10, color: C.orange, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Chauffeur</div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(245,158,11,0.18)', border: '1px solid rgba(245,158,11,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: ORANGE }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {trajetActif && !isAttenteQR && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', background: `${GPS_COLOR}12`, border: `1px solid ${GPS_COLOR}30`, borderRadius: 8 }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: GPS_COLOR, boxShadow: gpsStatus === 'actif' ? `0 0 6px ${GPS_COLOR}` : 'none', animation: gpsStatus === 'actif' ? 'pulse 2s infinite' : 'none' }} />
+              <span style={{ fontSize: 11, color: GPS_COLOR, fontWeight: 700 }}>{GPS_LABEL}</span>
+            </div>
+          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px', background: 'rgba(255,255,255,0.06)', borderRadius: 8 }}>
+            <div style={{ width: 22, height: 22, borderRadius: '50%', background: `${C.orange}20`, border: `1px solid ${C.orange}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: C.orange }}>
               {(user?.nom || 'C').charAt(0).toUpperCase()}
             </div>
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>{user?.nom}</span>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{user?.nom}</span>
           </div>
-          <button onClick={toggle} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', color: 'rgba(255,255,255,0.35)' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              {isDark ? <><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></> : <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>}
-            </svg>
-          </button>
-          <button onClick={logout} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'rgba(239,68,68,0.85)', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', padding: '5px 11px' }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.2)'; e.currentTarget.style.color = '#EF4444' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.1)'; e.currentTarget.style.color = 'rgba(239,68,68,0.85)' }}>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-            Déconnexion
+          <button onClick={logout}
+            style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'rgba(239,68,68,0.8)' }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
           </button>
         </div>
       </div>
 
       {/* ── Contenu ─────────────────────────────── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px 16px 32px', gap: 16, maxWidth: 520, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '16px 16px 40px', gap: 14, maxWidth: 520, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
 
         {loading ? (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 200, gap: 12 }}>
-            <div style={{ width: 36, height: 36, border: `3px solid ${palette.cardBorder}`, borderTopColor: BLUE, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-            <span style={{ fontSize: 13, color: palette.textSub }}>Chargement...</span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 300, gap: 14 }}>
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+              style={{ width: 40, height: 40, border: `3px solid ${C.orange}25`, borderTopColor: C.orange, borderRadius: '50%' }} />
+            <span style={{ fontSize: 13, color: C.sub }}>Chargement...</span>
           </div>
+
         ) : isAttenteQR ? (
-          /* ─ Attente validation QR ─ */
-          <EcranAttenteQR trajetActif={trajetActif} palette={palette} isDark={isDark} />
+          <EcranAttenteQR trajetActif={trajetActif} />
+
         ) : trajetActif ? (
           <>
-            {/* ─ Barre statut GPS + vitesse ─ */}
-            <div style={{
-              width: '100%',
-              background: palette.card,
-              border: `1px solid ${palette.cardBorder}`,
-              borderRadius: 18,
-              padding: '14px 18px',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-              boxShadow: theme.shadow.sm,
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 10, height: 10, borderRadius: '50%', background: GPS_ICON_COLOR, boxShadow: gpsStatus === 'actif' ? `0 0 8px ${GPS_ICON_COLOR}80` : 'none', animation: gpsStatus === 'actif' ? 'pulse 2s infinite' : 'none' }} />
-                <span style={{ fontSize: 13, fontWeight: 700, color: GPS_ICON_COLOR }}>{GPS_LABEL}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                {lastPos && (
-                  <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: palette.text, fontFamily: theme.font.mono, lineHeight: 1 }}>{lastPos.vitesse}</div>
-                    <div style={{ fontSize: 9, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>km/h</div>
+            {/* ─ Service actif + stats ─ */}
+            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
+              style={{ width: '100%', background: `linear-gradient(135deg, ${C.orange}12, ${C.orange}06)`, border: `1.5px solid ${C.orange}35`, borderRadius: 24, padding: '20px', boxShadow: `0 8px 32px ${C.orange}15` }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                <RingTimer pct={timer.pct} label={timer.label} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: C.orange, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>Trajet actif</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
+                    {[
+                      { l: 'Vitesse', v: lastPos ? `${lastPos.vitesse}` : '—', u: 'km/h', c: lastPos?.vitesse > 90 ? C.red : C.text },
+                      { l: 'Charge',  v: fmt(trajetActif.qty_depart ?? 0), u: 'L',    c: C.orange },
+                    ].map(({ l, v, u, c }) => (
+                      <div key={l} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '8px 10px', textAlign: 'center' }}>
+                        <div style={{ fontSize: 20, fontWeight: 900, color: c, fontFamily: 'monospace', lineHeight: 1 }}>{v}<span style={{ fontSize: 11, color: C.muted, marginLeft: 2 }}>{u}</span></div>
+                        <div style={{ fontSize: 9, color: C.muted, textTransform: 'uppercase', marginTop: 3 }}>{l}</div>
+                      </div>
+                    ))}
                   </div>
-                )}
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: palette.text, fontFamily: theme.font.mono, lineHeight: 1 }}>{elapsed}</div>
-                  <div style={{ fontSize: 9, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.06em' }}>en route</div>
+                  <button onClick={() => setModal('arriver')}
+                    style={{ width: '100%', height: 48, borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg, ${C.blue}, #0284C7)`, color: '#fff', fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: `0 4px 16px ${C.blue}35` }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    Arriver à destination
+                  </button>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* ─ Carte GPS live ─ */}
             <div style={{ width: '100%' }}>
-              <LiveMap lastPos={lastPos} isDark={isDark} />
+              <LiveMap lastPos={lastPos} />
             </div>
 
             {/* ─ Infos trajet ─ */}
-            <div style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }} className="chauffeur-grid-3">
+            <div style={{ width: '100%', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
               {[
                 { label: 'Citerne',     value: trajetActif.citerne_code ?? '—' },
                 { label: 'Destination', value: trajetActif.station_nom ?? '—' },
-                { label: 'Chargement',  value: `${(trajetActif.qty_depart ?? 0).toLocaleString('fr-FR')} L` },
+                { label: 'Cap',         value: lastPos?.cap != null ? `${lastPos.cap}°` : '—' },
               ].map(({ label, value }) => (
-                <div key={label} style={{
-                  background: palette.card, border: `1px solid ${palette.cardBorder}`,
-                  borderRadius: 14, padding: '12px 10px', textAlign: 'center',
-                  boxShadow: theme.shadow.sm,
-                }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: palette.text, fontFamily: theme.font.mono, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
-                  <div style={{ fontSize: 9, color: palette.textMuted, marginTop: 3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
+                <div key={label} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '12px 10px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: C.text, fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
+                  <div style={{ fontSize: 9, color: C.muted, marginTop: 3, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</div>
                 </div>
               ))}
             </div>
 
             {gpsStatus === 'erreur' && (
-              <div style={{ width: '100%', background: theme.colors.dangerLight, border: `1px solid ${theme.colors.danger}40`, borderRadius: 14, padding: '12px 16px', textAlign: 'center', fontSize: 13, color: theme.colors.danger, fontWeight: 600 }}>
-                📍 Activez la localisation dans les paramètres de votre téléphone
+              <div style={{ width: '100%', background: 'rgba(239,68,68,0.1)', border: `1px solid ${C.red}40`, borderRadius: 14, padding: '14px 16px', textAlign: 'center', fontSize: 13, color: C.red, fontWeight: 600 }}>
+                Activez la localisation dans les paramètres de votre téléphone
               </div>
             )}
-
-            {/* ─ Bouton arriver ─ */}
-            <button onClick={() => setModal('arriver')} style={{
-              width: '100%', height: 64, borderRadius: 18, border: 'none',
-              background: `linear-gradient(135deg, ${BLUE}, #1D4ED8)`,
-              color: '#fff', fontSize: 17, fontWeight: 800, fontFamily: 'inherit',
-              cursor: 'pointer',
-              boxShadow: '0 8px 28px rgba(37,99,235,0.4)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
-              transition: 'all 0.2s',
-            }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 36px rgba(37,99,235,0.5)' }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(37,99,235,0.4)' }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>
-              </svg>
-              Arriver à destination
-            </button>
           </>
+
         ) : (
           /* ─ Aucun trajet ─ */
-          <div style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 0, paddingTop: 40 }}>
-            <div style={{
-              width: '100%',
-              background: palette.card, border: `1px solid ${palette.cardBorder}`,
-              borderRadius: 24, padding: '48px 24px 36px',
-              textAlign: 'center', boxShadow: theme.shadow.md,
-            }}>
-              <div style={{
-                width: 80, height: 80, borderRadius: '50%', margin: '0 auto 20px',
-                background: isDark ? 'rgba(245,158,11,0.1)' : 'rgba(245,158,11,0.08)',
-                border: `2px solid rgba(245,158,11,0.25)`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 36,
-              }}>
-                🚚
+          <div style={{ width: '100%', flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: 32 }}>
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+              style={{ width: '100%', background: C.card, border: `1px solid ${C.border}`, borderRadius: 28, padding: '48px 24px 40px', textAlign: 'center', boxShadow: '0 8px 40px rgba(0,0,0,0.3)' }}>
+
+              <motion.div animate={{ scale: [1, 1.06, 1] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                style={{ width: 88, height: 88, borderRadius: '50%', background: `${C.orange}12`, border: `2px solid ${C.orange}30`, margin: '0 auto 20px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 30px ${C.orange}15` }}>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={C.orange} strokeWidth="1.8" strokeLinecap="round">
+                  <path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM18.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/>
+                </svg>
+              </motion.div>
+
+              <div style={{ fontSize: 22, fontWeight: 900, color: C.text, marginBottom: 10, letterSpacing: '-0.3px' }}>Aucun trajet en cours</div>
+              <div style={{ fontSize: 14, color: C.sub, marginBottom: 36, lineHeight: 1.7, maxWidth: 300, margin: '0 auto 36px' }}>
+                Démarrez un trajet pour activer le suivi GPS en temps réel et transmettre votre position.
               </div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: palette.text, marginBottom: 8, letterSpacing: '-0.3px' }}>
-                Aucun trajet en cours
-              </div>
-              <div style={{ fontSize: 14, color: palette.textSub, marginBottom: 32, lineHeight: 1.6, maxWidth: 300, margin: '0 auto 32px' }}>
-                Démarrez un trajet pour activer le suivi GPS en temps réel.
-              </div>
-              <button onClick={() => setModal('demarrer')} style={{
-                width: '100%', height: 62, borderRadius: 18, border: 'none',
-                background: `linear-gradient(135deg, ${GREEN}, #059669)`,
-                color: '#fff', fontSize: 17, fontWeight: 800, fontFamily: 'inherit',
-                cursor: 'pointer',
-                boxShadow: '0 8px 28px rgba(16,185,129,0.4)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
-                transition: 'all 0.2s',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 36px rgba(16,185,129,0.5)' }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 8px 28px rgba(16,185,129,0.4)' }}>
+
+              <motion.button whileTap={{ scale: 0.97 }} onClick={() => setModal('demarrer')}
+                style={{ width: '100%', height: 64, borderRadius: 20, border: 'none', background: `linear-gradient(135deg, ${C.orange}, #D97706)`, color: '#070B14', fontSize: 17, fontWeight: 800, cursor: 'pointer', boxShadow: `0 8px 28px ${C.orange}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                   <polygon points="5 3 19 12 5 21 5 3"/>
                 </svg>
                 Démarrer un trajet
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
           </div>
         )}
       </div>
 
       {/* ── Modals ──────────────────────────────── */}
-      {modal === 'demarrer' && (
-        <ModalDemarrer
-          citernes={citernes}
-          onClose={() => setModal(null)}
-          onConfirm={handleDemarrer}
-          loading={demarrerLoading}
-          palette={palette} isDark={isDark}
-        />
-      )}
-      {modal === 'arriver' && (
-        <ModalArriver
-          trajetActif={trajetActif}
-          onClose={() => setModal(null)}
-          onConfirm={handleArriver}
-          loading={arriverLoading}
-          palette={palette} isDark={isDark}
-        />
-      )}
+      <AnimatePresence>
+        {modal === 'demarrer' && <ModalDemarrer citernes={citernes} onClose={() => setModal(null)} onConfirm={handleDemarrer} loading={demarrerLoading} />}
+        {modal === 'arriver'  && <ModalArriver  trajetActif={trajetActif} onClose={() => setModal(null)} onConfirm={handleArriver} loading={arriverLoading} />}
+      </AnimatePresence>
 
       <style>{`
-        @keyframes spin    { to { transform: rotate(360deg); } }
-        @keyframes slideUp { from { opacity:0; transform:translateY(30px) } to { opacity:1; transform:translateY(0) } }
-        @keyframes pulse   { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        @keyframes spin  { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 8px rgba(245,158,11,0.7)} 50%{opacity:0.6;box-shadow:0 0 16px rgba(245,158,11,1)} }
         select { appearance: none; -webkit-appearance: none; }
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
-        @media (max-width: 480px) {
-          .chauffeur-grid-3 { grid-template-columns: 1fr 1fr !important; }
-        }
       `}</style>
     </div>
   )
