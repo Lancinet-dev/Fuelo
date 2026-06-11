@@ -176,14 +176,22 @@ function TabDashboard({ mois, annee }) {
   const volTypes= data?.volumes_par_type || []
 
   const statsCards = [
-    { label: "Chiffre d'affaires", val: s.ca,              unit: 'GNF',        variation: s.ca_var,      icon: '📈', color: '#22c55e' },
-    { label: 'Marge brute',        val: s.marge_brute,     unit: `GNF · ${s.marge_pct ?? 0}% du CA`, icon: '💹', color: s.marge_brute >= 0 ? '#22c55e' : '#ef4444' },
-    { label: 'Coût achats',        val: s.achats,          unit: 'GNF',        variation: s.achats_var,  icon: '⛽', color: '#f59e0b' },
-    { label: 'Dépenses',           val: s.depenses,        unit: 'GNF',        variation: s.depenses_var,icon: '💸', color: '#ef4444' },
-    { label: 'Coût transport',     val: s.transport,       unit: 'GNF',        icon: '🚛', color: '#8b5cf6' },
-    { label: 'Masse salariale',    val: s.paie,            unit: 'GNF',        icon: '👥', color: '#06b6d4' },
-    { label: 'Prix achat moyen',   val: s.prix_achat_moyen,unit: 'GNF/L',      icon: '📊', color: '#f97316' },
-    { label: 'Prix vente moyen',   val: s.prix_vente_moyen,unit: 'GNF/L',      icon: '💰', color: '#a78bfa' },
+    { label: "Chiffre d'affaires", val: s.ca,              unit: 'GNF',        variation: s.ca_var,
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>, color: '#22c55e' },
+    { label: 'Marge brute',        val: s.marge_brute,     unit: `GNF · ${s.marge_pct ?? 0}% du CA`,
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>, color: s.marge_brute >= 0 ? '#22c55e' : '#ef4444' },
+    { label: 'Coût achats',        val: s.achats,          unit: 'GNF',        variation: s.achats_var,
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>, color: '#f59e0b' },
+    { label: 'Dépenses',           val: s.depenses,        unit: 'GNF',        variation: s.depenses_var,
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>, color: '#ef4444' },
+    { label: 'Coût transport',     val: s.transport,       unit: 'GNF',
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>, color: '#8b5cf6' },
+    { label: 'Masse salariale',    val: s.paie,            unit: 'GNF',
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>, color: '#06b6d4' },
+    { label: 'Prix achat moyen',   val: s.prix_achat_moyen,unit: 'GNF/L',
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, color: '#f97316' },
+    { label: 'Prix vente moyen',   val: s.prix_vente_moyen,unit: 'GNF/L',
+      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>, color: '#a78bfa' },
   ]
 
   return (
@@ -191,9 +199,15 @@ function TabDashboard({ mois, annee }) {
       {/* Alertes */}
       {(alertes.bl_en_attente > 0 || alertes.factures_retard > 0 || alertes.marge_negative) && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} style={{ display: 'flex', gap: 10, marginBottom: 24, flexWrap: 'wrap' }}>
-          {alertes.bl_en_attente > 0 && <AlertBadge color="#f59e0b" text={`⚠️ ${alertes.bl_en_attente} BL en attente de signature`} />}
-          {alertes.factures_retard > 0 && <AlertBadge color="#ef4444" text={`🔴 ${alertes.factures_retard} facture(s) en retard`} />}
-          {alertes.marge_negative && <AlertBadge color="#ef4444" text="📉 Marge brute négative ce mois" />}
+          {alertes.bl_en_attente > 0 && <AlertBadge color="#f59e0b"
+            icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
+            text={`${alertes.bl_en_attente} BL en attente de signature`} />}
+          {alertes.factures_retard > 0 && <AlertBadge color="#ef4444"
+            icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
+            text={`${alertes.factures_retard} facture(s) en retard`} />}
+          {alertes.marge_negative && <AlertBadge color="#ef4444"
+            icon={<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>}
+            text="Marge brute négative ce mois" />}
         </motion.div>
       )}
 
@@ -668,15 +682,19 @@ function TabRapports({ mois, annee }) {
       <h2 style={{ margin: '0 0 24px', fontSize: 18, fontWeight: 700, color: palette.text }}>Rapports financiers</h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14, marginBottom: 28 }}>
         {[
-          { title: 'Bilan mensuel', desc: `Compte de résultat complet de ${MOIS_NOMS[mois-1]} ${annee}`, icon: '📋' },
-          { title: 'Journal des achats', desc: 'Détail des achats carburant par fournisseur', icon: '📦' },
-          { title: 'Journal des dépenses', desc: 'Dépenses classées par catégorie', icon: '💸' },
-          { title: 'Masse salariale', desc: 'Récapitulatif fiches de paie du mois', icon: '👥' },
+          { title: 'Bilan mensuel', desc: `Compte de résultat complet de ${MOIS_NOMS[mois-1]} ${annee}`,
+            icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> },
+          { title: 'Journal des achats', desc: 'Détail des achats carburant par fournisseur',
+            icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg> },
+          { title: 'Journal des dépenses', desc: 'Dépenses classées par catégorie',
+            icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg> },
+          { title: 'Masse salariale', desc: 'Récapitulatif fiches de paie du mois',
+            icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg> },
         ].map((r, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
             style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 12, padding: 20, cursor: 'pointer' }}
           >
-            <div style={{ fontSize: 26, marginBottom: 12 }}>{r.icon}</div>
+            <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(37,99,235,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14, color: '#60A5FA' }}>{r.icon}</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: palette.text, marginBottom: 6 }}>{r.title}</div>
             <div style={{ fontSize: 12, color: palette.textSub, lineHeight: 1.5, marginBottom: 14 }}>{r.desc}</div>
             <button style={{ ...btnPrimary, fontSize: 12, padding: '7px 14px' }} onClick={() => alert('Export en cours de développement')}>Exporter</button>
@@ -715,8 +733,8 @@ function KpiCard({ label, val, unit, variation, index, icon, color }) {
     >
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${color}, transparent)` }} />
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
-        <span style={{ fontSize: 11, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1.4, maxWidth: '75%' }}>{label}</span>
-        <span style={{ fontSize: 20 }}>{icon}</span>
+        <span style={{ fontSize: 11, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1.4, maxWidth: '72%' }}>{label}</span>
+        <div style={{ width: 32, height: 32, borderRadius: 8, background: `${color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color }}>{icon}</div>
       </div>
       <div style={{ fontSize: 22, fontWeight: 800, color, fontVariantNumeric: 'tabular-nums', letterSpacing: -0.5 }}>{fmt(val)}</div>
       <div style={{ fontSize: 10, color: palette.textMuted, marginTop: 2 }}>{unit}</div>
@@ -742,8 +760,13 @@ function ChartCard({ title, subtitle, children }) {
   )
 }
 
-function AlertBadge({ color, text }) {
-  return <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: `${color}15`, border: `1px solid ${color}30`, borderRadius: 8, fontSize: 13, color }}>{text}</div>
+function AlertBadge({ color, icon, text }) {
+  return (
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: `${color}15`, border: `1px solid ${color}30`, borderRadius: 8, fontSize: 13, color }}>
+      {icon && <span style={{ flexShrink: 0, display: 'flex' }}>{icon}</span>}
+      {text}
+    </div>
+  )
 }
 
 function TabHeader({ title, count, onAdd, btnLabel }) {

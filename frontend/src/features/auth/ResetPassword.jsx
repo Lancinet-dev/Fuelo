@@ -1,14 +1,27 @@
-// ================================================
-// FUELO V2 — ResetPassword
-// Fichier : frontend/src/features/auth/ResetPassword.jsx
-// ================================================
-
-import { useState }              from 'react'
+import { useState } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
-import api   from '../../services/api'
+import { motion } from 'framer-motion'
+import api from '../../services/api'
 import toast from 'react-hot-toast'
-import theme from '../../config/theme'
 import FueloLogo from '../../components/FueloLogo'
+
+const BG    = '#050A15'
+const BLUE  = '#2563EB'
+const SOFT  = '#60A5FA'
+const DARK  = '#1D4ED8'
+const GREEN = '#10B981'
+const RED   = '#EF4444'
+const TEXT  = '#F1F5F9'
+const SUB   = 'rgba(255,255,255,0.35)'
+const MUT   = 'rgba(255,255,255,0.2)'
+
+const DOTS = Array.from({ length: 14 }, (_, i) => ({
+  x: Math.random() * 100, y: Math.random() * 100,
+  size: Math.random() * 2 + 1,
+  color: i % 3 === 0 ? SOFT : BLUE,
+  dur: 12 + Math.random() * 18, delay: Math.random() * 8,
+}))
+
 function getStrength(pwd) {
   if (!pwd) return 0
   if (pwd.length >= 12 && /[A-Z]/.test(pwd) && /[0-9]/.test(pwd)) return 3
@@ -16,27 +29,29 @@ function getStrength(pwd) {
   if (pwd.length >= 4) return 1
   return 0
 }
-const STRENGTH_COLOR = ['', '#EF4444', '#F59E0B', '#10B981']
+const STRENGTH_COLOR = ['', RED, '#F59E0B', GREEN]
 const STRENGTH_LABEL = ['', 'Faible', 'Moyen', 'Fort']
 
-export default function ResetPassword() {
-  const navigate                = useNavigate()
-  const [searchParams]          = useSearchParams()
-  const token                   = searchParams.get('token')
+const BG_LAYOUT = { minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', fontFamily: "'DM Sans', system-ui, sans-serif", padding: '20px' }
 
-  const [password,  setPassword]  = useState('')
-  const [confirm,   setConfirm]   = useState('')
-  const [showPwd,   setShowPwd]   = useState(false)
-  const [loading,   setLoading]   = useState(false)
-  const [success,   setSuccess]   = useState(false)
-  const [errors,    setErrors]    = useState({})
+export default function ResetPassword() {
+  const navigate       = useNavigate()
+  const [searchParams] = useSearchParams()
+  const token          = searchParams.get('token')
+
+  const [password, setPassword] = useState('')
+  const [confirm,  setConfirm]  = useState('')
+  const [showPwd,  setShowPwd]  = useState(false)
+  const [loading,  setLoading]  = useState(false)
+  const [success,  setSuccess]  = useState(false)
+  const [errors,   setErrors]   = useState({})
 
   const strength = getStrength(password)
 
   const validate = () => {
     const e = {}
-    if (password.length < 6)       e.password = 'Minimum 6 caractères'
-    if (password !== confirm)       e.confirm  = 'Les mots de passe ne correspondent pas'
+    if (password.length < 6)   e.password = 'Minimum 6 caractères'
+    if (password !== confirm)   e.confirm  = 'Les mots de passe ne correspondent pas'
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -45,7 +60,6 @@ export default function ResetPassword() {
     ev.preventDefault()
     if (!validate()) return
     if (!token) { toast.error('Lien invalide'); return }
-
     setLoading(true)
     try {
       await api.post('/auth/reset-password', { token, password })
@@ -59,122 +73,159 @@ export default function ResetPassword() {
     }
   }
 
-  // Token manquant
+  const BgDecorations = () => (
+    <>
+      <div style={{ position: 'absolute', top: '-20%', left: '50%', transform: 'translateX(-50%)', width: '70vw', height: '60vh', background: 'radial-gradient(ellipse, rgba(37,99,235,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(37,99,235,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(37,99,235,0.03) 1px, transparent 1px)', backgroundSize: '80px 80px', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        {DOTS.map((d, i) => <div key={i} style={{ position: 'absolute', left: `${d.x}%`, top: `${d.y}%`, width: d.size, height: d.size, borderRadius: '50%', background: d.color, opacity: 0.25, animation: `floatPt ${d.dur}s ${d.delay}s ease-in-out infinite alternate` }} />)}
+      </div>
+    </>
+  )
+
   if (!token) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0A0F1E', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, fontFamily: theme.font.family }}>
-        <div style={{ background: '#0F172A', border: '0.5px solid #1E2D42', borderRadius: 16, padding: '32px 28px', maxWidth: 400, width: '100%', textAlign: 'center' }}>
-          <div style={{ fontSize: 40, marginBottom: 16 }}>⚠️</div>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: '#F1F5F9', marginBottom: 8 }}>Lien invalide</h2>
-          <p style={{ fontSize: 13, color: '#475569', marginBottom: 24 }}>Ce lien de réinitialisation est invalide ou a expiré.</p>
-          <Link to="/forgot-password" style={{ display: 'block', padding: '12px', borderRadius: theme.radius.md, background: theme.colors.primary, color: '#0F172A', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+      <div style={BG_LAYOUT}>
+        <BgDecorations />
+        <motion.div
+          initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          style={{ position: 'relative', zIndex: 2, width: '100%', maxWidth: 420, background: 'rgba(8,13,26,0.78)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 24, padding: '36px 32px', backdropFilter: 'blur(30px)', WebkitBackdropFilter: 'blur(30px)', boxShadow: '0 24px 80px rgba(0,0,0,0.5)', textAlign: 'center' }}
+        >
+          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(239,68,68,0.1)', border: '2px solid rgba(239,68,68,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={RED} strokeWidth="2.5" strokeLinecap="round">
+              <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+            </svg>
+          </div>
+          <h2 style={{ fontSize: 20, fontWeight: 800, color: TEXT, marginBottom: 8 }}>Lien invalide</h2>
+          <p style={{ fontSize: 13, color: SUB, marginBottom: 24, lineHeight: 1.65 }}>Ce lien de réinitialisation est invalide ou a expiré.</p>
+          <Link to="/forgot-password"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', height: 50, background: `linear-gradient(135deg, ${BLUE}, ${DARK})`, borderRadius: 12, color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}
+          >
             Demander un nouveau lien
           </Link>
-        </div>
+        </motion.div>
+        <style>{`@keyframes floatPt { from{transform:translateY(0) scale(1)}to{transform:translateY(-25px) scale(1.2)} } * { box-sizing:border-box }`}</style>
       </div>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0A0F1E', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, fontFamily: theme.font.family }}>
-      <div style={{ width: '100%', maxWidth: 400 }}>
+    <div style={BG_LAYOUT}>
+      <BgDecorations />
 
-        <FueloLogo size={80} forceTextColor="#fff" />
-
-      
-
-        <div style={{ background: '#0F172A', border: '0.5px solid #1E2D42', borderRadius: 16, padding: '32px 28px' }}>
-
-          {!success ? (
-            <>
-              <h1 style={{ fontSize: 20, fontWeight: 800, color: '#F1F5F9', marginBottom: 4, letterSpacing: '-0.5px' }}>
-                Nouveau mot de passe
-              </h1>
-              <p style={{ fontSize: 13, color: '#475569', marginBottom: 24 }}>
-                Choisissez un mot de passe sécurisé d'au moins 6 caractères.
-              </p>
-
-              <form onSubmit={handleSubmit}>
-
-                {/* Mot de passe */}
-                <div style={{ marginBottom: 14 }}>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 8 }}>
-                    Nouveau mot de passe
-                  </label>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type={showPwd ? 'text' : 'password'}
-                      value={password}
-                      onChange={e => { setPassword(e.target.value); setErrors(er => ({ ...er, password: '' })) }}
-                      placeholder="Minimum 6 caractères"
-                      onFocus={e => { e.target.style.borderColor = theme.colors.primary; e.target.style.boxShadow = `0 0 0 3px ${theme.colors.primaryLight}` }}
-                      onBlur={e  => { e.target.style.borderColor = errors.password ? theme.colors.danger : '#1E2D42'; e.target.style.boxShadow = 'none' }}
-                      style={{ width: '100%', height: 48, background: '#0A0F1E', border: `1.5px solid ${errors.password ? theme.colors.danger : '#1E2D42'}`, borderRadius: theme.radius.md, padding: '0 44px 0 16px', fontSize: 14, color: '#F1F5F9', fontFamily: theme.font.family, outline: 'none', transition: theme.transition.fast }}
-                    />
-                    <button type="button" onClick={() => setShowPwd(v => !v)}
-                      style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center' }}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        {showPwd
-                          ? <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></>
-                          : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>
-                        }
-                      </svg>
-                    </button>
-                  </div>
-                  {errors.password && <div style={{ fontSize: theme.font.size.xs, color: theme.colors.danger, marginTop: 4 }}>{errors.password}</div>}
-
-                  {/* Barre de force */}
-                  {password && (
-                    <div style={{ marginTop: 8 }}>
-                      <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
-                        {[1, 2, 3].map(i => (
-                          <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= strength ? STRENGTH_COLOR[strength] : '#1E2D42', transition: 'background 0.3s' }} />
-                        ))}
-                      </div>
-                      <div style={{ fontSize: 10, color: STRENGTH_COLOR[strength], fontWeight: 600 }}>{STRENGTH_LABEL[strength]}</div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Confirmation */}
-                <div style={{ marginBottom: 22 }}>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 8 }}>
-                    Confirmer le mot de passe
-                  </label>
-                  <input
-                    type="password"
-                    value={confirm}
-                    onChange={e => { setConfirm(e.target.value); setErrors(er => ({ ...er, confirm: '' })) }}
-                    placeholder="••••••••"
-                    onFocus={e => { e.target.style.borderColor = theme.colors.primary; e.target.style.boxShadow = `0 0 0 3px ${theme.colors.primaryLight}` }}
-                    onBlur={e  => { e.target.style.borderColor = errors.confirm ? theme.colors.danger : '#1E2D42'; e.target.style.boxShadow = 'none' }}
-                    style={{ width: '100%', height: 48, background: '#0A0F1E', border: `1.5px solid ${errors.confirm ? theme.colors.danger : '#1E2D42'}`, borderRadius: theme.radius.md, padding: '0 16px', fontSize: 14, color: '#F1F5F9', fontFamily: theme.font.family, outline: 'none', transition: theme.transition.fast }}
-                  />
-                  {errors.confirm && <div style={{ fontSize: theme.font.size.xs, color: theme.colors.danger, marginTop: 4 }}>{errors.confirm}</div>}
-                </div>
-
-                <button type="submit" disabled={loading}
-                  style={{ width: '100%', height: 50, background: loading ? theme.colors.primaryDark : theme.colors.primary, border: 'none', borderRadius: theme.radius.md, fontSize: 14, fontWeight: 700, color: '#0F172A', cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: theme.font.family, boxShadow: theme.shadow.primary }}>
-                  {loading && <div style={{ width: 18, height: 18, border: '2px solid #0F172A', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />}
-                  {loading ? 'Modification...' : 'Modifier mon mot de passe'}
-                </button>
-              </form>
-            </>
-          ) : (
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
-              </div>
-              <h2 style={{ fontSize: 18, fontWeight: 700, color: '#F1F5F9', marginBottom: 8 }}>Mot de passe modifié !</h2>
-              <p style={{ fontSize: 13, color: '#475569', marginBottom: 4 }}>Redirection vers la connexion dans 3 secondes...</p>
-              <Link to="/login" style={{ fontSize: 13, color: theme.colors.primary, textDecoration: 'none', fontWeight: 500 }}>
-                Aller maintenant →
-              </Link>
-            </div>
-          )}
+      <motion.div
+        initial={{ opacity: 0, y: 40, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.65, ease: [0.25, 0.46, 0.45, 0.94] }}
+        style={{ position: 'relative', zIndex: 2, width: '100%', maxWidth: 420, background: 'rgba(8,13,26,0.78)', border: '1px solid rgba(37,99,235,0.18)', borderRadius: 24, padding: '36px 32px', backdropFilter: 'blur(30px)', WebkitBackdropFilter: 'blur(30px)', boxShadow: '0 24px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)', overflow: 'hidden' }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 28 }}>
+          <FueloLogo size={72} forceTextColor="#fff" />
         </div>
-      </div>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
+        {!success ? (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(37,99,235,0.1)', border: '1px solid rgba(37,99,235,0.2)', borderRadius: 100, padding: '4px 14px', marginBottom: 14 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SOFT} strokeWidth="2.5" strokeLinecap="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0110 0v4"/>
+              </svg>
+              <span style={{ fontSize: 11, fontWeight: 700, color: SOFT, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Nouveau mot de passe</span>
+            </div>
+
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: TEXT, letterSpacing: '-0.5px', marginBottom: 4 }}>Réinitialiser</h1>
+            <p style={{ fontSize: 13, color: SUB, marginBottom: 24 }}>Choisissez un mot de passe sécurisé d'au moins 6 caractères.</p>
+
+            <form onSubmit={handleSubmit}>
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: MUT, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 8 }}>Nouveau mot de passe</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPwd ? 'text' : 'password'}
+                    value={password}
+                    onChange={e => { setPassword(e.target.value); setErrors(er => ({ ...er, password: '' })) }}
+                    placeholder="Minimum 6 caractères"
+                    onFocus={e => { e.target.style.borderColor = BLUE; e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.12)' }}
+                    onBlur={e  => { e.target.style.borderColor = errors.password ? RED : 'rgba(96,165,250,0.14)'; e.target.style.boxShadow = 'none' }}
+                    style={{ width: '100%', height: 50, background: 'rgba(255,255,255,0.04)', border: `1.5px solid ${errors.password ? RED : 'rgba(96,165,250,0.14)'}`, borderRadius: 12, padding: '0 44px 0 16px', fontSize: 15, color: TEXT, fontFamily: 'inherit', outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s', boxSizing: 'border-box' }}
+                  />
+                  <button type="button" onClick={() => setShowPwd(v => !v)}
+                    style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: MUT, display: 'flex', alignItems: 'center', padding: 4 }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      {showPwd
+                        ? <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></>
+                        : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>
+                      }
+                    </svg>
+                  </button>
+                </div>
+                {errors.password && <div style={{ fontSize: 12, color: RED, marginTop: 4 }}>{errors.password}</div>}
+                {password && (
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ display: 'flex', gap: 4, marginBottom: 4 }}>
+                      {[1,2,3].map(i => <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= strength ? STRENGTH_COLOR[strength] : 'rgba(255,255,255,0.07)', transition: 'background 0.3s' }} />)}
+                    </div>
+                    <div style={{ fontSize: 10, color: STRENGTH_COLOR[strength], fontWeight: 700 }}>{STRENGTH_LABEL[strength]}</div>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ marginBottom: 22 }}>
+                <label style={{ fontSize: 11, fontWeight: 700, color: MUT, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 8 }}>Confirmer le mot de passe</label>
+                <input
+                  type="password"
+                  value={confirm}
+                  onChange={e => { setConfirm(e.target.value); setErrors(er => ({ ...er, confirm: '' })) }}
+                  placeholder="••••••••"
+                  onFocus={e => { e.target.style.borderColor = BLUE; e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.12)' }}
+                  onBlur={e  => { e.target.style.borderColor = errors.confirm ? RED : 'rgba(96,165,250,0.14)'; e.target.style.boxShadow = 'none' }}
+                  style={{ width: '100%', height: 50, background: 'rgba(255,255,255,0.04)', border: `1.5px solid ${errors.confirm ? RED : 'rgba(96,165,250,0.14)'}`, borderRadius: 12, padding: '0 16px', fontSize: 15, color: TEXT, fontFamily: 'inherit', outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s', boxSizing: 'border-box' }}
+                />
+                {errors.confirm && <div style={{ fontSize: 12, color: RED, marginTop: 4 }}>{errors.confirm}</div>}
+              </div>
+
+              <button type="submit" disabled={loading}
+                style={{ width: '100%', height: 52, background: `linear-gradient(135deg, ${BLUE}, ${DARK})`, border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, color: '#fff', cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit', boxShadow: '0 4px 24px rgba(37,99,235,0.4)', opacity: loading ? 0.75 : 1, transition: 'all 0.2s' }}
+                onMouseEnter={e => { if (!loading) { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 10px 32px rgba(37,99,235,0.55)' }}}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 24px rgba(37,99,235,0.4)' }}
+              >
+                {loading && <div style={{ width: 18, height: 18, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />}
+                {loading ? 'Modification...' : 'Modifier mon mot de passe'}
+              </button>
+            </form>
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4 }}
+            style={{ textAlign: 'center' }}
+          >
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', damping: 12, delay: 0.1 }}
+              style={{ width: 72, height: 72, borderRadius: '50%', background: 'rgba(16,185,129,0.12)', border: '2px solid rgba(16,185,129,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', boxShadow: '0 0 40px rgba(16,185,129,0.2)' }}
+            >
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </motion.div>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: TEXT, marginBottom: 8, letterSpacing: '-0.3px' }}>Mot de passe modifié !</h2>
+            <p style={{ fontSize: 13, color: SUB, marginBottom: 16 }}>Redirection vers la connexion dans 3 secondes...</p>
+            <Link to="/login" style={{ fontSize: 13, color: SOFT, fontWeight: 600, textDecoration: 'none' }}>
+              Aller maintenant →
+            </Link>
+          </motion.div>
+        )}
+      </motion.div>
+
+      <style>{`
+        @keyframes floatPt { from { transform: translateY(0) scale(1); } to { transform: translateY(-25px) scale(1.2); } }
+        @keyframes spin    { to { transform: rotate(360deg); } }
+        * { box-sizing: border-box; }
+      `}</style>
     </div>
   )
 }
