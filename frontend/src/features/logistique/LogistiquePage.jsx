@@ -19,7 +19,6 @@ const GpsFlottePage = lazy(() => import('./GpsFlottePage'))
 
 const ORANGE = '#F59E0B'
 
-// Palette dark fixe — identité Fleet Ops, indépendante du ThemeContext
 const LOG_PALETTE = {
   bg:          '#0C0F1A',
   card:        '#111827',
@@ -34,6 +33,21 @@ const LOG_PALETTE = {
   dangerLight: 'rgba(239,68,68,0.15)',
   infoLight:   'rgba(245,158,11,0.15)',
   warningLight:'rgba(245,158,11,0.12)',
+}
+const LOG_PALETTE_DAY = {
+  bg:          '#F1F5F9',
+  card:        '#FFFFFF',
+  card2:       '#F8FAFC',
+  cardBorder:  'rgba(0,0,0,0.09)',
+  text:        '#0F172A',
+  textSub:     '#475569',
+  textMuted:   '#94A3B8',
+  inputBg:     'rgba(0,0,0,0.04)',
+  hover:       'rgba(0,0,0,0.04)',
+  successLight:'rgba(16,185,129,0.12)',
+  dangerLight: 'rgba(239,68,68,0.12)',
+  infoLight:   'rgba(245,158,11,0.12)',
+  warningLight:'rgba(245,158,11,0.10)',
 }
 const TABS   = [
   { key: 'gps',          label: 'GPS Flotte' },
@@ -950,9 +964,8 @@ function LogistiquePageContent() {
     })
   }, [])
 
-  // Palette et mode fixés — dark always, orange primary (Fleet Ops ≠ gérant)
-  const palette = LOG_PALETTE
-  const isDark  = true
+  const isDark  = nightMode
+  const palette = isDark ? LOG_PALETTE : LOG_PALETTE_DAY
 
   const { data: alertesData } = useQuery({
     queryKey: ['alertes-transport'],
@@ -964,11 +977,16 @@ function LogistiquePageContent() {
   const nbEnRoute   = trajets.filter(t => t.statut === 'en_cours').length
   const nbAttente   = trajets.filter(t => t.statut === 'arrive_attente').length
 
-  // Palette fixe dark charcoal — identité transport distincte du gérant
-  const SHELL_BG      = isDark ? '#0C0F1A' : '#F4F6FB'
-  const HEADER_BG     = 'linear-gradient(135deg, #0B1120 0%, #131C2E 100%)'
+  const SHELL_BG      = isDark ? '#0C0F1A' : '#F1F5F9'
+  const HEADER_BG     = isDark ? 'linear-gradient(135deg, #0B1120 0%, #131C2E 100%)' : 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)'
   const TABBAR_BG     = isDark ? '#111827' : '#FFFFFF'
   const TABBAR_BORDER = isDark ? 'rgba(245,158,11,0.15)' : 'rgba(245,158,11,0.2)'
+  // Couleurs header adaptatives
+  const H_TEXT   = isDark ? '#FFFFFF' : '#0F172A'
+  const H_SUB    = isDark ? 'rgba(255,255,255,0.6)' : '#64748B'
+  const H_MUTED  = isDark ? 'rgba(255,255,255,0.4)' : '#94A3B8'
+  const H_CHIP   = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'
+  const H_BORDER = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.1)'
 
   return (
     <div style={{ height: '100dvh', background: SHELL_BG, fontFamily: theme.font.family, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -991,8 +1009,8 @@ function LogistiquePageContent() {
               </div>
             )}
             <div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', lineHeight: 1.1 }}>
-                {parametres?.nom ?? <span style={{ color: '#fff' }}>Fuelo</span>}
+              <div style={{ fontSize: 14, fontWeight: 800, color: H_TEXT, lineHeight: 1.1 }}>
+                {parametres?.nom ?? 'Fuelo'}
               </div>
               <div style={{ fontSize: 10, color: ORANGE, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 1 }}>Fleet Operations</div>
             </div>
@@ -1008,14 +1026,14 @@ function LogistiquePageContent() {
               <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 5, background: `${color}15`, border: `1px solid ${color}30`, borderRadius: 8, padding: '4px 10px', flexShrink: 0 }}>
                 <span style={{ color }}>{icon}</span>
                 <span style={{ fontSize: 14, fontWeight: 800, color, fontFamily: theme.font.mono, lineHeight: 1 }}>{v}</span>
-                <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', fontWeight: 500, whiteSpace: 'nowrap' }}>{label}</span>
+                <span style={{ fontSize: 9, color: H_MUTED, fontWeight: 500, whiteSpace: 'nowrap' }}>{label}</span>
               </div>
             ))}
           </div>
 
           {/* Actions droite */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            <button onClick={toggleNightMode} title={nightMode ? 'Mode jour' : 'Mode nuit'} style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: nightMode ? ORANGE : 'rgba(255,255,255,0.5)' }}>
+            <button onClick={toggleNightMode} title={nightMode ? 'Mode jour' : 'Mode nuit'} style={{ width: 30, height: 30, borderRadius: 8, background: H_CHIP, border: `1px solid ${H_BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: nightMode ? ORANGE : H_MUTED }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 {nightMode ? <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/> : <><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></>}
               </svg>
@@ -1025,7 +1043,7 @@ function LogistiquePageContent() {
               <div style={{ width: 22, height: 22, borderRadius: '50%', background: `${ORANGE}25`, border: `1px solid ${ORANGE}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: ORANGE }}>
                 {(user?.nom || 'L').charAt(0).toUpperCase()}
               </div>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>{user?.nom}</span>
+              <span style={{ fontSize: 11, color: H_SUB, fontWeight: 500 }}>{user?.nom}</span>
             </div>
 
             <button onClick={logout}

@@ -59,17 +59,6 @@ function distKm(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
 }
 
-// ── NightToggleBtn ────────────────────────────────
-function NightToggleBtn({ nightMode, onToggle, style = {} }) {
-  return (
-    <motion.button whileTap={{ scale: 0.88 }} onClick={onToggle}
-      title={nightMode ? 'Mode jour' : 'Mode nuit'}
-      style={{ width: 44, height: 44, borderRadius: 12, border: `1px solid ${P.border}`, background: 'rgba(17,24,39,0.92)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 20, boxShadow: '0 2px 12px rgba(0,0,0,0.4)', zIndex: 1000, ...style }}>
-      {nightMode ? '☀️' : '🌙'}
-    </motion.button>
-  )
-}
-
 // ── TruckSvg ──────────────────────────────────────
 function TruckSvg({ statut, size = 28 }) {
   const color = statut === 'alerte' ? P.red : statut === 'arrive_attente' ? P.orange : P.green
@@ -142,7 +131,7 @@ function CamionCard({ camion: c, selected, onClick }) {
 // ─────────────────────────────────────────────────
 // TAB 1 : CARTE FLOTTE
 // ─────────────────────────────────────────────────
-function TabFlotte({ flotte, stats, loading, nightMode, onToggleNight }) {
+function TabFlotte({ flotte, stats, loading, nightMode }) {
   const winW      = useWindowWidth()
   const isMobile  = winW < 768
   const sidebarW  = winW < 768 ? 0 : winW < 1024 ? 220 : 280
@@ -263,11 +252,6 @@ function TabFlotte({ flotte, stats, loading, nightMode, onToggleNight }) {
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
 
-        {/* Toggle nuit/jour — top right */}
-        <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 1000 }}>
-          <NightToggleBtn nightMode={nightMode} onToggle={onToggleNight} />
-        </div>
-
         {/* Info camion sélectionné */}
         <AnimatePresence>
           {selected && (
@@ -344,7 +328,7 @@ function TabFlotte({ flotte, stats, loading, nightMode, onToggleNight }) {
 // ─────────────────────────────────────────────────
 // TAB 2 : REPLAY TRAJET
 // ─────────────────────────────────────────────────
-function TabReplay({ trajets, nightMode, onToggleNight }) {
+function TabReplay({ trajets, nightMode }) {
   const [trajetId, setTrajetId] = useState(null)
   const [playing,  setPlaying]  = useState(false)
   const [speed,    setSpeed]    = useState(1)
@@ -440,10 +424,6 @@ function TabReplay({ trajets, nightMode, onToggleNight }) {
       <div style={{ flex:1, display:'flex', flexDirection:'column', overflow:'hidden', position:'relative' }}>
         <div ref={mapRef} style={{ flex:1, background:'#0D1117', minHeight:0 }} />
 
-        <div style={{ position:'absolute', top:16, right:16, zIndex:1000 }}>
-          <NightToggleBtn nightMode={nightMode} onToggle={onToggleNight} />
-        </div>
-
         {vitesseData.length > 0 && (
           <div style={{ height:90, background:P.bgCard, borderTop:`1px solid ${P.border}`, padding:'6px 16px', flexShrink:0 }}>
             <div style={{ fontSize:10, color:P.sub, marginBottom:2 }}>Vitesse (km/h)</div>
@@ -505,7 +485,7 @@ function TabReplay({ trajets, nightMode, onToggleNight }) {
 // ─────────────────────────────────────────────────
 // TAB 3 : GÉOFENCING
 // ─────────────────────────────────────────────────
-function TabGeofencing({ nightMode, onToggleNight }) {
+function TabGeofencing({ nightMode }) {
   const winW     = useWindowWidth()
   const isMobile = winW < 768
 
@@ -631,9 +611,6 @@ function TabGeofencing({ nightMode, onToggleNight }) {
 
       <div style={{ flex:1, position:'relative', overflow:'hidden' }}>
         <div ref={mapRef} style={{ width:'100%', height:'100%', cursor:drawing?'crosshair':'grab' }} />
-        <div style={{ position:'absolute', top:16, right:16, zIndex:1000 }}>
-          <NightToggleBtn nightMode={nightMode} onToggle={onToggleNight} />
-        </div>
         {isMobile && (
           <motion.button whileTap={{ scale:0.9 }} onClick={() => setPanelOpen(o => !o)}
             style={{ position:'absolute', bottom:100, left:16, zIndex:1000, width:52, height:52, borderRadius:16, background:'rgba(17,24,39,0.95)', border:`1px solid ${P.border}`, backdropFilter:'blur(10px)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', boxShadow:'0 4px 16px rgba(0,0,0,0.4)', fontSize:22 }}>
@@ -858,9 +835,9 @@ export default function GpsFlottePage({ nightMode: nightModeProp, onToggleNight 
 
       {/* Contenu plein espace */}
       <div style={{ flex: 1, overflow: 'hidden' }}>
-        {tab === 'flotte'     && <TabFlotte    flotte={flotte} stats={stats} loading={loadFlotte} nightMode={nightMode} onToggleNight={toggleNightMode} />}
-        {tab === 'replay'     && <TabReplay    trajets={[]} nightMode={nightMode} onToggleNight={toggleNightMode} />}
-        {tab === 'geofencing' && <TabGeofencing nightMode={nightMode} onToggleNight={toggleNightMode} />}
+        {tab === 'flotte'     && <TabFlotte    flotte={flotte} stats={stats} loading={loadFlotte} nightMode={nightMode} />}
+        {tab === 'replay'     && <TabReplay    trajets={[]} nightMode={nightMode} />}
+        {tab === 'geofencing' && <TabGeofencing nightMode={nightMode} />}
         {tab === 'historique' && <TabHistorique trajets={[]} loading={false} />}
       </div>
     </div>
