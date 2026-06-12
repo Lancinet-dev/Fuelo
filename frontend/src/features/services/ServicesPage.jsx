@@ -165,7 +165,6 @@ function ServiceModal({ service, onClose, isDark, palette }) {
             </div>
           </div>
         )}
-      </div>
 
       {/* Lightbox photo */}
       <AnimatePresence>

@@ -10,6 +10,7 @@ import { useVentes }     from '../../hooks/useVentes'
 import { useParametres } from '../../hooks/useParametres'
 import { useService }    from '../../hooks/useService'
 import { formatGNF, formatLitres, getStockStatus } from '../../utils/format'
+import { compressImage } from '../../utils/compressImage'
 
 // ── Palette dark fixe — identité pompiste ────────
 const C = {
@@ -72,6 +73,7 @@ function RingTimer({ pct, label, secs }) {
 // ── Photo Input ──────────────────────────────────
 function PhotoInput({ onCapture, photoFile, error }) {
   const ref  = useRef()
+  const [processing, setProcessing] = useState(false)
   const prev = useMemo(() => photoFile ? URL.createObjectURL(photoFile) : null, [photoFile])
   useEffect(() => () => { if (prev) URL.revokeObjectURL(prev) }, [prev])
 
@@ -79,10 +81,19 @@ function PhotoInput({ onCapture, photoFile, error }) {
     if (ref.current) { ref.current.value = ''; ref.current.click() }
   }
 
+  // Compresse la photo (caméra téléphone = 5-12 Mo) avant de la remonter —
+  // évite l'échec "trop volumineuse" (>8 Mo) et accélère l'upload mobile
+  const handleFile = async (file) => {
+    if (!file) { onCapture(null); return }
+    setProcessing(true)
+    try { onCapture(await compressImage(file)) }
+    finally { setProcessing(false) }
+  }
+
   return (
     <div>
       <input ref={ref} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
-        onChange={e => onCapture(e.target.files?.[0] ?? null)} />
+        onChange={e => handleFile(e.target.files?.[0] ?? null)} />
       {prev ? (
         <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', border: `2px solid ${C.green}` }}>
           <img src={prev} alt="" style={{ width: '100%', maxHeight: 160, objectFit: 'cover', display: 'block' }} />
@@ -90,18 +101,27 @@ function PhotoInput({ onCapture, photoFile, error }) {
           <button onClick={openPicker} style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 11, fontWeight: 600, padding: '5px 12px', cursor: 'pointer' }}>Changer</button>
         </div>
       ) : (
-        <button onClick={openPicker} style={{
-          width: '100%', height: 110, borderRadius: 16, cursor: 'pointer',
+        <button onClick={openPicker} disabled={processing} style={{
+          width: '100%', height: 110, borderRadius: 16, cursor: processing ? 'wait' : 'pointer',
           border: `2px dashed ${error ? C.red : 'rgba(255,255,255,0.15)'}`,
           background: error ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.03)',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
           transition: 'all 0.2s',
         }}>
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={error ? C.red : C.green} strokeWidth="1.5" strokeLinecap="round">
-            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>
-          </svg>
-          <span style={{ fontSize: 14, fontWeight: 700, color: error ? C.red : C.text }}>{error || 'Prendre la photo du compteur'}</span>
-          <span style={{ fontSize: 11, color: C.muted }}>Obligatoire</span>
+          {processing ? (
+            <>
+              <div style={{ width: 28, height: 28, border: `3px solid ${C.green}40`, borderTopColor: C.green, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              <span style={{ fontSize: 14, fontWeight: 700, color: C.text }}>Traitement de la photo…</span>
+            </>
+          ) : (
+            <>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={error ? C.red : C.green} strokeWidth="1.5" strokeLinecap="round">
+                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>
+              </svg>
+              <span style={{ fontSize: 14, fontWeight: 700, color: error ? C.red : C.text }}>{error || 'Prendre la photo du compteur'}</span>
+              <span style={{ fontSize: 11, color: C.muted }}>Obligatoire</span>
+            </>
+          )}
         </button>
       )}
     </div>

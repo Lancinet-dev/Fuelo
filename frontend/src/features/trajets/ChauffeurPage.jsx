@@ -8,6 +8,7 @@ import { useAuth }       from '../../context/AuthContext'
 import { useTrajet }     from '../../hooks/useTrajet'
 import { useCiternes }   from '../../hooks/useTrajets'
 import { useParametres } from '../../hooks/useParametres'
+import { compressImage } from '../../utils/compressImage'
 
 // ── Palette dark fixe — identité chauffeur ────────
 const C = {
@@ -170,11 +171,22 @@ function LiveMap({ lastPos }) {
 // ── Photo Input ──────────────────────────────────
 function PhotoInput({ label, btnLabel, photoFile, onChange }) {
   const inputRef = useRef(null)
+  const [processing, setProcessing] = useState(false)
   const preview  = useMemo(() => photoFile ? URL.createObjectURL(photoFile) : null, [photoFile])
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview) }, [preview])
 
   const openPicker = () => {
+    if (processing) return
     if (inputRef.current) { inputRef.current.value = ''; inputRef.current.click() }
+  }
+
+  // Compresse la photo (caméra téléphone = 5-12 Mo) avant de la remonter —
+  // évite l'échec "trop volumineuse" (>8 Mo) et accélère l'upload mobile
+  const handleFile = async (file) => {
+    if (!file) { onChange(null); return }
+    setProcessing(true)
+    try { onChange(await compressImage(file)) }
+    finally { setProcessing(false) }
   }
 
   return (
@@ -186,25 +198,30 @@ function PhotoInput({ label, btnLabel, photoFile, onChange }) {
         height: preview ? 'auto' : 96, borderRadius: 16, overflow: 'hidden',
         border: `2px dashed ${photoFile ? C.green : C.orange + '50'}`,
         background: photoFile ? `${C.green}08` : `${C.orange}06`,
-        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        cursor: processing ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
         flexDirection: 'column', gap: 8, transition: 'all 0.15s',
       }}>
         {preview
           ? <img src={preview} alt="" style={{ width: '100%', maxHeight: 180, objectFit: 'cover', display: 'block' }} />
-          : <>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: `${C.orange}12`, border: `1.5px solid ${C.orange}40`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.orange} strokeWidth="1.8" strokeLinecap="round">
-                  <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
-                  <circle cx="12" cy="13" r="4"/>
-                </svg>
-              </div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: C.orange }}>{btnLabel || 'Prendre une photo'}</span>
-              <span style={{ fontSize: 11, color: C.muted }}>Appuyez pour ouvrir la caméra</span>
-            </>
+          : processing
+            ? <>
+                <div style={{ width: 28, height: 28, border: `3px solid ${C.orange}40`, borderTopColor: C.orange, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                <span style={{ fontSize: 13, fontWeight: 700, color: C.orange }}>Traitement de la photo…</span>
+              </>
+            : <>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: `${C.orange}12`, border: `1.5px solid ${C.orange}40`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={C.orange} strokeWidth="1.8" strokeLinecap="round">
+                    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 700, color: C.orange }}>{btnLabel || 'Prendre une photo'}</span>
+                <span style={{ fontSize: 11, color: C.muted }}>Appuyez pour ouvrir la caméra</span>
+              </>
         }
       </div>
       <input ref={inputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
-        onChange={e => onChange(e.target.files?.[0] ?? null)} />
+        onChange={e => handleFile(e.target.files?.[0] ?? null)} />
       {preview && (
         <button onClick={e => {
           e.stopPropagation()
