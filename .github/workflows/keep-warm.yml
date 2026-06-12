@@ -1,0 +1,43 @@
+name: Keep Backend Warm
+
+# Empêche le backend Render (tier gratuit) de s'endormir après 15 min
+# d'inactivité — sans ça, l'inscription/connexion semblent "buguées" car le
+# premier appel doit réveiller le serveur (30-50s) et dépasse le timeout client.
+# Ping le endpoint racine léger GET / toutes les ~5 min.
+# Repo public → minutes GitHub Actions illimitées et gratuites.
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'   # toutes les 5 minutes (marge contre les retards de planif GitHub)
+  workflow_dispatch:          # déclenchement manuel possible depuis l'onglet Actions
+
+# Si un ping déborde, on annule l'ancien plutôt que d'empiler les runs
+concurrency:
+  group: keep-warm
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    name: Ping backend Render
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Réveiller le backend
+        run: |
+          URL="https://fuelo.onrender.com/"
+          echo "Ping $URL ..."
+          # --max-time 120 : laisse le temps au cold start Render (30-50s)
+          # --retry 3 : réessaie si le réveil échoue une première fois
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+                   --max-time 120 \
+                   --retry 3 --retry-delay 10 --retry-all-errors \
+                   "$URL")
+          echo "HTTP $CODE"
+          # On considère le réveil réussi tant que le serveur répond (2xx/3xx)
+          if [ "$CODE" -ge 200 ] && [ "$CODE" -lt 400 ]; then
+            echo "✅ Backend réveillé/actif (HTTP $CODE)"
+          else
+            echo "⚠️ Réponse inattendue (HTTP $CODE) — le serveur démarre peut-être encore"
+            exit 1
+          fi
