@@ -155,7 +155,7 @@ function LiveMap({ lastPos }) {
 
   return (
     <div style={{ position: 'relative', borderRadius: 22, overflow: 'hidden', border: `2px solid ${C.orange}30`, boxShadow: `0 8px 40px rgba(245,158,11,0.12)` }}>
-      <div ref={containerRef} style={{ height: 400 }} />
+      <div ref={containerRef} className="chauffeur-map-container" style={{ height: 200 }} />
       {!lastPos && (
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(8,11,20,0.8)', backdropFilter: 'blur(4px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
           <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
@@ -642,6 +642,9 @@ export default function ChauffeurPage() {
         select { appearance: none; -webkit-appearance: none; }
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+        .chauffeur-map-container { height: 200px; }
+        @media (min-height: 700px) { .chauffeur-map-container { height: 240px; } }
+        @media (min-height: 800px) { .chauffeur-map-container { height: 280px; } }
       `}</style>
     </div>
   )
