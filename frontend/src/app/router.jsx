@@ -43,6 +43,7 @@ const SuperadminDashboard    = lazy(() => import('../features/dashboard/Superadm
 const PerformancesPage       = lazy(() => import('../features/performances/PerformancesPage'))
 const AntiFraudePage         = lazy(() => import('../features/anti-fraude/AntiFraudePage'))
 const ComptablePage          = lazy(() => import('../features/comptable/ComptablePage'))
+const ActivitePage           = lazy(() => import('../features/activite/ActivitePage'))
 
 // ── Garde routes protégées ────────────────────────────
 function PrivateRoute({ children, allowedRoles }) {
@@ -153,6 +154,11 @@ export default function Router() {
             <Route path="/abonnements"   element={<AbonnementsPage />} />
             <Route path="/performances" element={<PlanGatePage feature="performances"><PerformancesPage /></PlanGatePage>} />
             <Route path="/anti-fraude"  element={<PlanGatePage feature="antifraude"><AntiFraudePage /></PlanGatePage>} />
+            <Route path="/activite"     element={
+              <PrivateRoute allowedRoles={['owner', 'superadmin']}>
+                <ActivitePage />
+              </PrivateRoute>
+            } />
             <Route path="/comptabilite"  element={
               <PrivateRoute allowedRoles={['owner', 'superadmin']}>
                 <PlanGatePage feature="comptable"><ComptablePage /></PlanGatePage>

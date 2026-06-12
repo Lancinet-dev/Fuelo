@@ -10,7 +10,7 @@ const getResume = async (req, res) => {
   try {
     const station_id = req.user.station_id
 
-    const [stocks, ventesJour, ventesVeille, ventesMois, ventes7j, alertes] = await Promise.all([
+    const [stocks, ventesJour, ventesVeille, ventesMois, ventes7j, alertes, ventesSemaine, ventesPrec] = await Promise.all([
       pool.query(
         'SELECT type, quantite FROM stocks WHERE station_id = $1',
         [station_id]
@@ -56,7 +56,28 @@ const getResume = async (req, res) => {
         `SELECT COUNT(*) as nb FROM alertes
          WHERE station_id = $1 AND lu = false`,
         [station_id]
-      )
+      ),
+      // Semaine courante (lundi 00:00 → maintenant)
+      pool.query(
+        `SELECT COUNT(*) as nb,
+         COALESCE(SUM(litres), 0) as litres,
+         COALESCE(SUM(montant_gnf), 0) as montant
+         FROM ventes WHERE station_id = $1
+         AND created_at >= DATE_TRUNC('week', NOW())
+         AND deleted_at IS NULL`,
+        [station_id]
+      ),
+      // Même période semaine précédente
+      pool.query(
+        `SELECT COUNT(*) as nb,
+         COALESCE(SUM(litres), 0) as litres,
+         COALESCE(SUM(montant_gnf), 0) as montant
+         FROM ventes WHERE station_id = $1
+         AND created_at >= DATE_TRUNC('week', NOW() - INTERVAL '7 days')
+         AND created_at <  DATE_TRUNC('week', NOW())
+         AND deleted_at IS NULL`,
+        [station_id]
+      ),
     ])
 
     res.json({
@@ -64,8 +85,10 @@ const getResume = async (req, res) => {
       aujourd_hui:       ventesJour.rows[0],
       veille:            ventesVeille.rows[0],
       ce_mois:           ventesMois.rows[0],
-      graphique_7j:      ventes7j.rows,
-      alertes_non_lues:  alertes.rows[0].nb
+      graphique_7j:       ventes7j.rows,
+      alertes_non_lues:   alertes.rows[0].nb,
+      semaine_courante:   ventesSemaine.rows[0],
+      semaine_precedente: ventesPrec.rows[0],
     })
   } catch (err) {
     res.status(500).json({ error: erreurServeur(err) })

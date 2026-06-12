@@ -15,14 +15,16 @@ export function useDashboard() {
   })
 
   return {
-    stocks:          data?.stocks          ?? [],
-    aujourdhui:      data?.aujourd_hui     ?? { nb: 0, litres: 0, montant: 0 },
-    veille:          data?.veille          ?? { nb: 0, litres: 0, montant: 0 },
-    cemois:          data?.ce_mois         ?? { nb: 0, litres: 0, montant: 0 },
-    graphique7j:     data?.graphique_7j    ?? [],
-    alertesNonLues:  parseInt(data?.alertes_non_lues ?? 0),
-    loading:         isLoading,
-    error:           error?.message ?? null,
+    stocks:            data?.stocks             ?? [],
+    aujourdhui:        data?.aujourd_hui        ?? { nb: 0, litres: 0, montant: 0 },
+    veille:            data?.veille             ?? { nb: 0, litres: 0, montant: 0 },
+    cemois:            data?.ce_mois            ?? { nb: 0, litres: 0, montant: 0 },
+    semaine:           data?.semaine_courante   ?? { nb: 0, litres: 0, montant: 0 },
+    semainePrec:       data?.semaine_precedente ?? { nb: 0, litres: 0, montant: 0 },
+    graphique7j:       data?.graphique_7j       ?? [],
+    alertesNonLues:    parseInt(data?.alertes_non_lues ?? 0),
+    loading:           isLoading,
+    error:             error?.message ?? null,
     refetch,
   }
 }

@@ -550,7 +550,7 @@ export default function Dashboard() {
   const isGerant = userRole === 'gerant' || userRole === 'manager'
   const isOwner  = userRole === 'owner'
 
-  const { stocks, aujourdhui, veille, cemois, alertesNonLues, loading, refetch } = useDashboard()
+  const { stocks, aujourdhui, veille, cemois, semaine, semainePrec, alertesNonLues, loading, refetch } = useDashboard()
   const { recentes } = useVentes()
   const { plan, colors: planColors, loading: planLoading } = usePlan()
   const { nonLues: notifsNonLues } = useNotifications()
@@ -568,6 +568,7 @@ export default function Dashboard() {
 
   const periodeLabel = { '7j': '7 derniers jours', '30j': '30 derniers jours', '3m': '3 derniers mois' }[periode]
   const trendVentesJour = calcTrend(aujourdhui.montant, veille.montant)
+  const trendSemaine    = calcTrend(semaine.montant, semainePrec.montant)
 
   if (loading) return (<><SkeletonStyle /><SkeletonDashboard /></>)
 
@@ -707,6 +708,24 @@ export default function Dashboard() {
           pulse={stockGasoil > 0 && stockGasoil <= 300}
         />
       </div>
+
+      {/* ── Comparaison semaine ─────────────────── */}
+      {Number(semaine.montant) > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20, padding: '12px 18px', background: isDark ? 'rgba(37,99,235,0.06)' : 'rgba(37,99,235,0.04)', border: `1px solid ${theme.colors.primary}22`, borderRadius: 12, alignItems: 'center' }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.07em', marginRight: 4 }}>Cette semaine</span>
+          <span style={{ fontSize: 14, fontWeight: 800, color: palette.text }}>
+            {formatGNF(Number(semaine.montant))}
+          </span>
+          {trendSemaine && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 700, color: trendSemaine.up ? theme.colors.success : theme.colors.danger, background: trendSemaine.up ? 'rgba(16,185,129,0.10)' : 'rgba(239,68,68,0.10)', borderRadius: 99, padding: '2px 8px' }}>
+              {trendSemaine.up ? '↑' : '↓'} {trendSemaine.pct}% vs sem. préc.
+            </span>
+          )}
+          <span style={{ marginLeft: 'auto', fontSize: 12, color: palette.textMuted }}>
+            {formatLitres(semaine.litres)} · {semaine.nb} vente{Number(semaine.nb) > 1 ? 's' : ''}
+          </span>
+        </div>
+      )}
 
       {/* ── Graphique + Ventes récentes ──────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 14, marginBottom: 20 }} className="fuelo-grid-chart">

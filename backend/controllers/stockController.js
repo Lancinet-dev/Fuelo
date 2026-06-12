@@ -6,18 +6,35 @@ const getStock = async (req, res) => {
   try {
     const station_id = req.user.station_id
 
-    const result = await pool.query(
-      'SELECT type, quantite, updated_at FROM stocks WHERE station_id = $1',
-      [station_id]
-    )
+    const [result, consommation] = await Promise.all([
+      pool.query(
+        'SELECT type, quantite, updated_at FROM stocks WHERE station_id = $1',
+        [station_id]
+      ),
+      pool.query(
+        `SELECT type_carburant as type, COALESCE(SUM(litres), 0) / 7.0 as litres_par_jour
+         FROM ventes
+         WHERE station_id = $1
+           AND created_at >= NOW() - INTERVAL '7 days'
+           AND deleted_at IS NULL
+         GROUP BY type_carburant`,
+        [station_id]
+      ),
+    ])
+
+    const consoMap = {}
+    for (const c of consommation.rows) consoMap[c.type] = parseFloat(c.litres_par_jour)
 
     const stocks = {}
-      result.rows.forEach(row => {
+    for (const row of result.rows) {
+      const cj = consoMap[row.type] || 0
       stocks[row.type] = {
-        quantite: row.quantite,
-        updated_at: row.updated_at
+        quantite:          row.quantite,
+        updated_at:        row.updated_at,
+        conso_journaliere: Math.round(cj * 10) / 10,
+        jours_restants:    cj > 0 ? Math.floor(parseFloat(row.quantite) / cj) : null,
       }
-    })
+    }
 
     res.json({ stock: stocks })
   } catch (err) {

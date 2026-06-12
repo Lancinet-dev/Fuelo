@@ -9,6 +9,7 @@ import { useParametres } from '../../hooks/useParametres'
 import { useLogoUpload } from '../../hooks/useLogoUpload'
 import { useAuth }  from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
+import { useTranslation, LANGUES_DISPONIBLES } from '../../hooks/useTranslation'
 import api          from '../../services/api'
 import toast        from 'react-hot-toast'
 import theme        from '../../config/theme'
@@ -233,6 +234,7 @@ export default function Parametres() {
   const { user }    = useAuth()
   const { palette, isDark } = useTheme()
   const isOwner     = user?.role === 'owner'
+  const { lang, setLang } = useTranslation()
 
   const [station,        setStation]        = useState({ nom: '', adresse: '', ville: '', pays: '' })
   const [prix,           setPrix]           = useState({ prix_essence: 10000, prix_gasoil: 9000 })
@@ -449,6 +451,31 @@ const handlePwdSave = async (e) => {
           </motion.button>
         </form>
       </SectionCard>
+
+      {/* Langue de l'interface */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: 0.35 }}
+        style={{ background: isDark ? palette.glass : palette.card, backdropFilter: isDark ? 'blur(20px)' : 'none', WebkitBackdropFilter: isDark ? 'blur(20px)' : 'none', border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.card, padding: '18px 22px', marginBottom: 14 }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="2" strokeLinecap="round">
+            <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
+          </svg>
+          <span style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Langue de l'interface</span>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {LANGUES_DISPONIBLES.map(l => (
+            <button key={l.code} onClick={() => setLang(l.code)}
+              style={{ padding: '8px 18px', borderRadius: 10, border: `1.5px solid ${lang === l.code ? theme.colors.primary : palette.cardBorder}`, background: lang === l.code ? `${theme.colors.primary}14` : 'transparent', color: lang === l.code ? theme.colors.primary : palette.textSub, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: lang === l.code ? 700 : 500, display: 'flex', alignItems: 'center', gap: 7, transition: 'all 0.15s' }}>
+              <span style={{ fontSize: 16 }}>{l.flag}</span>
+              {l.label}
+            </button>
+          ))}
+        </div>
+        <div style={{ fontSize: 11, color: palette.textMuted, marginTop: 10 }}>
+          L'interface est entièrement disponible en français. L'anglais est en cours de traduction.
+        </div>
+      </motion.div>
 
       {/* Infos compte */}
       <motion.div

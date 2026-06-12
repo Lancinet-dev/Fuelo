@@ -8,6 +8,7 @@ const verifyToken = require('../middleware/auth')
 const { isManager, canManageEmployes } = require('../middleware/checkRole')
 const { checkMaxEmployes }             = require('../middleware/checkPlan')
 const { validate, employeSchema }      = require('../utils/zodSchemas')
+const { autoAudit } = require('../middleware/auditLog')
 const {
   creerEmploye,
   getEmployes,
@@ -17,7 +18,7 @@ const {
 } = require('../controllers/employeController')
 
 // owner → gérant/logisticien | gérant → pompiste | logisticien → chauffeur
-router.post('/',           verifyToken, canManageEmployes, checkMaxEmployes, validate(employeSchema), creerEmploye)
+router.post('/',           verifyToken, canManageEmployes, checkMaxEmployes, validate(employeSchema), autoAudit('EMPLOYE_CREE', 'users'), creerEmploye)
 router.get('/',            verifyToken, canManageEmployes, getEmployes)
 router.put('/:id/toggle',  verifyToken, canManageEmployes, toggleEmploye)
 router.delete('/:id',      verifyToken, canManageEmployes, supprimerEmploye)

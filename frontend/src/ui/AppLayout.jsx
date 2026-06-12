@@ -4,7 +4,7 @@
 // ================================================
 
 import { memo, useState, useEffect, useCallback } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import Sidebar from './Sidebar'
 import { useAlertes }       from '../hooks/useAlertes'
@@ -41,6 +41,7 @@ const AppLayout = memo(function AppLayout() {
     return !localStorage.getItem(`fuelo_onboarding_${user.id}`)
   })
 
+  const navigate    = useNavigate()
   const [searchOpen, setSearchOpen] = useState(false)
   const openSearch  = useCallback(() => setSearchOpen(true), [])
   const closeSearch = useCallback(() => setSearchOpen(false), [])
@@ -51,13 +52,23 @@ const AppLayout = memo(function AppLayout() {
         e.preventDefault()
         setSearchOpen(v => !v)
       }
+      // Ctrl+N → ventes (Nouveau : voir les ventes)
+      if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault()
+        navigate('/ventes')
+      }
+      // Ctrl+D → dashboard
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+        e.preventDefault()
+        navigate('/dashboard')
+      }
       if (e.key === 'Escape') {
         setSearchOpen(false)
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [])
+  }, [navigate])
 
   return (
     <>

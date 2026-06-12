@@ -302,6 +302,7 @@ const assistantRoutes       = require('./routes/assistant')
 const comptableRoutes       = require('./routes/comptable')
 const geofencingRoutes      = require('./routes/geofencing')
 const notificationsRoutes   = require('./routes/notificationsRoute')
+const activiteRoutes        = require('./routes/activiteRoute')
 
 app.use('/api/auth',      limiterAuth, authRoutes)
 app.use('/api/stock',     stockRoutes)
@@ -322,6 +323,7 @@ app.use('/api/assistant',     assistantRoutes)
 app.use('/api/comptable',     comptableRoutes)
 app.use('/api/geofencing',    geofencingRoutes)
 app.use('/api/notifications', notificationsRoutes)
+app.use('/api/activite',     activiteRoutes)
 
 // ── Route test ────────────────────────────────────────
 app.get('/', (req, res) => {

@@ -17,7 +17,7 @@ export default function Stock() {
   const { user }    = useAuth()
   const isOwner     = user?.role === 'owner'
   const { palette, isDark } = useTheme()
-  const { essence, gasoil, essenceMaj, gasoilMaj, loading, livraisonLoading, ajouterLivraison } = useStock()
+  const { essence, gasoil, essenceMaj, gasoilMaj, essenceJours, gasoilJours, loading, livraisonLoading, ajouterLivraison } = useStock()
 
   const [type,     setType]     = useState('essence')
   const [quantite, setQuantite] = useState('')
@@ -57,9 +57,21 @@ export default function Stock() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 28 }} className="fuelo-grid-2">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
             <StockGauge label="Essence" quantite={essence} derniereMaj={essenceMaj ? formatRelative(essenceMaj) : null} />
+            {essenceJours !== null && (
+              <div style={{ textAlign: 'center', marginTop: 8, fontSize: 12, color: essenceJours <= 3 ? '#EF4444' : essenceJours <= 7 ? '#F59E0B' : '#10B981', fontWeight: 600 }}>
+                ~{essenceJours} jour{essenceJours !== 1 ? 's' : ''} restant{essenceJours !== 1 ? 's' : ''}
+                {essenceJours <= 3 && <span style={{ marginLeft: 4 }}>⚠ Commandez !</span>}
+              </div>
+            )}
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.06 }}>
             <StockGauge label="Gasoil" quantite={gasoil} derniereMaj={gasoilMaj ? formatRelative(gasoilMaj) : null} />
+            {gasoilJours !== null && (
+              <div style={{ textAlign: 'center', marginTop: 8, fontSize: 12, color: gasoilJours <= 3 ? '#EF4444' : gasoilJours <= 7 ? '#F59E0B' : '#10B981', fontWeight: 600 }}>
+                ~{gasoilJours} jour{gasoilJours !== 1 ? 's' : ''} restant{gasoilJours !== 1 ? 's' : ''}
+                {gasoilJours <= 3 && <span style={{ marginLeft: 4 }}>⚠ Commandez !</span>}
+              </div>
+            )}
           </motion.div>
         </div>
       )}
