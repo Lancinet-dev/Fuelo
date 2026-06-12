@@ -3,6 +3,9 @@
 // ================================================
 
 import { useState, useEffect, useRef, useMemo, lazy, Suspense, useCallback } from 'react'
+import { motion } from 'framer-motion'
+import EmptyState from '../../ui/EmptyState'
+import { SkeletonStyle, SkeletonCard } from '../../ui/Skeleton'
 import { useAuth }    from '../../context/AuthContext'
 import { PlanGatePage } from '../../ui/PlanGate'
 import { useTrajets, useGpsPoints, useCiternes } from '../../hooks/useTrajets'
@@ -260,10 +263,13 @@ function TabTrajets({ palette, isDark }) {
       {/* Liste */}
       {loading ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {[1,2,3].map(i => <div key={i} style={{ height: 72, background: palette.card, borderRadius: 12, border: `1px solid ${palette.cardBorder}` }} />)}
+          <SkeletonStyle />
+          {[1,2,3].map(i => <SkeletonCard key={i} lines={2} />)}
         </div>
       ) : trajets.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 32, color: palette.textMuted, fontSize: 13 }}>Aucun trajet</div>
+        <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 16 }}>
+          <EmptyState type="trajets" message="Aucun trajet enregistré pour cette période." />
+        </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {trajets.map(t => {
@@ -387,9 +393,11 @@ function TabCiternes({ palette, isDark }) {
     <div>
       {/* Liste */}
       {isLoading ? (
-        <div style={{ height: 60, background: palette.card, borderRadius: 12, marginBottom: 16 }} />
+        <div style={{ marginBottom: 16 }}><SkeletonCard lines={1} /></div>
       ) : citernes.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 20, color: palette.textMuted, fontSize: 13, marginBottom: 16 }}>Aucune citerne enregistrée</div>
+        <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 16, marginBottom: 16 }}>
+          <EmptyState type="default" title="Aucune citerne" message="Ajoutez une citerne pour commencer à gérer vos transports." />
+        </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
           {citernes.map(c => (

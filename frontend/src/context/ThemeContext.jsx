@@ -61,7 +61,8 @@ export function ThemeProvider({ children }) {
     if (typeof document === 'undefined') return
     document.body.style.background = palette.bg
     document.body.style.color = palette.text
-  }, [palette])
+    document.documentElement.dataset.theme = mode
+  }, [palette, mode])
 
   const toggle = useCallback(() => {
     const next = mode === 'light' ? 'dark' : 'light'

@@ -3,12 +3,23 @@
 // ================================================
 
 import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useServices }    from '../../hooks/useServices'
 import { useTheme }       from '../../context/ThemeContext'
 import StatCard           from '../../ui/StatCard'
 import EmptyState         from '../../ui/EmptyState'
+import { SkeletonStyle, SkeletonStatCard, SkeletonCard } from '../../ui/Skeleton'
 import { formatRelative } from '../../utils/format'
 import theme from '../../config/theme'
+
+const CARD_VARIANTS = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.05 } },
+}
+const CARD_ITEM = {
+  hidden: { opacity: 0, y: 10 },
+  show:   { opacity: 1, y: 0, transition: { duration: 0.22 } },
+}
 
 const TABS = [
   { key: null,       label: 'Tous'             },
@@ -67,10 +78,18 @@ function ServiceModal({ service, onClose, isDark, palette }) {
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, animation: 'fadeIn 0.2s ease' }}
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}>
 
-      <div style={{ background: isDark ? '#0D1B2A' : '#fff', borderRadius: 20, padding: '24px 22px', width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.4)', animation: 'slideUp 0.25s ease' }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.94, y: 8 }}
+        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+        style={{ background: isDark ? '#0D1B2A' : '#fff', borderRadius: theme.radius.card, padding: '24px 22px', width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto', boxShadow: theme.shadow.lg }}
+      >
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
@@ -149,16 +168,25 @@ function ServiceModal({ service, onClose, isDark, palette }) {
       </div>
 
       {/* Lightbox photo */}
-      {photoMode && (
-        <div onClick={() => setPhotoMode(null)} style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(0,0,0,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}>
-          <img
-            src={photoMode === 'debut' ? service.photo_debut_url : service.photo_fin_url}
-            alt="compteur"
-            style={{ maxWidth: '95vw', maxHeight: '90vh', borderRadius: 12, objectFit: 'contain' }}
-          />
-        </div>
-      )}
-    </div>
+      <AnimatePresence>
+        {photoMode && (
+          <motion.div
+            key="lightbox"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setPhotoMode(null)}
+            style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(0,0,0,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-out' }}
+          >
+            <motion.img
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              src={photoMode === 'debut' ? service.photo_debut_url : service.photo_fin_url}
+              alt="compteur"
+              style={{ maxWidth: '95vw', maxHeight: '90vh', borderRadius: theme.radius.card, objectFit: 'contain' }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      </motion.div>
+    </motion.div>
   )
 }
 
@@ -250,8 +278,13 @@ export default function ServicesPage() {
         </p>
       </div>
 
+      <SkeletonStyle />
       {/* Stats */}
-      {!loading && (
+      {loading ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }} className="fuelo-grid-3">
+          <SkeletonStatCard /><SkeletonStatCard /><SkeletonStatCard />
+        </div>
+      ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }} className="fuelo-grid-3">
           <StatCard label="Total services"  value={String(stats.total)}   icon={ICON_SERVICE} color={palette.textSub} />
           <StatCard label="Alertes fraude"  value={String(stats.alertes)} icon={ICON_FRAUDE}  color={stats.alertes > 0 ? theme.colors.danger : theme.colors.success} />
@@ -279,39 +312,46 @@ export default function ServicesPage() {
       </div>
 
       {/* Liste */}
-      {loading ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.lg, padding: '16px 18px', height: 88 }} />
-          ))}
-        </div>
-      ) : services.length === 0 ? (
-        <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.lg, boxShadow: theme.shadow.sm }}>
-          <EmptyState type="alertes" />
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {services.map(s => (
-            <ServiceCard
-              key={s.id}
-              service={s}
-              onClick={() => setSelected(s)}
-              palette={palette}
-              isDark={isDark}
-            />
-          ))}
-        </div>
-      )}
+      <AnimatePresence mode="wait">
+        {loading ? (
+          <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} lines={2} />)}
+          </motion.div>
+        ) : services.length === 0 ? (
+          <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.card, boxShadow: theme.shadow.sm }}>
+            <EmptyState type="services" />
+          </motion.div>
+        ) : (
+          <motion.div key="list" variants={CARD_VARIANTS} initial="hidden" animate="show"
+            style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {services.map(s => (
+              <motion.div key={s.id} variants={CARD_ITEM}>
+                <ServiceCard
+                  service={s}
+                  onClick={() => setSelected(s)}
+                  palette={palette}
+                  isDark={isDark}
+                />
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Modal détail */}
-      {selected && (
-        <ServiceModal
-          service={selected}
-          onClose={() => setSelected(null)}
-          isDark={isDark}
-          palette={palette}
-        />
-      )}
+      <AnimatePresence>
+        {selected && (
+          <ServiceModal
+            key={selected.id}
+            service={selected}
+            onClose={() => setSelected(null)}
+            isDark={isDark}
+            palette={palette}
+          />
+        )}
+      </AnimatePresence>
 
       <style>{`
         @keyframes fadeIn  { from { opacity: 0 } to { opacity: 1 } }

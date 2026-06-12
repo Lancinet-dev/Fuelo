@@ -9,16 +9,10 @@ import theme from '../config/theme'
 // ── Bloc shimmer de base ──────────────────────────────
 const Shimmer = memo(function Shimmer({ width = '100%', height = 16, radius = theme.radius.sm, style = {} }) {
   return (
-    <div style={{
-      width,
-      height,
-      borderRadius: radius,
-      background:   'linear-gradient(90deg, #F3F4F6 25%, #E9EAEC 50%, #F3F4F6 75%)',
-      backgroundSize: '200% 100%',
-      animation:    'shimmer 2.5s infinite',
-      flexShrink:   0,
-      ...style,
-    }} />
+    <div
+      className="fuelo-shimmer"
+      style={{ width, height, borderRadius: radius, flexShrink: 0, ...style }}
+    />
   )
 })
 
@@ -28,7 +22,7 @@ export const SkeletonStatCard = memo(function SkeletonStatCard() {
     <div style={{
       background:   theme.colors.card,
       border:       `1px solid ${theme.colors.cardBorder}`,
-      borderRadius: theme.radius.lg,
+      borderRadius: theme.radius.card,
       padding:      '20px 22px',
       boxShadow:    theme.shadow.sm,
       display:      'flex',
@@ -51,7 +45,7 @@ export const SkeletonStockGauge = memo(function SkeletonStockGauge() {
     <div style={{
       background:   theme.colors.card,
       border:       `1px solid ${theme.colors.cardBorder}`,
-      borderRadius: theme.radius.lg,
+      borderRadius: theme.radius.card,
       padding:      '22px 24px',
       boxShadow:    theme.shadow.sm,
       display:      'flex',
@@ -93,6 +87,52 @@ export const SkeletonRow = memo(function SkeletonRow({ cols = 5 }) {
   )
 })
 
+// ── Skeleton carte générique (liste de cards) ─────────
+export const SkeletonCard = memo(function SkeletonCard({ lines = 2 }) {
+  return (
+    <div style={{
+      background:   theme.colors.card,
+      border:       `1px solid ${theme.colors.cardBorder}`,
+      borderRadius: theme.radius.card,
+      padding:      '16px 18px',
+      boxShadow:    theme.shadow.sm,
+      display:      'flex',
+      flexDirection:'column',
+      gap:          10,
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <Shimmer width={140} height={13} />
+        <Shimmer width={60} height={22} radius={theme.radius.full} />
+      </div>
+      {Array.from({ length: lines }).map((_, i) => (
+        <Shimmer key={i} width={`${75 - i * 15}%`} height={11} />
+      ))}
+    </div>
+  )
+})
+
+// ── Skeleton événement journal (activité) ─────────────
+export const SkeletonEvent = memo(function SkeletonEvent() {
+  return (
+    <div style={{
+      display:      'flex',
+      alignItems:   'center',
+      gap:          12,
+      padding:      '10px 14px',
+      borderRadius: theme.radius.card,
+      border:       `1px solid ${theme.colors.cardBorder}`,
+      marginBottom: 6,
+    }}>
+      <Shimmer width={30} height={30} radius={theme.radius.md} />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <Shimmer width="60%" height={12} />
+        <Shimmer width="35%" height={10} />
+      </div>
+      <Shimmer width={42} height={10} />
+    </div>
+  )
+})
+
 // ── Skeleton Dashboard complet ────────────────────────
 export const SkeletonDashboard = memo(function SkeletonDashboard() {
   return (
@@ -104,8 +144,8 @@ export const SkeletonDashboard = memo(function SkeletonDashboard() {
           <Shimmer width={140} height={13} />
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
-          <Shimmer width={100} height={38} radius={theme.radius.md} />
-          <Shimmer width={130} height={38} radius={theme.radius.md} />
+          <Shimmer width={100} height={38} radius={theme.radius.button} />
+          <Shimmer width={130} height={38} radius={theme.radius.button} />
         </div>
       </div>
 
@@ -126,7 +166,7 @@ export const SkeletonDashboard = memo(function SkeletonDashboard() {
       <div style={{
         background:   theme.colors.card,
         border:       `1px solid ${theme.colors.cardBorder}`,
-        borderRadius: theme.radius.lg,
+        borderRadius: theme.radius.card,
         padding:      '22px 24px',
         boxShadow:    theme.shadow.sm,
         display:      'flex',
@@ -150,12 +190,21 @@ export const SkeletonDashboard = memo(function SkeletonDashboard() {
   )
 })
 
-// ── Style global shimmer ──────────────────────────────
+// ── Style global shimmer (light + dark mode) ──────────
 export const SkeletonStyle = () => (
   <style>{`
     @keyframes shimmer {
       0%   { background-position:  200% 0; }
       100% { background-position: -200% 0; }
+    }
+    .fuelo-shimmer {
+      background: linear-gradient(90deg, #F3F4F6 25%, #E9EAEC 50%, #F3F4F6 75%);
+      background-size: 200% 100%;
+      animation: shimmer 2.5s infinite;
+    }
+    [data-theme="dark"] .fuelo-shimmer {
+      background: linear-gradient(90deg, #1E2D3D 25%, #243547 50%, #1E2D3D 75%);
+      background-size: 200% 100%;
     }
   `}</style>
 )

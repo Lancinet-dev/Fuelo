@@ -3,6 +3,7 @@
 // ================================================
 
 import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import api   from '../../services/api'
@@ -123,7 +124,11 @@ function ModalPaiement({ planKey, planLabel, prix, prixGnf, onClose, onConfirm, 
   }, [onClose])
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.2 }}
       style={{
         position: 'fixed', inset: 0, zIndex: 200,
         background: 'rgba(0,0,0,0.65)',
@@ -132,13 +137,18 @@ function ModalPaiement({ planKey, planLabel, prix, prixGnf, onClose, onConfirm, 
       }}
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div style={{
-        background: palette.card,
-        border: `1px solid ${palette.cardBorder}`,
-        borderRadius: 24, padding: '36px 32px 32px',
-        width: '100%', maxWidth: 420,
-        boxShadow: '0 32px 80px rgba(0,0,0,0.32)',
-      }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.94, y: 8 }}
+        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+        style={{
+          background: palette.card,
+          border: `1px solid ${palette.cardBorder}`,
+          borderRadius: 20, padding: '36px 32px 32px',
+          width: '100%', maxWidth: 420,
+          boxShadow: '0 32px 80px rgba(0,0,0,0.32)',
+        }}>
 
         {/* En-tête */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
@@ -188,22 +198,24 @@ function ModalPaiement({ planKey, planLabel, prix, prixGnf, onClose, onConfirm, 
 
         {/* Boutons */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: 12 }}>
-          <button onClick={onClose} style={{
-            height: 50, borderRadius: 14,
+          <motion.button whileHover={{ opacity: 0.8 }} whileTap={{ scale: 0.97 }} onClick={onClose} style={{
+            height: 50, borderRadius: theme.radius.lg,
             border: `1.5px solid ${palette.cardBorder}`,
             background: 'transparent', color: palette.textSub,
             cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 600,
           }}>
             Annuler
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={!loading ? { y: -1, boxShadow: '0 6px 20px rgba(37,99,235,0.40)' } : {}}
+            whileTap={!loading ? { scale: 0.97 } : {}}
             onClick={onConfirm}
             disabled={loading}
             style={{
-              height: 50, borderRadius: 14, border: 'none',
+              height: 50, borderRadius: theme.radius.lg, border: 'none',
               background: loading
                 ? (isDark ? '#0A1F5C' : '#E8EFFF')
-                : 'linear-gradient(135deg, #1A5CFF, #0040CC)',
+                : `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.primaryDark})`,
               color: loading ? palette.textMuted : '#fff',
               cursor: loading ? 'not-allowed' : 'pointer',
               fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
@@ -214,10 +226,10 @@ function ModalPaiement({ planKey, planLabel, prix, prixGnf, onClose, onConfirm, 
           >
             {loading && <Spinner />}
             {loading ? 'Redirection...' : 'Payer avec CinetPay →'}
-          </button>
+          </motion.button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }
 
@@ -228,7 +240,7 @@ function SkeletonCards({ palette }) {
       {[1, 2, 3].map(i => (
         <div key={i} style={{
           height: 640, background: palette.card,
-          borderRadius: 24, border: `1px solid ${palette.cardBorder}`,
+          borderRadius: 20, border: `1px solid ${palette.cardBorder}`,
           opacity: 0.4, animation: 'pulse 1.5s ease-in-out infinite',
         }} />
       ))}
@@ -285,15 +297,18 @@ export default function AbonnementsPage() {
   return (
     <div style={{ padding: '48px 28px 80px', maxWidth: 1060, margin: '0 auto' }} className="fuelo-abonnements">
 
-      {modal && (
-        <ModalPaiement
-          planKey={modal.key}   planLabel={modal.label}
-          prix={modal.prix}     prixGnf={modal.prix_gnf}
-          onClose={() => setModal(null)}
-          onConfirm={() => souscrire({ plan: modal.key })}
-          loading={loadingSub}  palette={palette} isDark={isDark}
-        />
-      )}
+      <AnimatePresence>
+        {modal && (
+          <ModalPaiement
+            key={modal.key}
+            planKey={modal.key}   planLabel={modal.label}
+            prix={modal.prix}     prixGnf={modal.prix_gnf}
+            onClose={() => setModal(null)}
+            onConfirm={() => souscrire({ plan: modal.key })}
+            loading={loadingSub}  palette={palette} isDark={isDark}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ── En-tête ─────────────────────────────── */}
       <div style={{ textAlign: 'center', marginBottom: 52 }}>
@@ -329,7 +344,7 @@ export default function AbonnementsPage() {
         }}>
           {METHODS.map(m => (
             <span key={m.label} style={{
-              padding: '4px 10px', borderRadius: 7,
+              padding: '4px 10px', borderRadius: 6,
               fontSize: 11, fontWeight: 700,
               background: isDark ? m.color + '22' : m.bg,
               color: isDark ? m.color.replace('C4', 'F4').replace('B4', 'F4') : m.color,
@@ -423,7 +438,7 @@ export default function AbonnementsPage() {
               <div key={plan.key} style={{
                 background:   cardBg,
                 border:       `1.5px solid ${cardBorder}`,
-                borderRadius: 24, padding: '28px 26px 26px',
+                borderRadius: 20, padding: '28px 26px 26px',
                 position:     'relative', display: 'flex', flexDirection: 'column',
                 boxShadow:    isHigh
                   ? (isDark ? '0 16px 48px rgba(37,99,235,0.20)' : '0 16px 48px rgba(37,99,235,0.12)')
@@ -530,27 +545,26 @@ export default function AbonnementsPage() {
                 </div>
 
                 {/* Bouton */}
-                <button
+                <motion.button
+                  whileHover={!isActuel ? { y: -2, boxShadow: '0 8px 24px rgba(37,99,235,0.40)' } : {}}
+                  whileTap={!isActuel ? { scale: 0.98 } : {}}
                   disabled={isActuel}
                   onClick={() => !isActuel && setModal({
                     key: plan.key, label: plan.label,
                     prix: plan.prix, prix_gnf: plan.prix_gnf,
                   })}
                   style={{
-                    width: '100%', height: 52, borderRadius: 14, border: 'none',
+                    width: '100%', height: 52, borderRadius: theme.radius.lg, border: 'none',
                     background: isActuel
                       ? (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)')
-                      : 'linear-gradient(135deg, #1A5CFF, #0040CC)',
+                      : `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.primaryDark})`,
                     color: isActuel ? palette.textMuted : '#fff',
                     fontSize: 14, fontWeight: 700,
                     cursor: isActuel ? 'default' : 'pointer',
                     fontFamily: 'inherit',
-                    boxShadow: isActuel ? 'none' : '0 4px 18px rgba(26,92,255,0.30)',
-                    transition: 'all 0.15s',
+                    boxShadow: isActuel ? 'none' : theme.shadow.primary,
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
                   }}
-                  onMouseEnter={e => { if (!isActuel) e.currentTarget.style.transform = 'translateY(-1px)' }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)' }}
                 >
                   {isActuel ? (
                     <>
@@ -565,7 +579,7 @@ export default function AbonnementsPage() {
                       Choisir {plan.label}
                     </>
                   )}
-                </button>
+                </motion.button>
               </div>
             )
           })}

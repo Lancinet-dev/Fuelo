@@ -1,10 +1,10 @@
 // ================================================
 // FUELO V2 — EmptyState
 // Fichier : frontend/src/ui/EmptyState.jsx
-// État vide premium — jamais une page blanche
 // ================================================
 
 import { memo } from 'react'
+import { motion } from 'framer-motion'
 import theme from '../config/theme'
 
 // ── Illustrations SVG par type ────────────────────────
@@ -53,6 +53,33 @@ const ILLUSTRATIONS = {
       <rect x="26" y="38" width="12" height="14" rx="2" fill="#3B82F6" opacity="0.6" />
     </svg>
   ),
+  services: (
+    <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+      <rect width="64" height="64" rx="16" fill="#D1FAE5" />
+      <circle cx="32" cy="26" r="10" fill="#10B981" opacity="0.25" stroke="#10B981" strokeWidth="2" />
+      <path d="M27 26l3 3 6-6" stroke="#10B981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="18" y="42" width="28" height="6" rx="3" fill="#10B981" opacity="0.3" />
+      <rect x="24" y="42" width="16" height="6" rx="3" fill="#10B981" opacity="0.6" />
+    </svg>
+  ),
+  trajets: (
+    <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+      <rect width="64" height="64" rx="16" fill="#FEF3C7" />
+      <circle cx="20" cy="44" r="6" fill="#F59E0B" opacity="0.5" />
+      <circle cx="44" cy="20" r="6" fill="#F59E0B" opacity="0.8" />
+      <path d="M20 44 Q32 32 44 20" stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="4 3" fill="none" />
+      <circle cx="44" cy="20" r="3" fill="#F59E0B" />
+    </svg>
+  ),
+  activite: (
+    <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+      <rect width="64" height="64" rx="16" fill="#EFF6FF" />
+      <rect x="14" y="16" width="36" height="5" rx="2.5" fill="#2563EB" opacity="0.25" />
+      <rect x="14" y="26" width="28" height="5" rx="2.5" fill="#2563EB" opacity="0.4" />
+      <rect x="14" y="36" width="32" height="5" rx="2.5" fill="#2563EB" opacity="0.55" />
+      <rect x="14" y="46" width="20" height="5" rx="2.5" fill="#2563EB" opacity="0.7" />
+    </svg>
+  ),
   default: (
     <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
       <rect width="64" height="64" rx="16" fill="#F3F4F6" />
@@ -74,32 +101,45 @@ const EmptyState = memo(function EmptyState({
   const illustration = ILLUSTRATIONS[type] ?? ILLUSTRATIONS.default
 
   const DEFAULT_CONTENT = {
-    ventes:   { title: 'Aucune vente enregistrée',   message: 'Les ventes de votre station apparaîtront ici.' },
-    stock:    { title: 'Stock non configuré',          message: 'Ajoutez une première livraison pour commencer.' },
-    alertes:  { title: 'Aucune alerte active',         message: 'Tout fonctionne normalement. Votre stock est en bon état.' },
-    employes: { title: 'Aucun employé ajouté',         message: 'Créez des comptes pompistes pour qu\'ils puissent enregistrer des ventes.' },
-    stations: { title: 'Aucune station supplémentaire',message: 'Créez une nouvelle station pour la gérer depuis ce tableau de bord.' },
-    default:  { title: 'Aucune donnée',                message: 'Il n\'y a rien à afficher pour le moment.' },
+    ventes:   { title: 'Aucune vente enregistrée',        message: 'Les ventes de votre station apparaîtront ici.' },
+    stock:    { title: 'Stock non configuré',              message: 'Ajoutez une première livraison pour commencer.' },
+    alertes:  { title: 'Aucune alerte active',             message: 'Tout fonctionne normalement. Votre stock est en bon état.' },
+    employes: { title: 'Aucun employé ajouté',             message: 'Créez des comptes pompistes pour qu\'ils puissent enregistrer des ventes.' },
+    stations: { title: 'Aucune station supplémentaire',    message: 'Créez une nouvelle station pour la gérer depuis ce tableau de bord.' },
+    services: { title: 'Aucun service enregistré',         message: 'Les services de vos pompistes apparaîtront ici avec les données anti-fraude.' },
+    trajets:  { title: 'Aucun trajet enregistré',          message: 'Les trajets GPS de vos chauffeurs apparaîtront ici.' },
+    activite: { title: 'Aucune activité',                  message: 'Modifiez les filtres pour voir les événements de votre équipe.' },
+    default:  { title: 'Aucune donnée',                    message: 'Il n\'y a rien à afficher pour le moment.' },
   }
 
-  const content = DEFAULT_CONTENT[type] ?? DEFAULT_CONTENT.default
+  const content      = DEFAULT_CONTENT[type] ?? DEFAULT_CONTENT.default
   const finalTitle   = title   ?? content.title
   const finalMessage = message ?? content.message
 
   return (
-    <div style={{
-      display:        'flex',
-      flexDirection:  'column',
-      alignItems:     'center',
-      justifyContent: 'center',
-      padding:        '60px 24px',
-      textAlign:      'center',
-      gap:            16,
-    }}>
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+      style={{
+        display:        'flex',
+        flexDirection:  'column',
+        alignItems:     'center',
+        justifyContent: 'center',
+        padding:        '60px 24px',
+        textAlign:      'center',
+        gap:            16,
+      }}
+    >
       {/* Illustration */}
-      <div style={{ marginBottom: 4 }}>
+      <motion.div
+        initial={{ scale: 0.85, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 0.1, type: 'spring', stiffness: 280, damping: 22 }}
+        style={{ marginBottom: 4 }}
+      >
         {illustration}
-      </div>
+      </motion.div>
 
       {/* Titre */}
       <div style={{
@@ -123,16 +163,18 @@ const EmptyState = memo(function EmptyState({
 
       {/* CTA */}
       {onAction && actionLabel && (
-        <button
+        <motion.button
+          whileHover={{ y: -2, boxShadow: '0 6px 20px rgba(37,99,235,0.4)' }}
+          whileTap={{ scale: 0.97 }}
           onClick={onAction}
           style={{
             marginTop:    8,
             padding:      '10px 22px',
-            borderRadius: theme.radius.md,
+            borderRadius: theme.radius.button,
             border:       'none',
             background:   theme.colors.primary,
-            color:        '#0F172A',
-            fontSize:     theme.font.size.md,
+            color:        '#fff',
+            fontSize:     theme.font.size.base,
             fontWeight:   theme.font.weight.semi,
             cursor:       'pointer',
             fontFamily:   theme.font.family,
@@ -140,18 +182,15 @@ const EmptyState = memo(function EmptyState({
             display:      'flex',
             alignItems:   'center',
             gap:          8,
-            transition:   theme.transition.fast,
           }}
-          onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
-          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <path d="M12 5v14M5 12h14" />
           </svg>
           {actionLabel}
-        </button>
+        </motion.button>
       )}
-    </div>
+    </motion.div>
   )
 })
 
