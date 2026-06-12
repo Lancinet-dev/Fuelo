@@ -66,6 +66,10 @@ function TrajetMap({ trajetId, isDark }) {
 
     initMap()
     return () => { if (leafRef.current) { leafRef.current.remove(); leafRef.current = null } }
+    // On ne réinitialise la carte que si le nombre de points ou le trajet change
+    // (pas à chaque nouveau tableau `points`), pour éviter de recréer la carte
+    // Leaflet en boucle. points.length + trajetId suffisent comme déclencheurs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [points.length, trajetId])
 
   if (points.length === 0) {

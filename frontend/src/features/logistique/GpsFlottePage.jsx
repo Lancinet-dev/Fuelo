@@ -622,7 +622,9 @@ function TabHistorique({ trajets, loading }) {
   const [statut,   setStatut]   = useState('')
   const [selected, setSelected] = useState(null)
   const { data: ptsData } = useGpsPoints(selected)
-  const points = ptsData?.points ?? []
+  // Mémoïsé : sans ça, `?? []` crée un nouveau tableau à chaque render et fait
+  // recalculer inutilement les useMemo (vmoy/vmax/spData) en dessous
+  const points = useMemo(() => ptsData?.points ?? [], [ptsData])
 
   const filtered = useMemo(() => {
     let t = [...trajets]

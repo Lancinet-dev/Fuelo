@@ -267,6 +267,10 @@ export default function AbonnementsPage() {
       toast('Paiement annulé.', { icon: '↩', duration: 4000 })
       setSearchParams({})
     }
+    // Volontairement au montage uniquement : traite le retour de paiement
+    // CinetPay (?status=success|cancel) une seule fois. Ré-exécuter à chaque
+    // changement de searchParams créerait une boucle avec setSearchParams({}).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const { data, isLoading } = useQuery({

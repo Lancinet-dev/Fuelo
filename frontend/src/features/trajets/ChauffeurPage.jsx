@@ -134,6 +134,9 @@ function LiveMap({ lastPos }) {
       mapRef.current = map
     })()
     return () => { cancelled = true }
+    // Init carte une seule fois au montage ; lastPos sert juste de centre initial
+    // (les mises à jour de position sont gérées par l'effet [lastPos] dédié).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -496,6 +499,10 @@ export default function ChauffeurPage() {
         watchRef.current = null
       }
     }
+    // On (re)démarre le watch GPS uniquement quand le trajet change (id) ou
+    // qu'il passe en attente QR — PAS à chaque nouvelle position ni quand
+    // envoyerPosition change, sinon on re-souscrit la géoloc en boucle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trajetActif?.id, isAttenteQR])
 
   const handleDemarrer = async (citerneId, qty, photoFile) => {
