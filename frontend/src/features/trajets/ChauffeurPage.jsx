@@ -173,12 +173,16 @@ function PhotoInput({ label, btnLabel, photoFile, onChange }) {
   const preview  = useMemo(() => photoFile ? URL.createObjectURL(photoFile) : null, [photoFile])
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview) }, [preview])
 
+  const openPicker = () => {
+    if (inputRef.current) { inputRef.current.value = ''; inputRef.current.click() }
+  }
+
   return (
     <div>
       <div style={{ fontSize: 11, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 8 }}>
         {label} <span style={{ color: C.red }}>*</span>
       </div>
-      <div onClick={() => inputRef.current?.click()} style={{
+      <div onClick={openPicker} style={{
         height: preview ? 'auto' : 96, borderRadius: 16, overflow: 'hidden',
         border: `2px dashed ${photoFile ? C.green : C.orange + '50'}`,
         background: photoFile ? `${C.green}08` : `${C.orange}06`,
@@ -202,7 +206,11 @@ function PhotoInput({ label, btnLabel, photoFile, onChange }) {
       <input ref={inputRef} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
         onChange={e => onChange(e.target.files?.[0] ?? null)} />
       {preview && (
-        <button onClick={e => { e.stopPropagation(); onChange(null) }}
+        <button onClick={e => {
+          e.stopPropagation()
+          onChange(null)
+          if (inputRef.current) inputRef.current.value = ''
+        }}
           style={{ marginTop: 6, fontSize: 11, color: C.red, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
           Supprimer la photo
         </button>
@@ -474,14 +482,18 @@ export default function ChauffeurPage() {
   }, [trajetActif?.id, isAttenteQR])
 
   const handleDemarrer = async (citerneId, qty, photoFile) => {
-    await demarrer({ citerne_id: parseInt(citerneId), qty_depart: parseFloat(qty), photoFile })
-    setModal(null)
+    try {
+      await demarrer({ citerne_id: parseInt(citerneId), qty_depart: parseFloat(qty), photoFile })
+      setModal(null)
+    } catch { /* toast affiché par onError — modal reste ouverte pour réessayer */ }
   }
 
   const handleArriver = async (qty, photoFile) => {
     if (!trajetActif) return
-    await arriver({ id: trajetActif.id, qty_arrivee: parseFloat(qty), photoFile })
-    setShowArriverForm(false)
+    try {
+      await arriver({ id: trajetActif.id, qty_arrivee: parseFloat(qty), photoFile })
+      setShowArriverForm(false)
+    } catch { /* toast affiché par onError — formulaire reste ouvert pour réessayer */ }
   }
 
   const GPS_COLOR = { actif: C.green, erreur: C.red, inactif: C.muted }[gpsStatus]

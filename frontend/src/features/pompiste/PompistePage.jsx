@@ -75,6 +75,10 @@ function PhotoInput({ onCapture, photoFile, error }) {
   const prev = useMemo(() => photoFile ? URL.createObjectURL(photoFile) : null, [photoFile])
   useEffect(() => () => { if (prev) URL.revokeObjectURL(prev) }, [prev])
 
+  const openPicker = () => {
+    if (ref.current) { ref.current.value = ''; ref.current.click() }
+  }
+
   return (
     <div>
       <input ref={ref} type="file" accept="image/*" capture="environment" style={{ display: 'none' }}
@@ -83,10 +87,10 @@ function PhotoInput({ onCapture, photoFile, error }) {
         <div style={{ position: 'relative', borderRadius: 16, overflow: 'hidden', border: `2px solid ${C.green}` }}>
           <img src={prev} alt="" style={{ width: '100%', maxHeight: 160, objectFit: 'cover', display: 'block' }} />
           <div style={{ position: 'absolute', top: 8, left: 8, background: C.green, borderRadius: 8, padding: '3px 10px', fontSize: 11, fontWeight: 700, color: '#fff' }}>✓ Photo prise</div>
-          <button onClick={() => ref.current?.click()} style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 11, fontWeight: 600, padding: '5px 12px', cursor: 'pointer' }}>Changer</button>
+          <button onClick={openPicker} style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: 8, color: '#fff', fontSize: 11, fontWeight: 600, padding: '5px 12px', cursor: 'pointer' }}>Changer</button>
         </div>
       ) : (
-        <button onClick={() => ref.current?.click()} style={{
+        <button onClick={openPicker} style={{
           width: '100%', height: 110, borderRadius: 16, cursor: 'pointer',
           border: `2px dashed ${error ? C.red : 'rgba(255,255,255,0.15)'}`,
           background: error ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.03)',
@@ -370,11 +374,17 @@ export default function PompistePage() {
     }
   }
 
-  const handleDemarrer = async (fd) => { await demarrer(fd); setModal(null) }
+  const handleDemarrer = async (fd) => {
+    try { await demarrer(fd); setModal(null) }
+    catch { /* toast affiché par onError — modal reste ouverte pour réessayer */ }
+  }
   const handleTerminer = async (fd) => {
     if (!serviceActif) return
-    try { const r = await terminer({ id: serviceActif.id, formData: fd }); setModal(null); setResume(r) }
-    catch { setModal(null) }
+    try {
+      const r = await terminer({ id: serviceActif.id, formData: fd })
+      setModal(null)
+      setResume(r)
+    } catch { /* toast affiché par onError — modal reste ouverte pour réessayer */ }
   }
 
   return (

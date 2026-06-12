@@ -27,9 +27,10 @@ const getFlotteStats = async (req, res) => {
   }
 }
 
-const uploadPhoto = async (buffer, folder, publicId) => {
+const uploadPhoto = async (buffer, mimetype, folder, publicId) => {
   const b64     = buffer.toString('base64')
-  const dataUri = `data:image/jpeg;base64,${b64}`
+  const mime    = (mimetype && mimetype.startsWith('image/')) ? mimetype : 'image/jpeg'
+  const dataUri = `data:${mime};base64,${b64}`
   const result  = await cloudinary.uploader.upload(dataUri, {
     folder,
     public_id: publicId,
@@ -44,7 +45,7 @@ const demarrerTrajet = async (req, res) => {
     let photoUrl = null
     if (req.file) {
       const folder = `fuelo/trajets/station_${req.user?.station_id || 'unknown'}`
-      photoUrl = await uploadPhoto(req.file.buffer, folder, `depart_${Date.now()}_${req.user?.id}`)
+      photoUrl = await uploadPhoto(req.file.buffer, req.file.mimetype, folder, `depart_${Date.now()}_${req.user?.id}`)
     }
     const trajet = await trajetService.demarrerTrajet(req.user, req.body, photoUrl)
     res.status(201).json({ message: 'Trajet démarré', trajet })
@@ -69,7 +70,7 @@ const arriverDestination = async (req, res) => {
     let photoUrl = null
     if (req.file) {
       const folder = `fuelo/trajets/station_${req.user?.station_id || 'unknown'}`
-      photoUrl = await uploadPhoto(req.file.buffer, folder, `arrivee_${Date.now()}_${req.user?.id}`)
+      photoUrl = await uploadPhoto(req.file.buffer, req.file.mimetype, folder, `arrivee_${Date.now()}_${req.user?.id}`)
     }
     const result = await trajetService.arriverDestination(req.user, parseInt(req.params.id), req.body, photoUrl)
     res.json({ message: 'Arrivée déclarée — En attente de validation QR', ...result })

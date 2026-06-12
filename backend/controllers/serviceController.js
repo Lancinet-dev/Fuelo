@@ -7,11 +7,11 @@ const cloudinary     = require('../config/cloudinary')
 const logger         = require('../utils/logger')
 const erreurServeur  = require('../utils/erreurServeur')
 
-const uploadPhoto = async (buffer, folder, publicId) => {
-  const b64    = buffer.toString('base64')
-  const mime   = 'image/jpeg'
+const uploadPhoto = async (buffer, mimetype, folder, publicId) => {
+  const b64     = buffer.toString('base64')
+  const mime    = (mimetype && mimetype.startsWith('image/')) ? mimetype : 'image/jpeg'
   const dataUri = `data:${mime};base64,${b64}`
-  const result = await cloudinary.uploader.upload(dataUri, {
+  const result  = await cloudinary.uploader.upload(dataUri, {
     folder,
     public_id: publicId,
     resource_type: 'image',
@@ -25,7 +25,7 @@ const demarrerService = async (req, res) => {
     let photoUrl = null
     if (req.file) {
       const folder = `fuelo/services/station_${req.user?.station_id || 'unknown'}`
-      photoUrl = await uploadPhoto(req.file.buffer, folder, `debut_${Date.now()}_${req.user?.id}`)
+      photoUrl = await uploadPhoto(req.file.buffer, req.file.mimetype, folder, `debut_${Date.now()}_${req.user?.id}`)
     }
     const service = await serviceService.demarrerService(req.user, req.body, photoUrl)
     res.status(201).json({ message: 'Service démarré', service })
@@ -40,7 +40,7 @@ const terminerService = async (req, res) => {
     let photoUrl = null
     if (req.file) {
       const folder = `fuelo/services/station_${req.user?.station_id || 'unknown'}`
-      photoUrl = await uploadPhoto(req.file.buffer, folder, `fin_${Date.now()}_${req.user?.id}`)
+      photoUrl = await uploadPhoto(req.file.buffer, req.file.mimetype, folder, `fin_${Date.now()}_${req.user?.id}`)
     }
     const result   = await serviceService.terminerService(
       req.user,
