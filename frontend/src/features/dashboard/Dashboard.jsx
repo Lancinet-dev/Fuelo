@@ -822,13 +822,12 @@ export default function Dashboard() {
       <style>{`
         @keyframes alertPulse { 0%,100%{opacity:1;box-shadow:0 0 6px rgba(239,68,68,0.6)} 50%{opacity:0.5;box-shadow:0 0 12px rgba(239,68,68,0.9)} }
         @keyframes pulse      { 0%,100%{opacity:1} 50%{opacity:0.4} }
-        @media (max-width: 1100px) {
-          .fuelo-grid-4   { grid-template-columns: repeat(2, 1fr) !important; }
-        }
-        @media (max-width: 1024px) {
+        @media (max-width: 1300px) {
           .fuelo-grid-chart { grid-template-columns: 1fr !important; }
           .fuelo-grid-owner { grid-template-columns: 1fr !important; }
-          .fuelo-grid-2     { grid-template-columns: 1fr 1fr !important; }
+        }
+        @media (max-width: 1100px) {
+          .fuelo-grid-4   { grid-template-columns: repeat(2, 1fr) !important; }
         }
         @media (max-width: 768px) {
           .fuelo-dashboard { padding: 16px 14px !important; }

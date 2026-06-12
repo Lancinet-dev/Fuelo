@@ -146,7 +146,7 @@ export default function Ventes() {
         </div>
 
         {/* Filtres carburant */}
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {[{ val: '', label: 'Toutes' }, { val: 'essence', label: 'Essence' }, { val: 'gasoil', label: 'Gasoil' }].map(({ val, label }) => {
             const active = filterType === val
             return (
@@ -272,10 +272,13 @@ export default function Ventes() {
         @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 768px) {
           .fuelo-ventes          { padding: 20px 16px !important; }
-          .fuelo-grid-3          { grid-template-columns: 1fr !important; }
+          .fuelo-grid-3          { grid-template-columns: repeat(2, 1fr) !important; }
           .ventes-header-desktop { display: none !important; }
           .ventes-row-desktop    { display: none !important; }
           .ventes-row-mobile     { display: block !important; }
+        }
+        @media (max-width: 480px) {
+          .fuelo-grid-3          { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>

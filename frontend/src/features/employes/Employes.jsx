@@ -343,7 +343,7 @@ export default function Employes() {
       {loading ? (
         <>
           <SkeletonStyle />
-          <div className="fuelo-emp-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+          <div className="fuelo-emp-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: 16 }}>
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} style={{
                 background: isDark ? palette.glass : palette.card,
@@ -379,7 +379,7 @@ export default function Employes() {
           />
         </div>
       ) : (
-        <div className="fuelo-emp-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+        <div className="fuelo-emp-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: 16 }}>
           <AnimatePresence mode="popLayout">
             {employes.map((emp, i) => {
               const displayRole = normalizeRole(emp.role)
@@ -497,9 +497,10 @@ export default function Employes() {
         @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 768px) {
           .fuelo-employes { padding: 20px 16px !important; }
-          .fuelo-grid-3   { grid-template-columns: 1fr !important; }
+          .fuelo-grid-3   { grid-template-columns: 1fr 1fr !important; }
         }
-        @media (max-width: 480px) {
+        @media (max-width: 540px) {
+          .fuelo-grid-3   { grid-template-columns: 1fr !important; }
           .fuelo-emp-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>

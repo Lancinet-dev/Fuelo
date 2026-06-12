@@ -138,7 +138,7 @@ export default function Alertes() {
 
       {/* Filtres */}
       {!loading && alertes.length > 0 && (
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
           {FILTERS.map(({ val, label }) => {
             const active = filter === val
             const count  = val === 'toutes' ? alertes.length : val === 'non_lues' ? nonLues : lues
@@ -247,6 +247,9 @@ export default function Alertes() {
         @keyframes ringPulse { 0% { transform: scale(1); opacity: 0.5 } 70% { transform: scale(1.12); opacity: 0 } 100% { transform: scale(1.12); opacity: 0 } }
         @media (max-width: 768px) {
           .fuelo-alertes { padding: 20px 16px !important; }
+          .fuelo-grid-3  { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+        @media (max-width: 480px) {
           .fuelo-grid-3  { grid-template-columns: 1fr !important; }
         }
       `}</style>

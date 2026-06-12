@@ -359,12 +359,14 @@ export default function Sidebar({ alertesNb = 0, onSearch }) {
       <div
         className="fuelo-sidebar-mobile"
         style={{
-          position: 'fixed', top: 0, left: mobileOpen ? 0 : -260, bottom: 0, width: 240,
+          position: 'fixed', top: 0, left: 0, bottom: 0, width: 260,
           background: palette.sidebar,
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
           borderRight: `1px solid ${palette.sidebarBorder}`,
-          zIndex: 99, transition: 'left 0.3s ease', display: 'none', flexDirection: 'column',
+          zIndex: 99,
+          transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.3s ease', display: 'none', flexDirection: 'column',
         }}
       >
         <Content {...contentProps} />
