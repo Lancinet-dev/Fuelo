@@ -2,9 +2,10 @@ const express = require('express')
 const router  = express.Router()
 const verifyToken = require('../middleware/auth')
 const { canAccessComptable } = require('../middleware/checkRole')
+const { checkPlan }          = require('../middleware/checkPlan')
 const ctrl = require('../controllers/comptableController')
 
-const auth = [verifyToken, canAccessComptable]
+const auth = [verifyToken, canAccessComptable, checkPlan('comptable')]
 
 // Dashboard financier
 router.get('/dashboard', ...auth, ctrl.getDashboard)

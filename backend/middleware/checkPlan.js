@@ -28,7 +28,7 @@ const PLANS = {
     label:        'Enterprise',
     max_stations: Infinity,
     max_employes: Infinity,
-    features:     ['ventes', 'stock', 'alertes', 'services', 'logistique', 'trajets', 'citernes', 'exports', 'assistant', 'performances'],
+    features:     ['ventes', 'stock', 'alertes', 'services', 'logistique', 'trajets', 'citernes', 'exports', 'assistant', 'performances', 'comptable'],
     assistant_limit: Infinity,
     upgrade_vers: null,
   },

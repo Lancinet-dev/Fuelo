@@ -17,6 +17,8 @@ const FEATURE_LABELS = {
   trajets:      'GPS Citernes & Trajets',
   citernes:     'Gestion des Citernes',
   services:     'Services Pompiste',
+  comptable:    'Module Comptable',
+  antifraude:   'Centre Anti-Fraude',
 }
 
 const PLAN_REQUIS_LABEL = {
@@ -39,7 +41,7 @@ export function UpgradeModal({ feature, onClose }) {
   const { plan, planDef } = usePlan()
   const { palette, isDark } = useTheme()
 
-  const reqPlan      = { exports: 'pro', assistant: 'pro', performances: 'pro', logistique: 'pro', trajets: 'pro', citernes: 'pro', services: 'pro' }[feature] ?? 'pro'
+  const reqPlan      = { exports: 'pro', assistant: 'pro', performances: 'pro', logistique: 'pro', trajets: 'pro', citernes: 'pro', services: 'pro', antifraude: 'pro', comptable: 'enterprise' }[feature] ?? 'pro'
   const featureLabel = FEATURE_LABELS[feature] ?? feature
   const reqColors    = PLAN_COLORS[reqPlan]
 
@@ -130,7 +132,7 @@ export function PlanGatePage({ feature, children }) {
   if (loading) return null
   if (canAccess(feature)) return children
 
-  const reqPlan      = { logistique: 'pro', trajets: 'pro', performances: 'pro', assistant: 'pro' }[feature] ?? 'pro'
+  const reqPlan      = { logistique: 'pro', trajets: 'pro', performances: 'pro', assistant: 'pro', services: 'pro', antifraude: 'pro', comptable: 'enterprise' }[feature] ?? 'pro'
   const featureLabel = FEATURE_LABELS[feature] ?? feature
   const reqColors    = PLAN_COLORS[reqPlan]
 

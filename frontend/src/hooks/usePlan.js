@@ -21,6 +21,8 @@ export const FEATURE_PLAN_REQUIS = {
   trajets:      'pro',
   citernes:     'pro',
   services:     'pro',
+  antifraude:   'pro',
+  comptable:    'enterprise',
 }
 
 export function usePlan() {

@@ -10,6 +10,7 @@ import AppLayout from '../ui/AppLayout'
 import PageLoader from '../ui/PageLoader'
 import ErrorBoundary from '../ui/ErrorBoundary'
 import ComptableLayout from '../features/comptable/ComptableLayout'
+import { PlanGatePage } from '../ui/PlanGate'
 
 const normalizeRole = (value = '') => {
   const role = String(value).trim().toLowerCase()
@@ -143,18 +144,18 @@ export default function Router() {
             <Route path="/stock"      element={<Stock />} />
             <Route path="/ventes"     element={<Ventes />} />
             <Route path="/alertes"    element={<Alertes />} />
-            <Route path="/services"   element={<ServicesPage />} />
-            <Route path="/trajets"    element={<TrajetsPage />} />
+            <Route path="/services"   element={<PlanGatePage feature="services"><ServicesPage /></PlanGatePage>} />
+            <Route path="/trajets"    element={<PlanGatePage feature="trajets"><TrajetsPage /></PlanGatePage>} />
             <Route path="/employes"   element={<Employes />} />
             <Route path="/stations"   element={<Stations />} />
             <Route path="/parametres"  element={<Parametres />} />
             <Route path="/profile"     element={<Profile />} />
             <Route path="/abonnements"   element={<AbonnementsPage />} />
-            <Route path="/performances" element={<PerformancesPage />} />
-            <Route path="/anti-fraude"  element={<AntiFraudePage />} />
+            <Route path="/performances" element={<PlanGatePage feature="performances"><PerformancesPage /></PlanGatePage>} />
+            <Route path="/anti-fraude"  element={<PlanGatePage feature="antifraude"><AntiFraudePage /></PlanGatePage>} />
             <Route path="/comptabilite"  element={
               <PrivateRoute allowedRoles={['owner', 'superadmin']}>
-                <ComptablePage />
+                <PlanGatePage feature="comptable"><ComptablePage /></PlanGatePage>
               </PrivateRoute>
             } />
           </Route>

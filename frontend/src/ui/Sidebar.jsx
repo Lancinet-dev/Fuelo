@@ -9,11 +9,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth }   from '../context/AuthContext'
 import { useTheme }  from '../context/ThemeContext'
 
-import { usePlan } from '../hooks/usePlan'
+import { usePlan, PLAN_COLORS, FEATURE_PLAN_REQUIS } from '../hooks/usePlan'
 import { useParametres } from '../hooks/useParametres'
 import { usePerformancesBadge } from '../hooks/usePerformances'
 import { useNotifications } from '../hooks/useNotifications'
 import NotificationsPanel, { NotifBell } from './NotificationsPanel'
+import { useUpgradeModal } from './PlanGate'
 
 const normalizeRole = (value = '') => {
   const role = String(value).trim().toLowerCase()
@@ -38,29 +39,31 @@ const ALL_NAV = [
   { path: '/stock',       label: 'Stock',            roles: ['owner', 'gerant'], d: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', ownerReadOnly: true },
   { path: '/ventes',      label: 'Ventes',           roles: ['owner', 'gerant'], d: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', ownerReadOnly: true },
   { path: '/alertes',     label: 'Alertes',          roles: ['owner', 'gerant'], d: 'M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01' },
-  { path: '/services',    label: 'Services',         roles: ['owner', 'gerant'], d: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', ownerReadOnly: true },
-  { path: '/trajets',     label: 'GPS Citernes',     roles: ['owner'], d: 'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0zM12 10m-3 0a3 3 0 106 0 3 3 0 00-6 0' },
+  { path: '/services',    label: 'Services',         roles: ['owner', 'gerant'], d: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', ownerReadOnly: true, planRequired: 'services' },
+  { path: '/trajets',     label: 'GPS Citernes',     roles: ['owner'], d: 'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0zM12 10m-3 0a3 3 0 106 0 3 3 0 00-6 0', planRequired: 'trajets' },
   { path: '/employes',    label: 'Employés',         roles: ['owner', 'gerant'], d: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75M9 7a4 4 0 100 8 4 4 0 000-8z' },
   { path: '/stations',    label: 'Mes stations',     roles: ['owner'], d: 'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2zM9 22V12h6v10' },
   { path: '/profile',     label: 'Mon profil',       roles: ['owner', 'gerant', 'pompiste', 'superadmin'], d: 'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z' },
   { path: '/parametres',  label: 'Paramètres',       roles: ['owner', 'gerant'], d: 'M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z' },
-  { path: '/performances', label: 'Performances',     roles: ['owner', 'gerant'], d: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z', badge: 'performances' },
-  { path: '/anti-fraude',  label: 'Anti-Fraude',      roles: ['owner', 'gerant'], d: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9.5 12l1.8 1.8L15 10' },
-  { path: '/comptabilite', label: 'Comptabilité',     roles: ['owner', 'superadmin'], d: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 100 6 3 3 0 000-6z', readOnlyBadge: true },
+  { path: '/performances', label: 'Performances',     roles: ['owner', 'gerant'], d: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z', badge: 'performances', planRequired: 'performances' },
+  { path: '/anti-fraude',  label: 'Anti-Fraude',      roles: ['owner', 'gerant'], d: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9.5 12l1.8 1.8L15 10', planRequired: 'antifraude' },
+  { path: '/comptabilite', label: 'Comptabilité',     roles: ['owner', 'superadmin'], d: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zM12 9a3 3 0 100 6 3 3 0 000-6z', readOnlyBadge: true, planRequired: 'comptable' },
   { path: '/abonnements',  label: 'Mon abonnement',  roles: ['owner'], d: 'M3 3h18v18H3zM3 9h18M9 21V9' },
 ]
 
 function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logout, onSearch, user, role, isDark, toggle, palette, notifNb = 0, onBellClick }) {
-  const { plan, colors } = usePlan()
+  const { plan, colors, canAccess } = usePlan()
   const { parametres }   = useParametres()
   const { data: badgeData } = usePerformancesBadge()
   const performancesBadge   = badgeData?.count ?? 0
   const isOwner = role === 'owner'
   const logoUrl = parametres?.logo_url ?? null
   const stationNom = parametres?.nom ?? null
+  const { showUpgrade, Modal: UpgradeModal } = useUpgradeModal()
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      {UpgradeModal}
 
       {/* Header espace de travail — logo + nom station + cloche */}
       <div style={{ padding: '18px 14px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: `1px solid ${palette.sidebarBorder}`, marginBottom: 8 }}>
@@ -114,13 +117,19 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
 
       <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto', minHeight: 0, padding: '0 8px' }}>
         {navItems.map((item, i) => {
-          const active   = location.pathname === item.path
-          const isAlerte = item.path === '/alertes'
+          const active    = location.pathname === item.path
+          const isAlerte  = item.path === '/alertes'
+          const locked    = item.planRequired ? !canAccess(item.planRequired) : false
+          const reqPlan   = item.planRequired ? (FEATURE_PLAN_REQUIS[item.planRequired] ?? 'pro') : null
+          const lockLabel = reqPlan ? (PLAN_COLORS[reqPlan]?.label ?? reqPlan) : null
 
           return (
             <motion.button
               key={item.path}
-              onClick={() => { navigate(item.path); setMobileOpen(false) }}
+              onClick={() => {
+                if (locked) { showUpgrade(item.planRequired); return }
+                navigate(item.path); setMobileOpen(false)
+              }}
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.025, duration: 0.25 }}
@@ -130,8 +139,9 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
                 padding: '9px 12px', borderRadius: 10, border: 'none', cursor: 'pointer',
                 background: active ? 'rgba(37,99,235,0.14)' : 'transparent',
                 boxShadow: active ? '0 0 0 1px rgba(37,99,235,0.25), 0 4px 16px rgba(37,99,235,0.18)' : 'none',
-                color: active ? '#60A5FA' : palette.textSub,
+                color: active ? '#60A5FA' : locked ? palette.textMuted : palette.textSub,
                 fontFamily: 'inherit', fontSize: 13, fontWeight: active ? 600 : 400,
+                opacity: locked ? 0.7 : 1,
                 width: '100%', textAlign: 'left', transition: 'background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease', position: 'relative',
               }}
               onMouseEnter={(e) => {
@@ -162,14 +172,20 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
                   {performancesBadge}
                 </span>
               )}
-              {item.ownerReadOnly && role === 'owner' && (
+              {item.ownerReadOnly && role === 'owner' && !locked && (
                 <span style={{ fontSize: 8, fontWeight: 700, color: palette.textMuted, background: 'rgba(255,255,255,0.06)', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.06em', textTransform: 'uppercase', flexShrink: 0 }}>
                   lecture
                 </span>
               )}
-              {item.readOnlyBadge && (
+              {item.readOnlyBadge && !locked && (
                 <span style={{ fontSize: 8, fontWeight: 700, color: '#f59e0b', background: 'rgba(245,158,11,0.12)', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.06em', textTransform: 'uppercase', flexShrink: 0 }}>
                   lecture
+                </span>
+              )}
+              {locked && (
+                <span style={{ fontSize: 8, fontWeight: 800, color: reqPlan === 'enterprise' ? '#F59E0B' : '#60A5FA', background: reqPlan === 'enterprise' ? 'rgba(245,158,11,0.12)' : 'rgba(37,99,235,0.14)', borderRadius: 4, padding: '1px 5px', letterSpacing: '0.06em', textTransform: 'uppercase', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+                  {lockLabel}
                 </span>
               )}
             </motion.button>
