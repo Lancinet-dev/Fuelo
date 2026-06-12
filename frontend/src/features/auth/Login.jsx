@@ -84,8 +84,9 @@ export default function Login() {
       navigate(getHomePath(user.role))
     } catch (err) {
       let msg
-      if (!err?.response) {
-        msg = 'Connexion au serveur impossible. Vérifiez votre connexion internet.'
+      if (err?.code === 'ECONNABORTED' || !err?.response) {
+        // Timeout réveil Render ou coupure réseau — on invite à réessayer
+        msg = 'Le serveur démarre (quelques secondes). Patientez puis réessayez.'
       } else if (err.response.status === 429) {
         msg = err.response.data?.error ?? 'Trop de tentatives. Réessayez dans quelques minutes.'
       } else if (err.response.status === 403) {

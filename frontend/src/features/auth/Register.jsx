@@ -114,14 +114,21 @@ export default function Register() {
       toast.success(`Bienvenue sur Fuelo, ${user.nom} !`)
       navigate('/dashboard')
     } catch (err) {
-      const details = err?.response?.data?.details
-      const errMsg  = (details?.length > 0 ? details[0].message : null)
-                    ?? err?.response?.data?.error
-                    ?? 'Erreur lors de la création du compte'
-      toast.error(errMsg)
-      // Retour à l'étape concernée selon le type d'erreur
-      const status = err?.response?.status
-      if (status === 400) goTo(1)
+      // Pas de réponse du serveur = timeout réveil Render (tier gratuit) ou
+      // coupure réseau. On l'affiche clairement plutôt qu'un "Erreur" générique,
+      // et on NE revient PAS à l'étape 1 (les données saisies restent valides —
+      // il suffit de réessayer une fois le serveur réveillé)
+      if (err?.code === 'ECONNABORTED' || !err?.response) {
+        toast.error('Le serveur démarre (quelques secondes). Patientez puis cliquez à nouveau sur « Créer mon compte ».')
+      } else {
+        const details = err?.response?.data?.details
+        const errMsg  = (details?.length > 0 ? details[0].message : null)
+                      ?? err?.response?.data?.error
+                      ?? 'Erreur lors de la création du compte'
+        toast.error(errMsg)
+        // Retour à l'étape 1 uniquement pour une erreur de validation des champs
+        if (err.response.status === 400 && details?.length > 0) goTo(1)
+      }
     } finally {
       setLoading(false)
     }

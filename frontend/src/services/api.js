@@ -9,7 +9,11 @@ import axios from 'axios'
 // ── Instance axios ────────────────────────────────────
 const api = axios.create({
   baseURL:          import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api',
-  timeout:          15000,
+  // 30s — le backend Render (tier gratuit) s'endort après 15 min d'inactivité
+  // et met 30-50s à se réveiller au premier appel. Un timeout trop court (15s)
+  // coupe la requête avant la réponse → l'inscription/connexion semblent "buguées"
+  // alors que le serveur démarrait juste. 30s couvre la majorité des réveils.
+  timeout:          30000,
   withCredentials:  true, // envoyer le cookie HttpOnly fuelo_refresh
   headers: {
     'Content-Type': 'application/json',
