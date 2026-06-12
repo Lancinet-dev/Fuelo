@@ -424,7 +424,7 @@ export default function PompistePage() {
           {serviceActif ? (
             <motion.div key="active" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
               style={{ width: '100%', background: `linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.05))`, border: `1.5px solid ${C.green}35`, borderRadius: 24, padding: '20px', boxShadow: `0 8px 32px rgba(16,185,129,0.15)` }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+              <div className="pompiste-svc" style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                 <RingTimer pct={timer.pct} label={timer.label} secs={timer.secs} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: C.green, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Service actif</div>
@@ -603,6 +603,10 @@ export default function PompistePage() {
         @keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 8px rgba(16,185,129,0.7)} 50%{opacity:0.6;box-shadow:0 0 16px rgba(16,185,129,1)} }
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+        @media (max-width: 400px) {
+          .pompiste-svc { flex-direction: column !important; align-items: center !important; gap: 16px !important; }
+          .pompiste-svc > div:last-child { width: 100% !important; }
+        }
       `}</style>
     </div>
   )

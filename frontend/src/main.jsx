@@ -66,10 +66,45 @@ const globalStyles = `
   /* Tableaux mobiles scrollables */
   .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-  /* Boutons minimum touch target */
+  /* Boutons — minimum touch target 48px WCAG */
   @media (max-width: 768px) {
-    button, a[role="button"] { min-height: 44px; }
+    button { min-height: 48px; touch-action: manipulation; }
   }
+
+  /* ── Responsive utilitaires globaux ─────────── */
+  @media (max-width: 1024px) {
+    .fuelo-grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
+  }
+  @media (max-width: 768px) {
+    .fuelo-grid-2 { grid-template-columns: 1fr !important; }
+    .fuelo-grid-3 { grid-template-columns: repeat(2, 1fr) !important; }
+    .fuelo-grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
+  }
+  @media (max-width: 480px) {
+    .fuelo-grid-3 { grid-template-columns: 1fr !important; }
+    .fuelo-grid-4 { grid-template-columns: 1fr !important; }
+  }
+
+  /* ── Modals → bottom-sheet sur mobile ────────── */
+  @media (max-width: 480px) {
+    .fuelo-modal-overlay {
+      align-items: flex-end !important;
+      padding: 0 !important;
+    }
+    .fuelo-modal {
+      border-radius: 24px 24px 0 0 !important;
+      max-width: 100% !important;
+      width: 100% !important;
+      max-height: 90dvh;
+      overflow-y: auto;
+    }
+  }
+
+  /* ── Images responsive ───────────────────────── */
+  img { max-width: 100%; height: auto; }
+
+  /* ── Prévenir overflow horizontal global ─────── */
+  html, body { overflow-x: hidden; max-width: 100vw; }
 
   /* Shimmer animation pour skeletons */
   @keyframes shimmer {

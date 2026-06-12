@@ -126,12 +126,12 @@ function ModalQR({ onClose, onConfirm, loading, palette, isDark }) {
   const canSubmit = code.replace(/\s/g, '').length === 6
 
   return (
-    <div style={{
+    <div className="fuelo-modal-overlay" style={{
       position: 'fixed', inset: 0, zIndex: 300,
       background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)',
       display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
     }} onClick={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div style={{
+      <div className="fuelo-modal" style={{
         background: isDark ? '#0D1B2A' : '#fff',
         borderRadius: 24, padding: '32px 28px',
         width: '100%', maxWidth: 380,
@@ -219,7 +219,7 @@ function TabTrajets({ palette, isDark }) {
     <div>
       {/* Stats + bouton QR */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, alignItems: 'stretch' }}>
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+        <div className="log-kpi-grid" style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
           {[
             { l: 'Total',    v: stats.total,   color: palette.text },
             { l: 'En route', v: stats.enCours, color: '#10B981' },
@@ -1051,7 +1051,7 @@ function LogistiquePageContent() {
               <div style={{ width: 22, height: 22, borderRadius: '50%', background: `${ORANGE}25`, border: `1px solid ${ORANGE}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: ORANGE }}>
                 {(user?.nom || 'L').charAt(0).toUpperCase()}
               </div>
-              <span style={{ fontSize: 11, color: H_SUB, fontWeight: 500 }}>{user?.nom}</span>
+              <span className="log-user-txt" style={{ fontSize: 11, color: H_SUB, fontWeight: 500 }}>{user?.nom}</span>
             </div>
 
             <button onClick={logout}
@@ -1128,6 +1128,15 @@ function LogistiquePageContent() {
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
         select { appearance: none; }
+        @media (max-width: 480px) {
+          .log-user-txt { display: none !important; }
+        }
+        @media (max-width: 768px) {
+          .log-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+        @media (max-width: 480px) {
+          .log-kpi-grid { grid-template-columns: 1fr !important; }
+        }
       `}</style>
     </div>
   )

@@ -518,7 +518,7 @@ export default function ChauffeurPage() {
             <div style={{ width: 22, height: 22, borderRadius: '50%', background: `${C.orange}20`, border: `1px solid ${C.orange}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: C.orange }}>
               {(user?.nom || 'C').charAt(0).toUpperCase()}
             </div>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{user?.nom}</span>
+            <span className="chauffeur-user-name" style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{user?.nom}</span>
           </div>
           <button onClick={logout}
             style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'rgba(239,68,68,0.8)' }}>
@@ -579,7 +579,7 @@ export default function ChauffeurPage() {
                 </div>
 
                 {/* ─ Infos trajet ─ */}
-                <div style={{ width: '100%', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                <div className="chauffeur-infos-grid" style={{ width: '100%', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
                   {[
                     { label: 'Citerne',     value: trajetActif.citerne_code ?? '—' },
                     { label: 'Destination', value: trajetActif.station_nom ?? '—' },
@@ -645,6 +645,10 @@ export default function ChauffeurPage() {
         .chauffeur-map-container { height: 200px; }
         @media (min-height: 700px) { .chauffeur-map-container { height: 240px; } }
         @media (min-height: 800px) { .chauffeur-map-container { height: 280px; } }
+        @media (max-width: 400px) {
+          .chauffeur-user-name { display: none !important; }
+          .chauffeur-infos-grid { grid-template-columns: 1fr 1fr !important; }
+        }
       `}</style>
     </div>
   )

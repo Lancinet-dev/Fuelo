@@ -92,6 +92,7 @@ function ConfirmModal({ employe, onConfirm, onCancel, palette, isDark }) {
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       onClick={onCancel}
+      className="fuelo-modal-overlay"
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', padding: 16 }}
     >
       <motion.div
@@ -100,6 +101,7 @@ function ConfirmModal({ employe, onConfirm, onCancel, palette, isDark }) {
         exit={{ opacity: 0, scale: 0.94, y: 14 }}
         transition={{ type: 'spring', stiffness: 380, damping: 30 }}
         onClick={e => e.stopPropagation()}
+        className="fuelo-modal"
         style={{
           background: isDark ? palette.glass : palette.card,
           backdropFilter: isDark ? 'blur(20px)' : 'none',

@@ -129,6 +129,7 @@ function ModalPaiement({ planKey, planLabel, prix, prixGnf, onClose, onConfirm, 
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
+      className="fuelo-modal-overlay"
       style={{
         position: 'fixed', inset: 0, zIndex: 200,
         background: 'rgba(0,0,0,0.65)',
@@ -142,6 +143,7 @@ function ModalPaiement({ planKey, planLabel, prix, prixGnf, onClose, onConfirm, 
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.94, y: 8 }}
         transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+        className="fuelo-modal"
         style={{
           background: palette.card,
           border: `1px solid ${palette.cardBorder}`,

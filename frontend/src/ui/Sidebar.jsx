@@ -276,11 +276,12 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
 // ── Modale confirmation déconnexion ─────────────────
 function LogoutConfirmModal({ onConfirm, onCancel, palette }) {
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+    <div className="fuelo-modal-overlay" style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.18 }}
+        className="fuelo-modal"
         style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 16, padding: '28px 24px', width: '100%', maxWidth: 320, boxShadow: '0 0 0 1px rgba(255,255,255,0.05), 0 20px 60px rgba(0,0,0,0.5)' }}
       >
         <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(239,68,68,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
