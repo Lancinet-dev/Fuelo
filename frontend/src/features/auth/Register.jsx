@@ -83,15 +83,15 @@ export default function Register() {
 
   const validateStep1 = () => {
     const e = {}
-    if (!form.nom.trim())         e.nom      = 'Obligatoire'
-    if (!emailValid)              e.email    = 'Email invalide'
-    if (form.password.length < 6) e.password = 'Minimum 6 caractères'
+    if (form.nom.trim().length < 2)  e.nom      = 'Minimum 2 caractères'
+    if (!emailValid)                 e.email    = 'Email invalide'
+    if (form.password.length < 6)    e.password = 'Minimum 6 caractères'
     setErrors(e)
     return Object.keys(e).length === 0
   }
   const validateStep2 = () => {
     const e = {}
-    if (!form.nom_station.trim()) e.nom_station = 'Obligatoire'
+    if (form.nom_station.trim().length < 2) e.nom_station = 'Minimum 2 caractères'
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -114,8 +114,14 @@ export default function Register() {
       toast.success(`Bienvenue sur Fuelo, ${user.nom} !`)
       navigate('/dashboard')
     } catch (err) {
-      toast.error(err?.response?.data?.error ?? 'Erreur lors de la création du compte')
-      goTo(1)
+      const details = err?.response?.data?.details
+      const errMsg  = (details?.length > 0 ? details[0].message : null)
+                    ?? err?.response?.data?.error
+                    ?? 'Erreur lors de la création du compte'
+      toast.error(errMsg)
+      // Retour à l'étape concernée selon le type d'erreur
+      const status = err?.response?.status
+      if (status === 400) goTo(1)
     } finally {
       setLoading(false)
     }

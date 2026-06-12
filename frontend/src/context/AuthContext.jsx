@@ -83,16 +83,11 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = useCallback(async (email, password) => {
-    setLoading(true)
-    try {
-      const { data } = await api.post('/auth/login', { email, password })
-      storage.set(data.token, data.station_id)
-      setUser(normalizeUser(data.user))
-      setStationId(Number(data.station_id))
-      return normalizeUser(data.user)
-    } finally {
-      setLoading(false)
-    }
+    const { data } = await api.post('/auth/login', { email, password })
+    storage.set(data.token, data.station_id)
+    setUser(normalizeUser(data.user))
+    setStationId(Number(data.station_id))
+    return normalizeUser(data.user)
   }, [])
 
   // Connexion via un token déjà émis (callback OAuth Google) — recharge
@@ -117,16 +112,11 @@ export function AuthProvider({ children }) {
   }, [])
 
   const register = useCallback(async (payload) => {
-    setLoading(true)
-    try {
-      const { data } = await api.post('/auth/register', payload)
-      storage.set(data.token, data.station_id)
-      setUser(normalizeUser(data.user))
-      setStationId(Number(data.station_id))
-      return normalizeUser(data.user)
-    } finally {
-      setLoading(false)
-    }
+    const { data } = await api.post('/auth/register', payload)
+    storage.set(data.token, data.station_id)
+    setUser(normalizeUser(data.user))
+    setStationId(Number(data.station_id))
+    return normalizeUser(data.user)
   }, [])
 
   const logout = useCallback(async () => {

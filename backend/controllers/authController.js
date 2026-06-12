@@ -39,44 +39,52 @@ const storeRefreshToken = async (userId, token) => {
 
 // ── REGISTER ─────────────────────────────────────────
 const register = async (req, res) => {
-  try {
-    const { nom, password, nom_station } = req.body
-    const email = normalizeEmail(req.body.email)
+  const { nom, password, nom_station } = req.body
+  const email = normalizeEmail(req.body.email)
 
-    const existe = await pool.query(
-      'SELECT id FROM users WHERE LOWER(email) = LOWER($1) AND deleted_at IS NULL',
-      [email]
-    )
-    if (existe.rows.length > 0) {
-      logger.warn(`Register refusé — email déjà utilisé : ${email}`)
-      return res.status(400).json({ error: 'Email déjà utilisé' })
-    }
+  // Vérification email avant d'ouvrir une transaction
+  const existe = await pool.query(
+    'SELECT id FROM users WHERE LOWER(email) = LOWER($1) AND deleted_at IS NULL',
+    [email]
+  ).catch(err => { throw err })
+
+  if (existe.rows.length > 0) {
+    logger.warn(`Register refusé — email déjà utilisé : ${email}`)
+    return res.status(400).json({ error: 'Email déjà utilisé' })
+  }
+
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
 
     const hash = await bcrypt.hash(password, 10)
 
-    const user = await pool.query(
+    const user = await client.query(
       `INSERT INTO users (nom, email, password, role)
        VALUES ($1, $2, $3, 'owner')
        RETURNING id, nom, email, role`,
       [nom, email, hash]
     )
 
-    const station = await pool.query(
+    const station = await client.query(
       `INSERT INTO stations (owner_id, nom) VALUES ($1, $2) RETURNING id`,
       [user.rows[0].id, nom_station || 'Ma Station']
     )
 
     const station_id = station.rows[0].id
 
-    await pool.query(
+    await client.query(
       `INSERT INTO station_users (station_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
       [station_id, user.rows[0].id]
     )
 
-    await pool.query(
-      `INSERT INTO stocks (station_id, type, quantite) VALUES ($1, 'essence', 0), ($1, 'gasoil', 0)`,
+    await client.query(
+      `INSERT INTO stocks (station_id, type, quantite) VALUES ($1, 'essence', 0), ($1, 'gasoil', 0)
+       ON CONFLICT (station_id, type) DO NOTHING`,
       [station_id]
     )
+
+    await client.query('COMMIT')
 
     const payload      = { id: user.rows[0].id, station_id, role: user.rows[0].role }
     const accessToken  = signAccessToken(payload)
@@ -87,8 +95,11 @@ const register = async (req, res) => {
     logger.info(`Register réussi — ${email} (id ${user.rows[0].id})`)
     res.status(201).json({ token: accessToken, user: user.rows[0], station_id })
   } catch (err) {
+    await client.query('ROLLBACK')
     logger.error(`Register erreur — ${err.message}`)
     res.status(500).json({ error: erreurServeur(err) })
+  } finally {
+    client.release()
   }
 }
 
