@@ -22,15 +22,21 @@ jobs:
           sudo apt-get install -y postgresql-common
           sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
           sudo apt-get install -y --no-install-recommends postgresql-client-17
-          pg_dump --version
+          # Le runner a déjà postgresql-client-16 : le `pg_dump` du PATH reste en
+          # v16 et refuse de dumper un serveur v17 (version mismatch). On met le
+          # binaire v17 en tête de PATH pour les étapes suivantes.
+          echo "/usr/lib/postgresql/17/bin" >> $GITHUB_PATH
 
       - name: Dump de la base Neon
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
+          # Chemin explicite v17 — garantit qu'on n'utilise pas le pg_dump v16 du runner
+          PG_DUMP=/usr/lib/postgresql/17/bin/pg_dump
+          "$PG_DUMP" --version
           DATE=$(date +%Y-%m-%d)
           FILENAME="fuelo_backup_${DATE}.dump"
-          pg_dump "$DATABASE_URL" \
+          "$PG_DUMP" "$DATABASE_URL" \
             --no-password \
             --format=custom \
             --compress=9 \
