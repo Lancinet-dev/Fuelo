@@ -12,8 +12,17 @@ jobs:
     timeout-minutes: 15
 
     steps:
+      # postgresql-client-17 n'est PAS dans les dépôts Ubuntu par défaut du
+      # runner → il faut d'abord ajouter le dépôt officiel PostgreSQL (PGDG),
+      # sinon `apt-get install postgresql-client-17` échoue ("package introuvable")
+      # et tout le backup plante (cause des échecs quotidiens jusqu'au 2026-06-12).
       - name: Installer postgresql-client 17 (Neon = PostgreSQL 17 — pg_dump doit être ≥ version serveur)
-        run: sudo apt-get install -y --no-install-recommends postgresql-client-17
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y --no-install-recommends postgresql-client-17
+          pg_dump --version
 
       - name: Dump de la base Neon
         env:
