@@ -783,25 +783,29 @@ function TabHistorique({ trajets, loading }) {
 // ─────────────────────────────────────────────────
 // COMPOSANT PRINCIPAL
 // ─────────────────────────────────────────────────
-export default function GpsFlottePage() {
+export default function GpsFlottePage({ nightMode: nightModeProp, onToggleNight }) {
   const winW     = useWindowWidth()
   const isMobile = winW < 768
 
   const [tab, setTab] = useState('flotte')
-  const [nightMode, setNightMode] = useState(() => {
+  const [nightModeLocal, setNightModeLocal] = useState(() => {
     try { return localStorage.getItem('fuelo-map-mode') !== 'day' } catch { return true }
   })
+
+  const nightMode = nightModeProp !== undefined ? nightModeProp : nightModeLocal
 
   const { data: flotte = [], isLoading: loadFlotte } = useFlotte()
   const { data: stats } = useFlotteStats()
 
-  const toggleNightMode = useCallback(() => {
-    setNightMode(m => {
+  const toggleNightModeLocal = useCallback(() => {
+    setNightModeLocal(m => {
       const next = !m
       try { localStorage.setItem('fuelo-map-mode', next ? 'night' : 'day') } catch {}
       return next
     })
   }, [])
+
+  const toggleNightMode = onToggleNight ?? toggleNightModeLocal
 
   useEffect(() => {
     if (document.getElementById('fuelo-gps-css')) return
@@ -830,7 +834,7 @@ export default function GpsFlottePage() {
   ]
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: P.bg, color: P.text, fontFamily: 'DM Sans, sans-serif' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, background: P.bg, color: P.text, fontFamily: 'DM Sans, sans-serif' }}>
 
       {/* KPI Header — scroll horizontal sur mobile */}
       <div style={{ padding: '10px 14px', borderBottom: `1px solid ${P.border}`, background: P.bgCard, flexShrink: 0, overflowX: 'auto' }}>

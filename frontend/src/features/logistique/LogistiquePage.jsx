@@ -2,9 +2,8 @@
 // FUELO — Interface logisticien
 // ================================================
 
-import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react'
+import { useState, useEffect, useRef, useMemo, lazy, Suspense, useCallback } from 'react'
 import { useAuth }    from '../../context/AuthContext'
-import { useTheme }   from '../../context/ThemeContext'
 import { PlanGatePage } from '../../ui/PlanGate'
 import { useTrajets, useGpsPoints, useCiternes } from '../../hooks/useTrajets'
 import { usePerformances, useValiderPrime } from '../../hooks/usePerformances'
@@ -937,9 +936,19 @@ function TabRapports({ palette}) {
 // ── Page principale — identité Fleet Operations Center ─
 function LogistiquePageContent() {
   const { user, logout }  = useAuth()
-  const { toggle }        = useTheme()
   const { parametres }    = useParametres()
   const [onglet, setOnglet] = useState('gps')
+
+  const [nightMode, setNightMode] = useState(() => {
+    try { return localStorage.getItem('fuelo-map-mode') !== 'day' } catch { return true }
+  })
+  const toggleNightMode = useCallback(() => {
+    setNightMode(m => {
+      const next = !m
+      try { localStorage.setItem('fuelo-map-mode', next ? 'night' : 'day') } catch {}
+      return next
+    })
+  }, [])
 
   // Palette et mode fixés — dark always, orange primary (Fleet Ops ≠ gérant)
   const palette = LOG_PALETTE
@@ -962,7 +971,7 @@ function LogistiquePageContent() {
   const TABBAR_BORDER = isDark ? 'rgba(245,158,11,0.15)' : 'rgba(245,158,11,0.2)'
 
   return (
-    <div style={{ minHeight: '100vh', background: SHELL_BG, fontFamily: theme.font.family, display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100dvh', background: SHELL_BG, fontFamily: theme.font.family, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
       {/* ── Header Fleet Operations ─────────────────── */}
       <div style={{ background: HEADER_BG, position: 'sticky', top: 0, zIndex: 20, borderBottom: `2px solid ${ORANGE}30`, boxShadow: `0 2px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(245,158,11,0.08)` }}>
@@ -1006,9 +1015,9 @@ function LogistiquePageContent() {
 
           {/* Actions droite */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-            <button onClick={toggle} style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}>
+            <button onClick={toggleNightMode} title={nightMode ? 'Mode jour' : 'Mode nuit'} style={{ width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: nightMode ? ORANGE : 'rgba(255,255,255,0.5)' }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                {isDark ? <><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></> : <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>}
+                {nightMode ? <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/> : <><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></>}
               </svg>
             </button>
 
@@ -1065,14 +1074,14 @@ function LogistiquePageContent() {
 
       {/* ── Contenu — GPS plein écran, autres en colonne ─ */}
       {onglet === 'gps' ? (
-        <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           <Suspense fallback={
             <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, color:'#94A3B8' }}>
               <div style={{ width:32, height:32, border:`3px solid ${ORANGE}30`, borderTopColor:ORANGE, borderRadius:'50%', animation:'spin 1s linear infinite' }}/>
               <span style={{ fontSize:13 }}>Chargement GPS...</span>
             </div>
           }>
-            <GpsFlottePage />
+            <GpsFlottePage nightMode={nightMode} onToggleNight={toggleNightMode} />
           </Suspense>
         </div>
       ) : (
