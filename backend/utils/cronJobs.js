@@ -8,8 +8,20 @@ const logger = require('./logger')
 const { envoyerTousLesRapports } = require('../services/reportService')
 const { lancerBackup }           = require('../services/backupService')
 const { calculerPerformances }   = require('../services/performanceService')
+const { genererRapportHebdo }    = require('../services/weeklyReportService')
+const { notifierStation }        = require('../services/notificationService')
 
 const initCronJobs = () => {
+
+  // ── Rapport hebdomadaire — chaque lundi à 8h00 UTC ─
+  cron.schedule('0 8 * * 1', async () => {
+    logger.info('🕐 Cron: Rapport hebdomadaire…')
+    try {
+      await genererRapportHebdo()
+    } catch (err) {
+      logger.error('Cron rapport hebdo error:', err.message)
+    }
+  }, { timezone: 'UTC' })
 
   // ── Rapport mensuel — 1er du mois à 8h00 ────────
   cron.schedule('0 8 1 * *', async () => {
@@ -53,6 +65,12 @@ const initCronJobs = () => {
             [row.station_id, msg]
           )
           logger.info(`Alerte créée: ${msg}`)
+          await notifierStation(row.station_id, {
+            titre:   `⚠️ Stock ${row.type} critique`,
+            corps:   msg,
+            type:    'alerte',
+            lienUrl: '/alertes',
+          })
         }
       }
     } catch (err) {

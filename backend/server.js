@@ -264,6 +264,18 @@ pool.query(`
   CREATE INDEX IF NOT EXISTS idx_depenses_station       ON depenses(station_id, date_depense DESC);
   CREATE INDEX IF NOT EXISTS idx_couts_transport_station ON couts_transport(station_id);
   CREATE INDEX IF NOT EXISTS idx_fiches_paie_station    ON fiches_paie(station_id, annee DESC, mois DESC);
+  CREATE TABLE IF NOT EXISTS notifications (
+    id         SERIAL PRIMARY KEY,
+    user_id    INT REFERENCES users(id) ON DELETE CASCADE,
+    titre      VARCHAR(200) NOT NULL,
+    corps      TEXT,
+    type       VARCHAR(50) DEFAULT 'info',
+    lien_url   VARCHAR(500),
+    lu         BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT NOW()
+  );
+  CREATE INDEX IF NOT EXISTS idx_notifications_user    ON notifications(user_id, created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_notifications_user_lu ON notifications(user_id, lu);
 `).catch(err => logger.error('Migration startup error:', err.message))
 
 // ── Rate limiting ─────────────────────────────────────
@@ -289,6 +301,7 @@ const antiFraudeRoutes      = require('./routes/antiFraude')
 const assistantRoutes       = require('./routes/assistant')
 const comptableRoutes       = require('./routes/comptable')
 const geofencingRoutes      = require('./routes/geofencing')
+const notificationsRoutes   = require('./routes/notificationsRoute')
 
 app.use('/api/auth',      limiterAuth, authRoutes)
 app.use('/api/stock',     stockRoutes)
@@ -308,6 +321,7 @@ app.use('/api/anti-fraude',   antiFraudeRoutes)
 app.use('/api/assistant',     assistantRoutes)
 app.use('/api/comptable',     comptableRoutes)
 app.use('/api/geofencing',    geofencingRoutes)
+app.use('/api/notifications', notificationsRoutes)
 
 // ── Route test ────────────────────────────────────────
 app.get('/', (req, res) => {

@@ -1,13 +1,13 @@
 // ================================================
-// FUELO — Hook Notifications temps réel
-// Fichier : frontend/src/hooks/useNotifications.js
+// FUELO — Hook Notifications (DB + temps réel)
 // ================================================
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useCallback } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { io } from 'socket.io-client'
 import { useAuth } from '../context/AuthContext'
 import toast from 'react-hot-toast'
-import { useQueryClient } from '@tanstack/react-query'
+import api from '../services/api'
 
 const SOCKET_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'
 
@@ -16,9 +16,32 @@ let socket = null
 export function useNotifications() {
   const { user, stationId, isAuthenticated } = useAuth()
   const queryClient = useQueryClient()
-  const [notifications, setNotifications] = useState([])
-  const [connected, setConnected] = useState(false)
 
+  // ── Fetch notifications depuis l'API ──────────
+  const { data, isLoading } = useQuery({
+    queryKey:        ['notifications'],
+    queryFn:         () => api.get('/notifications').then(r => r.data),
+    staleTime:       30_000,
+    refetchInterval: 60_000,
+    enabled:         !!isAuthenticated,
+  })
+
+  const notifications = data?.notifications ?? []
+  const nonLues       = data?.nbNonLues ?? 0
+
+  // ── Marquer une notification lue ─────────────
+  const { mutateAsync: marquerLu } = useMutation({
+    mutationFn: (id) => api.put(`/notifications/${id}/lu`).then(r => r.data),
+    onSuccess:  () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+  })
+
+  // ── Marquer tout lu ───────────────────────────
+  const { mutateAsync: marquerToutLu } = useMutation({
+    mutationFn: () => api.put('/notifications/tout-lu').then(r => r.data),
+    onSuccess:  () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
+  })
+
+  // ── Socket.IO — temps réel ────────────────────
   useEffect(() => {
     if (!isAuthenticated || !user) return
 
@@ -32,13 +55,8 @@ export function useNotifications() {
     }
 
     const onConnect = () => {
-      setConnected(true)
-      if (stationId) {
-        socket.emit('join_station', stationId)
-      }
+      if (stationId) socket.emit('join_station', stationId)
     }
-
-    const onDisconnect = () => setConnected(false)
 
     const onAlerteStock = (data) => {
       toast.error(`⚠️ Stock critique : ${data.message}`, {
@@ -46,9 +64,9 @@ export function useNotifications() {
         icon: '🔔',
         style: { background: '#1E293B', color: '#F1F5F9', border: '1px solid #EF4444' }
       })
-      setNotifications(prev => [{ ...data, id: Date.now(), lu: false }, ...prev.slice(0, 19)])
       queryClient.invalidateQueries({ queryKey: ['alertes'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['notifications'] })
     }
 
     const onNouvelleVente = (data) => {
@@ -69,31 +87,20 @@ export function useNotifications() {
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
     }
 
-    socket.on('connect',       onConnect)
-    socket.on('disconnect',    onDisconnect)
-    socket.on('alerte_stock',  onAlerteStock)
+    socket.on('connect',        onConnect)
+    socket.on('alerte_stock',   onAlerteStock)
     socket.on('nouvelle_vente', onNouvelleVente)
-    socket.on('stock_update',  onStockUpdate)
+    socket.on('stock_update',   onStockUpdate)
 
-    // Si déjà connecté, rejoindre la room immédiatement
-    if (socket.connected && stationId) {
-      socket.emit('join_station', stationId)
-    }
+    if (socket.connected && stationId) socket.emit('join_station', stationId)
 
     return () => {
-      socket.off('connect',       onConnect)
-      socket.off('disconnect',    onDisconnect)
-      socket.off('alerte_stock',  onAlerteStock)
+      socket.off('connect',        onConnect)
+      socket.off('alerte_stock',   onAlerteStock)
       socket.off('nouvelle_vente', onNouvelleVente)
-      socket.off('stock_update',  onStockUpdate)
+      socket.off('stock_update',   onStockUpdate)
     }
   }, [isAuthenticated, user, stationId, queryClient])
 
-  const marquerLu = useCallback((id) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, lu: true } : n))
-  }, [])
-
-  const nonLues = notifications.filter(n => !n.lu).length
-
-  return { notifications, nonLues, connected, marquerLu }
+  return { notifications, nonLues, isLoading, marquerLu, marquerToutLu }
 }

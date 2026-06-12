@@ -12,6 +12,8 @@ import { useTheme }  from '../context/ThemeContext'
 import { usePlan } from '../hooks/usePlan'
 import { useParametres } from '../hooks/useParametres'
 import { usePerformancesBadge } from '../hooks/usePerformances'
+import { useNotifications } from '../hooks/useNotifications'
+import NotificationsPanel, { NotifBell } from './NotificationsPanel'
 
 const normalizeRole = (value = '') => {
   const role = String(value).trim().toLowerCase()
@@ -48,7 +50,7 @@ const ALL_NAV = [
   { path: '/abonnements',  label: 'Mon abonnement',  roles: ['owner'], d: 'M3 3h18v18H3zM3 9h18M9 21V9' },
 ]
 
-function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logout, onSearch, user, role, isDark, toggle, palette }) {
+function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logout, onSearch, user, role, isDark, toggle, palette, notifNb = 0, onBellClick }) {
   const { plan, colors } = usePlan()
   const { parametres }   = useParametres()
   const { data: badgeData } = usePerformancesBadge()
@@ -60,7 +62,7 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
 
-      {/* Header espace de travail — logo + nom station */}
+      {/* Header espace de travail — logo + nom station + cloche */}
       <div style={{ padding: '18px 14px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: `1px solid ${palette.sidebarBorder}`, marginBottom: 8 }}>
         {logoUrl ? (
           <img
@@ -88,6 +90,7 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
             fuel<span style={{ color: '#F59E0B' }}>o</span>
           </div>
         </div>
+        <NotifBell onClick={onBellClick} count={notifNb} palette={palette} />
       </div>
 
       {/* Bouton recherche */}
@@ -300,21 +303,26 @@ export default function Sidebar({ alertesNb = 0, onSearch }) {
   const location = useLocation()
   const { user, role, logout: authLogout } = useAuth()
   const { isDark, toggle, palette } = useTheme()
-  const [mobileOpen,     setMobileOpen]     = useState(false)
-  const [confirmLogout,  setConfirmLogout]  = useState(false)
+  const [mobileOpen,      setMobileOpen]      = useState(false)
+  const [confirmLogout,   setConfirmLogout]   = useState(false)
+  const [notifPanelOpen,  setNotifPanelOpen]  = useState(false)
+
+  const { nonLues } = useNotifications()
 
   const userRole = normalizeRole(role)
   const navItems = ALL_NAV.filter((item) => item.roles.includes(userRole || 'gerant'))
 
   const doLogout = () => { authLogout(); navigate('/login') }
 
-  const contentProps = { alertesNb, navItems, location, navigate, setMobileOpen, logout: () => setConfirmLogout(true), onSearch, user, role: userRole, isDark, toggle, palette }
+  const contentProps = { alertesNb, navItems, location, navigate, setMobileOpen, logout: () => setConfirmLogout(true), onSearch, user, role: userRole, isDark, toggle, palette, notifNb: nonLues, onBellClick: () => setNotifPanelOpen(o => !o) }
 
   return (
     <>
       <AnimatePresence>
         {confirmLogout && <LogoutConfirmModal onConfirm={doLogout} onCancel={() => setConfirmLogout(false)} palette={palette} />}
       </AnimatePresence>
+
+      <NotificationsPanel open={notifPanelOpen} onClose={() => setNotifPanelOpen(false)} />
 
       <div
         className="fuelo-sidebar-desktop"
