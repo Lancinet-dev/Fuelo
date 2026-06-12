@@ -2,7 +2,7 @@
 // FUELO — Panneau notifications in-app
 // ================================================
 
-import { useState, useRef, useEffect } from 'react'
+import { useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNotifications } from '../hooks/useNotifications'
 import { useTheme } from '../context/ThemeContext'

@@ -2,7 +2,7 @@
 // FUELO — PompistePage PREMIUM (dark green identity)
 // ================================================
 
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth }       from '../../context/AuthContext'
 import { useStock }      from '../../hooks/useStock'
@@ -48,7 +48,7 @@ function useElapsed(startedAt) {
 }
 
 // ── Ring Timer SVG ────────────────────────────────
-function RingTimer({ pct, label, secs }) {
+function RingTimer({ pct, label }) {
   const R   = 64
   const cir = 2 * Math.PI * R
   const off = cir * (1 - pct)
@@ -296,7 +296,7 @@ function ResumeModal({ data, onClose }) {
 }
 
 // ── Overlay lock premium ──────────────────────────
-function LockOverlay({ onDemarrer }) {
+function LockOverlay() {
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
       style={{ position: 'absolute', inset: 0, zIndex: 8, borderRadius: 24, backdropFilter: 'blur(6px)', background: 'rgba(7,11,20,0.82)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: 32, textAlign: 'center' }}>
@@ -455,7 +455,7 @@ export default function PompistePage() {
             <motion.div key="active" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
               style={{ width: '100%', background: `linear-gradient(135deg, rgba(16,185,129,0.12), rgba(16,185,129,0.05))`, border: `1.5px solid ${C.green}35`, borderRadius: 24, padding: '20px', boxShadow: `0 8px 32px rgba(16,185,129,0.15)` }}>
               <div className="pompiste-svc" style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-                <RingTimer pct={timer.pct} label={timer.label} secs={timer.secs} />
+                <RingTimer pct={timer.pct} label={timer.label} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: C.green, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Service actif</div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
@@ -611,7 +611,7 @@ export default function PompistePage() {
 
           {/* Overlay lock */}
           <AnimatePresence>
-            {locked && <LockOverlay onDemarrer={() => setModal('demarrer')} />}
+            {locked && <LockOverlay />}
           </AnimatePresence>
         </div>
       </div>

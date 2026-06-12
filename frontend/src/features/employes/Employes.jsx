@@ -139,11 +139,9 @@ export default function Employes() {
 
   const { palette, isDark } = useTheme()
   const { employes, loading, createLoading, creerEmploye, toggleEmploye, supprimerEmploye } = useEmployes()
-  const { maxEmployes, canAccess } = usePlan()
+  const { maxEmployes } = usePlan()
   const { showUpgrade, Modal: UpgradeModal } = useUpgradeModal()
 
-  // Pour owner : bloquer création de logisticien si plan Starter
-  const canCreateLogisticien = canAccess('logistique')
   // Limite employés : maxEmployes null = illimité
   const limitEmployesAtteinte = maxEmployes !== null && employes.length >= maxEmployes
 

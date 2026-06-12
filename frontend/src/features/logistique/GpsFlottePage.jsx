@@ -51,30 +51,6 @@ function useWindowWidth() {
   return w
 }
 
-// ── Haversine ─────────────────────────────────────
-function distKm(lat1, lng1, lat2, lng2) {
-  const R = 6371, p1 = lat1*Math.PI/180, p2 = lat2*Math.PI/180
-  const dp = (lat2-lat1)*Math.PI/180, dl = (lng2-lng1)*Math.PI/180
-  const a = Math.sin(dp/2)**2 + Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-}
-
-// ── TruckSvg ──────────────────────────────────────
-function TruckSvg({ statut, size = 28 }) {
-  const color = statut === 'alerte' ? P.red : statut === 'arrive_attente' ? P.orange : P.green
-  const anim  = statut === 'alerte' ? { animation: 'pulse-red 1s infinite' } : statut === 'en_cours' ? { animation: 'pulse-green 2s infinite' } : {}
-  return (
-    <div style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center', ...anim }}>
-      <svg viewBox="0 0 32 20" width={size} height={size*0.625} fill="none">
-        <rect x="1" y="5" width="20" height="12" rx="2" fill={color} opacity=".9"/>
-        <path d="M21 8h7l3 5v4h-10V8z" fill={color} opacity=".7"/>
-        <circle cx="7"  cy="18" r="2.5" fill="#1E293B" stroke={color} strokeWidth="1.5"/>
-        <circle cx="25" cy="18" r="2.5" fill="#1E293B" stroke={color} strokeWidth="1.5"/>
-      </svg>
-    </div>
-  )
-}
-
 // ── KpiCard ───────────────────────────────────────
 function KpiCard({ label, value, color, icon }) {
   return (
@@ -87,7 +63,7 @@ function KpiCard({ label, value, color, icon }) {
 }
 
 // ── createTruckIcon ───────────────────────────────
-function createTruckIcon(L, statut, vitesse) {
+function createTruckIcon(L, statut) {
   const color = statut === 'alerte' ? '#EF4444' : statut === 'arrive_attente' ? '#F59E0B' : '#10B981'
   const anim  = statut === 'alerte' ? 'pulse-red 1s infinite' : statut === 'en_cours' ? 'pulse-green 2s infinite' : 'none'
   const html  = `<div style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;animation:${anim};">
@@ -131,7 +107,7 @@ function CamionCard({ camion: c, selected, onClick }) {
 // ─────────────────────────────────────────────────
 // TAB 1 : CARTE FLOTTE
 // ─────────────────────────────────────────────────
-function TabFlotte({ flotte, stats, loading, nightMode }) {
+function TabFlotte({ flotte, loading, nightMode }) {
   const winW      = useWindowWidth()
   const isMobile  = winW < 768
   const sidebarW  = winW < 768 ? 0 : winW < 1024 ? 220 : 280
@@ -760,12 +736,12 @@ function TabHistorique({ trajets, loading }) {
 // ─────────────────────────────────────────────────
 // COMPOSANT PRINCIPAL
 // ─────────────────────────────────────────────────
-export default function GpsFlottePage({ nightMode: nightModeProp, onToggleNight }) {
+export default function GpsFlottePage({ nightMode: nightModeProp }) {
   const winW     = useWindowWidth()
   const isMobile = winW < 768
 
   const [tab, setTab] = useState('flotte')
-  const [nightModeLocal, setNightModeLocal] = useState(() => {
+  const [nightModeLocal] = useState(() => {
     try { return localStorage.getItem('fuelo-map-mode') !== 'day' } catch { return true }
   })
 
@@ -773,16 +749,6 @@ export default function GpsFlottePage({ nightMode: nightModeProp, onToggleNight 
 
   const { data: flotte = [], isLoading: loadFlotte } = useFlotte()
   const { data: stats } = useFlotteStats()
-
-  const toggleNightModeLocal = useCallback(() => {
-    setNightModeLocal(m => {
-      const next = !m
-      try { localStorage.setItem('fuelo-map-mode', next ? 'night' : 'day') } catch {}
-      return next
-    })
-  }, [])
-
-  const toggleNightMode = onToggleNight ?? toggleNightModeLocal
 
   useEffect(() => {
     if (document.getElementById('fuelo-gps-css')) return

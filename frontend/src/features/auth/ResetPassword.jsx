@@ -34,6 +34,19 @@ const STRENGTH_LABEL = ['', 'Faible', 'Moyen', 'Fort']
 
 const BG_LAYOUT = { minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', fontFamily: "'DM Sans', system-ui, sans-serif", padding: '20px' }
 
+// Décor de fond (défini au niveau module — n'utilise que DOTS, pas le state)
+function BgDecorations() {
+  return (
+    <>
+      <div style={{ position: 'absolute', top: '-20%', left: '50%', transform: 'translateX(-50%)', width: '70vw', height: '60vh', background: 'radial-gradient(ellipse, rgba(37,99,235,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(37,99,235,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(37,99,235,0.03) 1px, transparent 1px)', backgroundSize: '80px 80px', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        {DOTS.map((d, i) => <div key={i} style={{ position: 'absolute', left: `${d.x}%`, top: `${d.y}%`, width: d.size, height: d.size, borderRadius: '50%', background: d.color, opacity: 0.25, animation: `floatPt ${d.dur}s ${d.delay}s ease-in-out infinite alternate` }} />)}
+      </div>
+    </>
+  )
+}
+
 export default function ResetPassword() {
   const navigate       = useNavigate()
   const [searchParams] = useSearchParams()
@@ -72,16 +85,6 @@ export default function ResetPassword() {
       setLoading(false)
     }
   }
-
-  const BgDecorations = () => (
-    <>
-      <div style={{ position: 'absolute', top: '-20%', left: '50%', transform: 'translateX(-50%)', width: '70vw', height: '60vh', background: 'radial-gradient(ellipse, rgba(37,99,235,0.15) 0%, transparent 70%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(37,99,235,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(37,99,235,0.03) 1px, transparent 1px)', backgroundSize: '80px 80px', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-        {DOTS.map((d, i) => <div key={i} style={{ position: 'absolute', left: `${d.x}%`, top: `${d.y}%`, width: d.size, height: d.size, borderRadius: '50%', background: d.color, opacity: 0.25, animation: `floatPt ${d.dur}s ${d.delay}s ease-in-out infinite alternate` }} />)}
-      </div>
-    </>
-  )
 
   if (!token) {
     return (

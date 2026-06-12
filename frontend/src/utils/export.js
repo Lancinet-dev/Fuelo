@@ -111,7 +111,7 @@ const drawHeader = (doc, name, ventes, logoBase64 = null) => {
   doc.setFillColor(...C.orange); doc.rect(0, 0, 5, 34, 'F')
 
   if (logoBase64) {
-    try { doc.addImage(logoBase64, 'JPEG', 9, 5, 24, 24) } catch {}
+    try { doc.addImage(logoBase64, 'JPEG', 9, 5, 24, 24) } catch { /* logo optionnel — on continue sans */ }
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10)
     doc.setTextColor(...C.white)
     doc.text(name, 37, 16)
@@ -279,16 +279,6 @@ const border = (color = XL.border) => ({
 
 const fill = (argb) => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } })
 
-const styleRow = (row, { font = {}, fillColor, align = 'left', borders = true, height } = {}) => {
-  if (height) row.height = height
-  row.eachCell({ includeEmpty: true }, cell => {
-    cell.font      = { name: 'Calibri', size: 10, ...font }
-    cell.alignment = { vertical: 'middle', horizontal: align, wrapText: false }
-    if (fillColor) cell.fill = fill(fillColor)
-    if (borders)   cell.border = border()
-  })
-}
-
 const styleCols = (ws, defs) => { ws.columns = defs }
 
 const addTitleBand = (ws, text, merged, color = XL.navy) => {
@@ -367,7 +357,7 @@ const fmtDateXL = (v) => {
 }
 
 // ─── EXPORT VENTES ────────────────────────────────────
-export const exportVentesExcel = async (ventes, nomStation = 'Station', logoUrl = null) => {
+export const exportVentesExcel = async (ventes, nomStation = 'Station') => {
   const name = cleanName(nomStation)
   const s    = buildSummary(ventes)
   const wb   = new ExcelJS.Workbook()
@@ -480,7 +470,7 @@ export const exportVentesExcel = async (ventes, nomStation = 'Station', logoUrl 
 }
 
 // ─── EXPORT STOCK ─────────────────────────────────────
-export const exportStockExcel = async (stocks, nomStation = 'Station', logoUrl = null) => {
+export const exportStockExcel = async (stocks, nomStation = 'Station') => {
   const name    = cleanName(nomStation)
   const essence = toNum(stocks?.essence?.quantite ?? stocks?.essence ?? 0)
   const gasoil  = toNum(stocks?.gasoil?.quantite  ?? stocks?.gasoil  ?? 0)
@@ -547,8 +537,6 @@ export const exportTrajetsExcel = async (trajets = [], stats = {}, options = {})
   const termines   = trajets.filter(t => t.statut !== 'en_cours')
   const nbFraudes  = trajets.filter(t => t.statut === 'alerte').length
   const totalEcart = termines.reduce((s, t) => s + (parseFloat(t.ecart) || 0), 0)
-  const totalDepart = trajets.reduce((s, t) => s + toNum(t.qty_depart), 0)
-  const totalArrivee = termines.reduce((s, t) => s + toNum(t.qty_arrivee), 0)
 
   const durationHours = (start, end) => {
     if (!start || !end) return null
@@ -795,7 +783,7 @@ export const exportAntiFraudePDF = async (data, nomStation = 'Station', logoUrl 
     doc.setFillColor(...C.red);  doc.rect(0, 0, 5, 34, 'F')
 
     if (logoBase64) {
-      try { doc.addImage(logoBase64, 'JPEG', 9, 5, 24, 24) } catch {}
+      try { doc.addImage(logoBase64, 'JPEG', 9, 5, 24, 24) } catch { /* logo optionnel — on continue sans */ }
       doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...C.white)
       doc.text(name, 37, 16)
       doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(200, 210, 225)

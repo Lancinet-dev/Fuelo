@@ -3,7 +3,6 @@
 // ================================================
 
 import { useState, useEffect, useRef, useMemo, lazy, Suspense, useCallback } from 'react'
-import { motion } from 'framer-motion'
 import EmptyState from '../../ui/EmptyState'
 import { SkeletonStyle, SkeletonCard } from '../../ui/Skeleton'
 import { useAuth }    from '../../context/AuthContext'
@@ -570,7 +569,7 @@ function TabChauffeurs({ palette, isDark }) {
     } finally { setCreating(false) }
   }
 
-  const handleToggle = async (id, nomChauffeur) => {
+  const handleToggle = async (id) => {
     try {
       const r = await api.put(`/employes/${id}/toggle`)
       toast.success(r.data.message)
@@ -745,7 +744,7 @@ const NIVEAUX_LOG = [
 const getNiveauLog = (score) => NIVEAUX_LOG.find(n => (score ?? -1) >= n.min) ?? NIVEAUX_LOG[NIVEAUX_LOG.length - 1]
 const fmtLog = (n) => (n ?? 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
 
-function TabPerformances({ palette, isDark }) {
+function TabPerformances({ palette }) {
   const now   = new Date()
   const [mois,  setMois]  = useState(now.getMonth() + 1)
   const [annee, setAnnee] = useState(now.getFullYear())
@@ -967,7 +966,7 @@ function LogistiquePageContent() {
   const toggleNightMode = useCallback(() => {
     setNightMode(m => {
       const next = !m
-      try { localStorage.setItem('fuelo-map-mode', next ? 'night' : 'day') } catch {}
+      try { localStorage.setItem('fuelo-map-mode', next ? 'night' : 'day') } catch { /* localStorage indisponible — non bloquant */ }
       return next
     })
   }, [])

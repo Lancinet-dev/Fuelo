@@ -38,7 +38,7 @@ function LockIcon({ size = 28, color = '#F59E0B' }) {
 // Modal popup d'upgrade
 export function UpgradeModal({ feature, onClose }) {
   const navigate = useNavigate()
-  const { plan, planDef } = usePlan()
+  const { planDef } = usePlan()
   const { palette, isDark } = useTheme()
 
   const reqPlan      = { exports: 'pro', assistant: 'pro', performances: 'pro', logistique: 'pro', trajets: 'pro', citernes: 'pro', services: 'pro', antifraude: 'pro', comptable: 'enterprise' }[feature] ?? 'pro'
@@ -109,6 +109,7 @@ export function UpgradeModal({ feature, onClose }) {
 }
 
 // Hook : retourne { showUpgrade, Modal } — à utiliser dans les pages pour les boutons
+// eslint-disable-next-line react-refresh/only-export-components -- hook volontairement co-localisé avec UpgradeModal
 export function useUpgradeModal() {
   const [activeFeature, setActiveFeature] = useState(null)
 
@@ -125,7 +126,7 @@ export function useUpgradeModal() {
 
 // Page gate : bloque une page entière et affiche un écran d'upgrade
 export function PlanGatePage({ feature, children }) {
-  const { canAccess, plan, planDef, loading } = usePlan()
+  const { canAccess, planDef, loading } = usePlan()
   const navigate = useNavigate()
   const { palette, isDark } = useTheme()
 

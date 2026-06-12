@@ -34,16 +34,12 @@ const STATUT_CONFIG = {
   termine:  { label: 'Terminé',       color: theme.colors.info,    bg: theme.colors.infoLight    },
 }
 
-// ── Modal détail service ──────────────────────────
-function ServiceModal({ service, onClose, isDark, palette }) {
-  const [photoMode, setPhotoMode] = useState(null) // 'debut' | 'fin'
-  const sc = STATUT_CONFIG[service.statut] ?? STATUT_CONFIG.termine
-
-  const Ecart = ({ label, ecart, vendu, debut, fin }) => {
-    if (debut == null) return null
-    const hasAlerte = ecart != null && Math.abs(ecart) > 10
-    const sign = ecart > 0 ? '+' : ''
-    return (
+// ── Bloc écart d'un carburant (défini au niveau module — pas dans le render) ──
+function Ecart({ label, ecart, vendu, debut, fin, isDark, palette }) {
+  if (debut == null) return null
+  const hasAlerte = ecart != null && Math.abs(ecart) > 10
+  const sign = ecart > 0 ? '+' : ''
+  return (
       <div style={{ background: hasAlerte ? theme.colors.dangerLight : isDark ? 'rgba(255,255,255,0.04)' : '#F9FAFB', border: `1px solid ${hasAlerte ? theme.colors.danger + '40' : palette.cardBorder}`, borderRadius: 12, padding: '12px 14px' }}>
         <div style={{ fontSize: 11, fontWeight: 700, color: hasAlerte ? theme.colors.danger : palette.textSub, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -75,7 +71,12 @@ function ServiceModal({ service, onClose, isDark, palette }) {
         )}
       </div>
     )
-  }
+}
+
+// ── Modal détail service ──────────────────────────
+function ServiceModal({ service, onClose, isDark, palette }) {
+  const [photoMode, setPhotoMode] = useState(null) // 'debut' | 'fin'
+  const sc = STATUT_CONFIG[service.statut] ?? STATUT_CONFIG.termine
 
   return (
     <motion.div
@@ -129,12 +130,14 @@ function ServiceModal({ service, onClose, isDark, palette }) {
             ecart={service.ecart_essence}
             debut={service.compteur_essence_debut}
             fin={service.compteur_essence_fin}
+            isDark={isDark} palette={palette}
           />
           <Ecart
             label="Gasoil"
             ecart={service.ecart_gasoil}
             debut={service.compteur_gasoil_debut}
             fin={service.compteur_gasoil_fin}
+            isDark={isDark} palette={palette}
           />
         </div>
 
@@ -296,7 +299,7 @@ export default function ServicesPage() {
         {TABS.map(tab => (
           <button key={String(tab.key)} onClick={() => setTabStatut(tab.key)}
             style={{
-              padding: '7px 16px', borderRadius: 99, border: 'none', cursor: 'pointer',
+              padding: '7px 16px', borderRadius: 99, cursor: 'pointer',
               fontFamily: 'inherit', fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap', transition: 'all 0.15s',
               background: tabStatut === tab.key
                 ? tab.key === 'alerte' ? theme.colors.danger : theme.colors.primary

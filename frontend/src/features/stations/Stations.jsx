@@ -7,7 +7,6 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStations } from '../../hooks/useStations'
 import { useTheme }    from '../../context/ThemeContext'
-import { useAuth }     from '../../context/AuthContext'
 import { usePlan }     from '../../hooks/usePlan'
 import { useUpgradeModal } from '../../ui/PlanGate'
 import EmptyState      from '../../ui/EmptyState'
@@ -203,7 +202,6 @@ function StationCard({ station, onSwitch, switching, palette }) {
 export default function Stations() {
   const navigate = useNavigate()
   const { palette } = useTheme()
-  const { user }    = useAuth()
   const { stations, consolide, loading, createLoading, creerStation, switchStation } = useStations()
   const { maxStations } = usePlan()
   const { showUpgrade, Modal: UpgradeModal } = useUpgradeModal()

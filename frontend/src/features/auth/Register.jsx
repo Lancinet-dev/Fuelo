@@ -45,7 +45,6 @@ const slideVariants = {
 }
 
 function Field({ label, type = 'text', value, onChange, placeholder, error, suffix }) {
-  const [focused, setFocused] = useState(false)
   return (
     <div style={{ marginBottom: 14 }}>
       <label style={{ fontSize: 11, fontWeight: 700, color: MUT, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: 8 }}>{label}</label>
@@ -53,8 +52,8 @@ function Field({ label, type = 'text', value, onChange, placeholder, error, suff
         <input type={type} value={value}
           onChange={e => onChange(e.target.value)}
           placeholder={placeholder}
-          onFocus={e => { setFocused(true); e.target.style.borderColor = BLUE; e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.12)' }}
-          onBlur={e  => { setFocused(false); e.target.style.borderColor = error ? RED : 'rgba(96,165,250,0.14)'; e.target.style.boxShadow = 'none' }}
+          onFocus={e => { e.target.style.borderColor = BLUE; e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.12)' }}
+          onBlur={e  => { e.target.style.borderColor = error ? RED : 'rgba(96,165,250,0.14)'; e.target.style.boxShadow = 'none' }}
           style={{ width: '100%', height: 50, background: 'rgba(255,255,255,0.04)', border: `1.5px solid ${error ? RED : 'rgba(96,165,250,0.14)'}`, borderRadius: 12, padding: suffix ? '0 44px 0 16px' : '0 16px', fontSize: 15, color: TEXT, fontFamily: "'DM Sans', system-ui, sans-serif", outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s' }}
         />
         {suffix && <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)' }}>{suffix}</div>}

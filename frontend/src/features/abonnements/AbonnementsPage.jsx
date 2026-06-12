@@ -9,7 +9,7 @@ import { useSearchParams } from 'react-router-dom'
 import api   from '../../services/api'
 import toast from 'react-hot-toast'
 import { useTheme }            from '../../context/ThemeContext'
-import { usePlan, PLAN_COLORS } from '../../hooks/usePlan'
+import { PLAN_COLORS } from '../../hooks/usePlan'
 import theme from '../../config/theme'
 
 const FEATURES = [
@@ -115,7 +115,7 @@ function MethodBadges() {
 }
 
 // ── Modal paiement CinetPay ───────────────────────
-function ModalPaiement({ planKey, planLabel, prix, prixGnf, onClose, onConfirm, loading, palette, isDark }) {
+function ModalPaiement({ planLabel, prix, prixGnf, onClose, onConfirm, loading, palette, isDark }) {
 
   useEffect(() => {
     const fn = e => { if (e.key === 'Escape') onClose() }
@@ -256,8 +256,6 @@ export default function AbonnementsPage() {
   const queryClient = useQueryClient()
   const [modal, setModal] = useState(null)
   const [searchParams, setSearchParams] = useSearchParams()
-
-  const { plan: planActuel } = usePlan()
 
   useEffect(() => {
     const status = searchParams.get('status')

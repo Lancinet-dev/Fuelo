@@ -2,12 +2,12 @@
 // FUELO — Superadmin Dashboard — Enterprise Grade
 // ================================================
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import { useAuth }        from '../../context/AuthContext'
 import { useAdminStats, useAdminClients, exportClientsCSV } from '../../hooks/useAdminStats'
@@ -53,7 +53,7 @@ const fmt$ = (n) => {
 const fmtN = (n) => (n ?? 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
 const moisCourt = (yyyy_mm) => {
   if (!yyyy_mm) return ''
-  const [y, m] = yyyy_mm.split('-')
+  const [, m] = yyyy_mm.split('-')
   return ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'][parseInt(m)-1]
 }
 
@@ -402,8 +402,6 @@ function SectionClients({ clients, loading, valider, suspendre }) {
               ) : visible.length === 0 ? (
                 <tr><td colSpan={8} style={{ padding: '40px 20px', textAlign: 'center', color: P.textMuted }}>Aucun résultat</td></tr>
               ) : visible.map((c, i) => {
-                const plan  = PLAN_CFG[c.sub_plan]  ?? { color: P.textMuted, label: c.sub_plan ?? '—' }
-                const statut= SUB_CFG[c.sub_statut] ?? { color: P.textMuted, label: c.sub_statut ?? '—' }
                 const isAct = actionLoad === c.sub_id
                 return (
                   <tr key={c.id} style={{ borderBottom: i < visible.length-1 ? `1px solid ${P.cardBorder}` : 'none', transition: 'background 0.1s' }}
@@ -860,7 +858,7 @@ function StatutBadge({ statut }) {
   return <span style={{ fontSize: 10, fontWeight: 700, color: cfg.color, background: cfg.color + '15', borderRadius: 99, padding: '2px 9px' }}>{cfg.label}</span>
 }
 
-function ClientRow({ c, i, last, onValider, onSuspendre, actionLoad }) {
+function ClientRow({ c, last, onValider, onSuspendre, actionLoad }) {
   const isAct = actionLoad === c.sub_id
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: last ? 'none' : `1px solid ${P.cardBorder}` }}>
