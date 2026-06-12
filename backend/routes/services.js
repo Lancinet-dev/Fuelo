@@ -15,9 +15,11 @@ const {
   getServices,
 } = require('../controllers/serviceController')
 
-// Pompiste — gestion de son propre service (plan PRO+ requis)
+// Pompiste — gestion de son propre service
+// Démarrer un service requiert le plan PRO+
+// Terminer est TOUJOURS permis (pompiste bloqué sinon si plan downgrade)
 router.post('/',              verifyToken, isPompiste, checkPlan('services'), upload.single('photo'), demarrerService)
-router.post('/:id/terminer',  verifyToken, isPompiste, checkPlan('services'), upload.single('photo'), terminerService)
+router.post('/:id/terminer',  verifyToken, isPompiste,                        upload.single('photo'), terminerService)
 router.get('/actif',          verifyToken, isPompiste, getServiceActif)
 
 // Owner + gérant — consultation de tous les services

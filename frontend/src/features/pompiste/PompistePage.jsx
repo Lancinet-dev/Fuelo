@@ -208,7 +208,7 @@ function ServiceModal({ mode, onClose, onSubmit, loading }) {
 
 // ── Modal résumé fin de service ───────────────────
 function ResumeModal({ data, onClose }) {
-  const { service, ventes, alerte_fraude } = data
+  const { service = {}, ventes = {}, alerte_fraude } = data ?? {}
   const hEss = service.compteur_essence_debut != null && service.compteur_essence_fin != null
   const hGas = service.compteur_gasoil_debut  != null && service.compteur_gasoil_fin  != null
   const carbs = [
