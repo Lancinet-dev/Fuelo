@@ -6,6 +6,7 @@ import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useActivite, useActiviteEmployes } from '../../hooks/useActivite'
 import { useTheme } from '../../context/ThemeContext'
+import { useTranslation } from '../../hooks/useTranslation'
 import EmptyState from '../../ui/EmptyState'
 import { SkeletonStyle, SkeletonEvent } from '../../ui/Skeleton'
 import theme from '../../config/theme'
@@ -157,6 +158,7 @@ function EventRow({ event, palette, isDark }) {
 
 export default function ActivitePage() {
   const { palette, isDark } = useTheme()
+  const { t } = useTranslation()
 
   const today = new Date()
   const il30j = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
@@ -202,10 +204,10 @@ export default function ActivitePage() {
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: theme.font.size['2xl'], fontWeight: theme.font.weight.black, color: palette.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 4 }}>
-          Journal d'activité
+          {t('activite.title')}
         </h1>
         <p style={{ fontSize: 13, color: palette.textSub, margin: 0 }}>
-          Toutes les actions de votre équipe — ventes, services, alertes
+          {t('activite.subtitle')}
         </p>
       </motion.div>
 
@@ -215,28 +217,28 @@ export default function ActivitePage() {
         style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 24, padding: '16px 18px', background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.card, boxShadow: theme.shadow.sm, alignItems: 'center' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 12, color: palette.textMuted, fontWeight: 500, whiteSpace: 'nowrap' }}>Du</span>
+          <span style={{ fontSize: 12, color: palette.textMuted, fontWeight: 500, whiteSpace: 'nowrap' }}>{t('activite.du')}</span>
           <input type="date" value={debut} onChange={e => setDebut(e.target.value)} style={inputStyle}
             onFocus={e => { e.target.style.borderColor = theme.colors.primary; e.target.style.boxShadow = `0 0 0 3px ${theme.colors.primaryLight}` }}
             onBlur={e  => { e.target.style.borderColor = palette.cardBorder; e.target.style.boxShadow = 'none' }} />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 12, color: palette.textMuted, fontWeight: 500 }}>au</span>
+          <span style={{ fontSize: 12, color: palette.textMuted, fontWeight: 500 }}>{t('activite.au')}</span>
           <input type="date" value={fin} onChange={e => setFin(e.target.value)} style={inputStyle}
             onFocus={e => { e.target.style.borderColor = theme.colors.primary; e.target.style.boxShadow = `0 0 0 3px ${theme.colors.primaryLight}` }}
             onBlur={e  => { e.target.style.borderColor = palette.cardBorder; e.target.style.boxShadow = 'none' }} />
         </div>
         <select value={employe} onChange={e => setEmploye(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-          <option value="">Tous les employés</option>
+          <option value="">{t('activite.tousEmployes')}</option>
           {employes.map(emp => (
             <option key={emp.id} value={emp.id}>{emp.nom} ({emp.role})</option>
           ))}
         </select>
         <select value={typeFiltre} onChange={e => setTypeFiltre(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-          <option value="">Tous les types</option>
-          <option value="vente">Ventes</option>
-          <option value="service">Services</option>
-          <option value="alerte">Alertes</option>
+          <option value="">{t('activite.tousTypes')}</option>
+          <option value="vente">{t('activite.ventes')}</option>
+          <option value="service">{t('activite.services')}</option>
+          <option value="alerte">{t('activite.alertes')}</option>
         </select>
         <motion.button
           whileHover={{ y: -1 }} whileTap={{ scale: 0.97 }}
@@ -244,7 +246,7 @@ export default function ActivitePage() {
           style={{ height: 36, padding: '0 16px', borderRadius: theme.radius.button, border: 'none', background: theme.colors.primary, color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: theme.font.family, display: 'flex', alignItems: 'center', gap: 6, boxShadow: theme.shadow.primary }}
         >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
-          Actualiser
+          {t('common.refresh')}
         </motion.button>
       </motion.div>
 
@@ -271,7 +273,7 @@ export default function ActivitePage() {
                 <div style={{ fontSize: 12, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10, paddingLeft: 4 }}>
                   {group.label}
                   <span style={{ marginLeft: 8, fontWeight: 500, fontSize: 11, opacity: 0.7 }}>
-                    {group.events.length} événement{group.events.length > 1 ? 's' : ''}
+                    {group.events.length} {t('activite.evenements')}
                   </span>
                 </div>
                 <motion.div variants={LIST_CONTAINER} initial="hidden" animate="show">
