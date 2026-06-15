@@ -99,17 +99,33 @@ const NAV = [
   { id: 'alertes',   label: 'Alertes système',   ic: Ic.alertes   },
 ]
 
+// ── Hook responsive ────────────────────────────────────────
+function useIsMobile(bp = 768) {
+  const [m, setM] = useState(() => typeof window !== 'undefined' && window.innerWidth < bp)
+  useEffect(() => {
+    const fn = () => setM(window.innerWidth < bp)
+    window.addEventListener('resize', fn)
+    return () => window.removeEventListener('resize', fn)
+  }, [bp])
+  return m
+}
+
 // ═══════════════════════════════════════════════════════════
 export default function SuperadminDashboard() {
   const { user, logout }      = useAuth()
   const navigate              = useNavigate()
   const [section, setSection] = useState('dashboard')
   const [now, setNow]         = useState(new Date())
+  const isMobile              = useIsMobile()
+  const [navOpen, setNavOpen] = useState(false)
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(t)
   }, [])
+
+  // Fermer le drawer en repassant en desktop
+  useEffect(() => { if (!isMobile) setNavOpen(false) }, [isMobile])
 
   const { stats, loading: statsLoading, refetch: refetchStats } = useAdminStats()
   const { clients, loading: clientsLoading, refetch: refetchClients, valider, suspendre } = useAdminClients()
@@ -120,12 +136,24 @@ export default function SuperadminDashboard() {
   return (
     <div style={{ display: 'flex', height: '100vh', background: P.bg, fontFamily: '"DM Sans", system-ui, sans-serif', overflow: 'hidden' }}>
 
+      {/* Overlay drawer mobile */}
+      {isMobile && navOpen && (
+        <div onClick={() => setNavOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)', zIndex: 999 }} />
+      )}
+
       {/* ── SIDEBAR ─────────────────────────────────────── */}
       <aside style={{
         width: 240, flexShrink: 0, background: P.sidebar, height: '100vh',
         display: 'flex', flexDirection: 'column',
         borderRight: `1px solid ${P.cardBorder}`,
         backdropFilter: 'blur(20px)',
+        ...(isMobile ? {
+          position: 'fixed', top: 0, left: 0, zIndex: 1000,
+          transform: navOpen ? 'translateX(0)' : 'translateX(-100%)',
+          transition: 'transform 0.25s ease',
+          boxShadow: navOpen ? '0 0 50px rgba(0,0,0,0.7)' : 'none',
+        } : {}),
       }}>
         {/* Logo */}
         <div style={{ padding: '22px 20px', borderBottom: `1px solid ${P.cardBorder}` }}>
@@ -147,7 +175,7 @@ export default function SuperadminDashboard() {
         {/* Nav */}
         <nav style={{ flex: 1, padding: '12px 10px', overflowY: 'auto' }}>
           {NAV.map(item => (
-            <button key={item.id} onClick={() => setSection(item.id)} style={{
+            <button key={item.id} onClick={() => { setSection(item.id); setNavOpen(false) }} style={{
               width: '100%', display: 'flex', alignItems: 'center', gap: 10,
               padding: '9px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
               marginBottom: 2, textAlign: 'left', fontFamily: 'inherit',
@@ -186,24 +214,30 @@ export default function SuperadminDashboard() {
       {/* ── MAIN ────────────────────────────────────────── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Top bar */}
-        <header style={{ padding: '0 28px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(5,14,26,0.7)', backdropFilter: 'blur(20px)', borderBottom: `1px solid ${P.cardBorder}`, flexShrink: 0 }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: P.text }}>
+        <header className="sa-header" style={{ padding: '0 28px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, background: 'rgba(5,14,26,0.7)', backdropFilter: 'blur(20px)', borderBottom: `1px solid ${P.cardBorder}`, flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+            {isMobile && (
+              <button onClick={() => setNavOpen(true)} title="Menu"
+                style={{ width: 36, height: 36, flexShrink: 0, borderRadius: 8, background: P.glass, border: `1px solid ${P.glassBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: P.text }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              </button>
+            )}
+            <h1 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: P.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {{ dashboard:'Vue globale', clients:'Clients', revenus:'Revenus', abonnements:'Abonnements', alertes:'Alertes système' }[section]}
             </h1>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <span style={{ fontSize: 12, color: P.textMuted, fontVariantNumeric: 'tabular-nums' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+            <span className="sa-hide-mobile" style={{ fontSize: 12, color: P.textMuted, fontVariantNumeric: 'tabular-nums' }}>
               {now.toLocaleDateString('fr-FR', { weekday:'short', day:'numeric', month:'short' })} · {now.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit' })}
             </span>
             <button onClick={refetch} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: P.glass, border: `1px solid ${P.glassBorder}`, borderRadius: 8, color: P.textSub, cursor: 'pointer', fontSize: 12, fontFamily: 'inherit' }}>
-              <I d={Ic.refresh} size={12} /> Actualiser
+              <I d={Ic.refresh} size={12} /> <span className="sa-hide-mobile">Actualiser</span>
             </button>
           </div>
         </header>
 
         {/* Content */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
+        <div className="sa-content" style={{ flex: 1, overflowY: 'auto', padding: '24px 28px' }}>
           <AnimatePresence mode="wait">
             <motion.div key={section} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
               {section === 'dashboard'    && <SectionDashboard stats={stats} loading={statsLoading} clients={clients} setSection={setSection} />}
@@ -259,12 +293,12 @@ function SectionDashboard({ stats, loading, clients, setSection }) {
       )}
 
       {/* 6 KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
+      <div className="sa-grid-6" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }}>
         {CARDS.map((c, i) => <KpiCard key={i} {...c} index={i} />)}
       </div>
 
       {/* Graphiques ligne 1 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 16, marginBottom: 16 }}>
+      <div className="sa-charts" style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 16, marginBottom: 16 }}>
         <GlassCard title="MRR — 12 derniers mois" sub="Monthly Recurring Revenue (USD)">
           {mrr.length > 0 && mrr.some(m => m.mrr > 0) ? (
             <ResponsiveContainer width="100%" height={200}>
@@ -302,7 +336,7 @@ function SectionDashboard({ stats, loading, clients, setSection }) {
       </div>
 
       {/* Graphiques ligne 2 */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 3fr', gap: 16, marginBottom: 20 }}>
+      <div className="sa-charts" style={{ display: 'grid', gridTemplateColumns: '2fr 3fr', gap: 16, marginBottom: 20 }}>
         {/* Carte Afrique de l'Ouest */}
         <GlassCard title="Présence Afrique de l'Ouest" sub="Distribution géographique clients">
           <WestAfricaMap clients={clients} />
@@ -484,7 +518,7 @@ function SectionRevenus({ stats }) {
   return (
     <div>
       {/* Top KPIs revenus */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+      <div className="sa-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
         {[
           { label: 'MRR actuel',        value: fmt$(mrr),     sub: 'Monthly Recurring Revenue',  color: P.green  },
           { label: 'ARR',               value: fmt$(arr),     sub: 'Annual Recurring Revenue',   color: P.cyan   },
@@ -548,7 +582,7 @@ function SectionAbonnements({ clients, stats, valider, suspendre }) {
   return (
     <div>
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
+      <div className="sa-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }}>
         {[
           { label: 'Actifs',      value: subs.actif      ?? 0, color: P.green  },
           { label: 'En attente',  value: subs.en_attente ?? 0, color: P.orange },
@@ -886,12 +920,12 @@ function ClientRow({ c, last, onValider, onSuspendre, actionLoad }) {
 function LoadingSkeleton() {
   return (
     <div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 24 }}>
+      <div className="sa-grid-6" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 24 }}>
         {Array.from({length:6}).map((_,i) => (
           <div key={i} style={{ height: 110, background: P.card, borderRadius: 14, border: `1px solid ${P.cardBorder}` }} />
         ))}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 16 }}>
+      <div className="sa-charts" style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 16 }}>
         <div style={{ height: 250, background: P.card, borderRadius: 14, border: `1px solid ${P.cardBorder}` }} />
         <div style={{ height: 250, background: P.card, borderRadius: 14, border: `1px solid ${P.cardBorder}` }} />
       </div>
@@ -916,6 +950,21 @@ function GlobalStyles() {
       * { scrollbar-width: thin; scrollbar-color: rgba(139,92,246,0.3) transparent; }
       *::-webkit-scrollbar { width: 5px; height: 5px; }
       *::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.3); border-radius: 99px; }
+
+      /* ── Responsive ── (les grids ont des styles inline → !important requis) */
+      @media (max-width: 1100px) {
+        .sa-grid-6 { grid-template-columns: repeat(2, 1fr) !important; }
+      }
+      @media (max-width: 900px) {
+        .sa-charts  { grid-template-columns: 1fr !important; }
+        .sa-grid-4  { grid-template-columns: repeat(2, 1fr) !important; }
+      }
+      @media (max-width: 560px) {
+        .sa-grid-6, .sa-grid-4 { grid-template-columns: 1fr !important; }
+        .sa-hide-mobile { display: none !important; }
+        .sa-header  { padding: 0 14px !important; }
+        .sa-content { padding: 16px 14px !important; }
+      }
     `}</style>
   )
 }
