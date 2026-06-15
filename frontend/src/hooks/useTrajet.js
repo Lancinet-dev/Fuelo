@@ -6,6 +6,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../services/api'
 import toast from 'react-hot-toast'
 
+// Photos jauge (upload Cloudinary) + GPS temps réel exigent une connexion
+const OFFLINE_MSG = 'Action impossible hors ligne — la photo nécessite une connexion internet'
+const assertOnline = () => { if (typeof navigator !== 'undefined' && !navigator.onLine) throw new Error(OFFLINE_MSG) }
+
 export function useTrajet() {
   const queryClient = useQueryClient()
 
@@ -18,6 +22,7 @@ export function useTrajet() {
 
   const { mutateAsync: demarrer, isPending: demarrerLoading } = useMutation({
     mutationFn: ({ photoFile, ...fields }) => {
+      assertOnline()
       const fd = new FormData()
       Object.entries(fields).forEach(([k, v]) => fd.append(k, String(v)))
       if (photoFile) fd.append('photo', photoFile)
@@ -30,7 +35,7 @@ export function useTrajet() {
       toast.success('Trajet démarré — GPS activé')
       queryClient.invalidateQueries({ queryKey: ['trajet-actif'] })
     },
-    onError: (err) => toast.error(err.response?.data?.error ?? 'Erreur'),
+    onError: (err) => toast.error(err.response?.data?.error ?? err.message ?? 'Erreur'),
   })
 
   const { mutateAsync: envoyerPosition } = useMutation({
@@ -45,6 +50,7 @@ export function useTrajet() {
 
   const { mutateAsync: arriver, isPending: arriverLoading } = useMutation({
     mutationFn: ({ id, photoFile, ...fields }) => {
+      assertOnline()
       const fd = new FormData()
       Object.entries(fields).forEach(([k, v]) => fd.append(k, String(v)))
       if (photoFile) fd.append('photo', photoFile)
@@ -54,7 +60,7 @@ export function useTrajet() {
       toast.success('Arrivée déclarée — Montrez votre code au logisticien')
       queryClient.invalidateQueries({ queryKey: ['trajet-actif'] })
     },
-    onError: (err) => toast.error(err.response?.data?.error ?? 'Erreur'),
+    onError: (err) => toast.error(err.response?.data?.error ?? err.message ?? 'Erreur'),
   })
 
   return {

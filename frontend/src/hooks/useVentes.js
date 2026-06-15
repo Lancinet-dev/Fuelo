@@ -6,6 +6,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api from '../services/api'
 import toast from 'react-hot-toast'
+import { addPendingVente } from '../utils/offlineQueue'
 
 export function useVentes({ page = 1, limit = 20, type = '', search = '' } = {}) {
   const queryClient = useQueryClient()
@@ -35,8 +36,30 @@ export function useVentes({ page = 1, limit = 20, type = '', search = '' } = {})
 
   // ── Enregistrer une vente ─────────────────────────
   const { mutateAsync: enregistrerVente, isPending: venteLoading } = useMutation({
-    mutationFn: (payload) => api.post('/ventes', payload).then(r => r.data),
+    mutationFn: async (payload) => {
+      // Hors ligne → file d'attente IndexedDB, synchronisée à la reconnexion
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        await addPendingVente(payload)
+        return { queued: true }
+      }
+      try {
+        const { data } = await api.post('/ventes', payload)
+        return data
+      } catch (err) {
+        // Serveur injoignable (pas de réponse) → on met en file plutôt que d'échouer
+        if (!err.response) {
+          await addPendingVente(payload)
+          return { queued: true }
+        }
+        throw err
+      }
+    },
     onSuccess: (data) => {
+      // Vente mise en file hors ligne
+      if (data?.queued) {
+        toast('Vente enregistrée hors ligne — sera synchronisée à la reconnexion', { icon: '📴', duration: 4000 })
+        return
+      }
       const msg = data.alerte
         ? `Vente enregistrée — ⚠️ Stock faible : ${data.stock_restant}L`
         : `Vente enregistrée — Stock restant : ${data.stock_restant}L`

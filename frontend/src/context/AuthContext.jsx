@@ -35,6 +35,13 @@ const storage = {
     const val = localStorage.getItem('fuelo_station')
     return val ? Number(val) || null : null
   },
+  // Cache local du profil — permet de rester connecté hors ligne (PWA)
+  getUser: () => {
+    try { return JSON.parse(localStorage.getItem('fuelo_user')) } catch { return null }
+  },
+  setUser: (u) => {
+    try { if (u) localStorage.setItem('fuelo_user', JSON.stringify(u)) } catch { /* quota / privé */ }
+  },
   set: (token, stationId) => {
     localStorage.setItem('fuelo_token', String(token))
     localStorage.setItem('fuelo_station', String(stationId))
@@ -42,6 +49,7 @@ const storage = {
   clear: () => {
     localStorage.removeItem('fuelo_token')
     localStorage.removeItem('fuelo_station')
+    localStorage.removeItem('fuelo_user')
     delete api.defaults.headers.common.Authorization
   },
 }
@@ -62,19 +70,31 @@ export function AuthProvider({ children }) {
       settled = true
       clearTimeout(safety)
       if (!normalizedUser) storage.clear()
+      else storage.setUser(normalizedUser)
       setUser(normalizedUser)
       setStationId(normalizedUser ? storage.getStation() : null)
       setLoading(false)
     }
 
+    // Hors ligne (PWA) : on hydrate la session depuis le cache local plutôt que
+    // d'appeler /auth/me (qui échouerait et déconnecterait l'utilisateur)
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      finish(storage.getUser())
+      return
+    }
+
     // Filet de sécurité — backend lent à se réveiller (Render gratuit) ou
-    // requête qui ne répond jamais : au bout de 3s on considère la session
-    // comme invalide plutôt que de bloquer l'app sur l'écran de chargement
-    const safety = setTimeout(() => finish(null), 3_000)
+    // requête qui ne répond jamais : au bout de 3s on retombe sur le profil en
+    // cache plutôt que de bloquer l'app sur l'écran de chargement
+    const safety = setTimeout(() => finish(storage.getUser()), 3_000)
 
     api.get('/auth/me')
       .then((res) => finish(normalizeUser(res.data.user)))
-      .catch(() => finish(null))
+      .catch((err) => {
+        // Erreur réseau (serveur injoignable) → garder la session via le cache
+        // si disponible. Erreur serveur réelle (401…) → déconnexion.
+        finish(err?.response ? null : storage.getUser())
+      })
 
     return () => {
       settled = true
@@ -85,9 +105,11 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password })
     storage.set(data.token, data.station_id)
-    setUser(normalizeUser(data.user))
+    const u = normalizeUser(data.user)
+    storage.setUser(u)
+    setUser(u)
     setStationId(Number(data.station_id))
-    return normalizeUser(data.user)
+    return u
   }, [])
 
   // Connexion via un token déjà émis (callback OAuth Google) — recharge
@@ -98,6 +120,7 @@ export function AuthProvider({ children }) {
       storage.set(token, stationId)
       const { data } = await api.get('/auth/me')
       const normalized = normalizeUser(data.user)
+      storage.setUser(normalized)
       setUser(normalized)
       setStationId(storage.getStation())
       return normalized
@@ -114,9 +137,11 @@ export function AuthProvider({ children }) {
   const register = useCallback(async (payload) => {
     const { data } = await api.post('/auth/register', payload)
     storage.set(data.token, data.station_id)
-    setUser(normalizeUser(data.user))
+    const u = normalizeUser(data.user)
+    storage.setUser(u)
+    setUser(u)
     setStationId(Number(data.station_id))
-    return normalizeUser(data.user)
+    return u
   }, [])
 
   const logout = useCallback(async () => {
@@ -134,7 +159,9 @@ export function AuthProvider({ children }) {
   const changerStation = useCallback(async (newStationId) => {
     const { data } = await api.post('/station/changer', { station_id: newStationId })
     storage.set(data.token, data.station_id)
-    setUser(normalizeUser(data.user))
+    const u = normalizeUser(data.user)
+    storage.setUser(u)
+    setUser(u)
     setStationId(Number(data.station_id))
     return Number(data.station_id)
   }, [])
