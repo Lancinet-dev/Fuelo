@@ -3,7 +3,7 @@
 // ================================================
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import api from '../services/api'
 import { useSocket } from './useSocket'
 
@@ -21,7 +21,7 @@ export function useConversations() {
 export function useConversationMessages(conversationId) {
   const { data, isLoading } = useQuery({
     queryKey:  ['messages', conversationId],
-    queryFn:   () => api.get(`/messages/conversations/${conversationId}`, { params: { limit: 50 } }).then(r => r.data),
+    queryFn:   () => api.get(`/messages/conversations/${conversationId}`, { params: { page: 1, limit: 40 } }).then(r => r.data),
     enabled:   !!conversationId,
     staleTime: 5_000,
   })
@@ -92,6 +92,8 @@ export function useUnreadMessages() {
     queryFn:         () => api.get('/messages/non-lus').then(r => r.data.total ?? 0),
     staleTime:       10_000,
     refetchInterval: 60_000,
+    // Ne pas appeler l'API sur les pages non connectées (évite des 401)
+    enabled:         typeof localStorage !== 'undefined' && !!localStorage.getItem('fuelo_token'),
   })
 
   useEffect(() => {
@@ -140,6 +142,55 @@ export function useMessagesRealtime(onTyping) {
       socket.off('message:lu',          onLu)
     }
   }, [socket, qc, onTyping])
+}
+
+// ── Présence en ligne (Set des user_id connectés) ─
+export function usePresence() {
+  const { socket } = useSocket()
+  const [online, setOnline] = useState(() => new Set())
+
+  useEffect(() => {
+    if (!socket) return
+    const onList = (ids) => setOnline(new Set(ids))
+    const onUpd  = ({ user_id, online: on }) => setOnline(prev => {
+      const next = new Set(prev)
+      if (on) next.add(user_id); else next.delete(user_id)
+      return next
+    })
+    const ask = () => socket.emit('presence:get')
+
+    socket.on('presence:list', onList)
+    socket.on('presence:update', onUpd)
+    socket.on('connect', ask)
+    ask()
+    return () => {
+      socket.off('presence:list', onList)
+      socket.off('presence:update', onUpd)
+      socket.off('connect', ask)
+    }
+  }, [socket])
+
+  return online
+}
+
+// ── Charger les messages plus anciens (scroll vers le haut) ──
+// Conserve la clé de cache ['messages', id] stable → le temps réel continue de marcher
+export function useLoadOlder() {
+  const qc = useQueryClient()
+  return async (conversationId) => {
+    const cache = qc.getQueryData(['messages', conversationId])
+    if (cache && cache.has_more === false) return false
+    const page = (cache?.page || 1) + 1
+    const data = await api.get(`/messages/conversations/${conversationId}`, { params: { page, limit: 40 } }).then(r => r.data)
+    qc.setQueryData(['messages', conversationId], (old) => {
+      const older    = data.messages ?? []
+      const existing = old?.messages ?? []
+      const seen     = new Set(existing.map(m => m.id))
+      const merged   = [...older.filter(m => !seen.has(m.id)), ...existing]
+      return { messages: merged, has_more: data.has_more, page }
+    })
+    return true
+  }
 }
 
 // Émettre l'indicateur "en train d'écrire"

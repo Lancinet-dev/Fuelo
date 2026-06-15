@@ -2,7 +2,7 @@
 // FUELO — Messagerie interne (style WhatsApp Web)
 // ================================================
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth }  from '../../context/AuthContext'
@@ -10,6 +10,7 @@ import { useTheme } from '../../context/ThemeContext'
 import {
   useConversations, useConversationMessages, useStationUsers,
   useMessageActions, useMessagesRealtime, useTypingEmitter,
+  usePresence, useLoadOlder,
 } from '../../hooks/useMessages'
 import { isSoundOn, setSoundOn } from '../../utils/messageSound'
 import toast from 'react-hot-toast'
@@ -28,15 +29,24 @@ const homePath = (role) => ({ pompiste: '/pompiste', chauffeur: '/chauffeur', lo
 
 const EMOJIS = ['😀','😂','😍','👍','🙏','🔥','✅','❌','⛽','🚚','💰','📊','⚠️','👏','🎉','❤️','😢','😡','🤝','💪']
 
-// ── Avatar ────────────────────────────────────────
-function Avatar({ nom, url, size = 44, groupe = false }) {
+// ── Avatar (avec pastille "en ligne" optionnelle) ──
+function Avatar({ nom, url, size = 44, groupe = false, online = false }) {
   const color = avatarColor(nom || (groupe ? 'Groupe' : '?'))
-  if (url) return <img src={url} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+  const dot = online ? (
+    <span style={{ position: 'absolute', bottom: 0, right: 0, width: Math.max(10, size * 0.26), height: Math.max(10, size * 0.26), borderRadius: '50%', background: '#22C55E', border: '2px solid #0F172A', boxShadow: '0 0 6px rgba(34,197,94,0.7)' }} />
+  ) : null
   return (
-    <div style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, background: `linear-gradient(135deg, ${color}, ${color}AA)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: size * 0.38 }}>
-      {groupe
-        ? <svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75M9 7a4 4 0 100 8 4 4 0 000-8z"/></svg>
-        : initials(nom)}
+    <div style={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
+      {url
+        ? <img src={url} alt="" style={{ width: size, height: size, borderRadius: '50%', objectFit: 'cover' }} />
+        : (
+          <div style={{ width: size, height: size, borderRadius: '50%', background: `linear-gradient(135deg, ${color}, ${color}AA)`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: size * 0.38 }}>
+            {groupe
+              ? <svg width={size * 0.5} height={size * 0.5} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75M9 7a4 4 0 100 8 4 4 0 000-8z"/></svg>
+              : initials(nom)}
+          </div>
+        )}
+      {dot}
     </div>
   )
 }
@@ -59,6 +69,7 @@ export default function MessagesPage() {
   const { palette, isDark } = useTheme()
   const { conversations, loading: loadingConvs } = useConversations()
   const { send, create, markRead, upload } = useMessageActions()
+  const presence = usePresence()
 
   const [activeId,  setActiveId]  = useState(null)
   const [search,    setSearch]    = useState('')
@@ -165,7 +176,7 @@ export default function MessagesPage() {
             return (
               <button key={c.id} onClick={() => openConversation(c)}
                 style={{ display: 'flex', gap: 12, alignItems: 'center', width: '100%', textAlign: 'left', padding: '11px 16px', border: 'none', borderBottom: `1px solid ${palette.cardBorder}`, cursor: 'pointer', background: isActive ? 'rgba(37,99,235,0.12)' : 'transparent', fontFamily: 'inherit', transition: 'background 0.15s' }}>
-                <Avatar nom={convNom(c)} url={c.type === 'direct' ? c.autre_avatar : null} groupe={c.type === 'groupe'} size={46} />
+                <Avatar nom={convNom(c)} url={c.type === 'direct' ? c.autre_avatar : null} groupe={c.type === 'groupe'} size={46} online={c.type === 'direct' && presence.has(c.autre_id)} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: palette.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{convNom(c)}</span>
@@ -198,6 +209,7 @@ export default function MessagesPage() {
             palette={palette} isDark={isDark}
             onBack={() => setMobileView('list')}
             typingNom={typing[active.id]}
+            isOnline={active.type !== 'groupe' && presence.has(active.autre_id)}
             send={send} upload={upload} markRead={markRead}
             convNom={convNom(active)} convSousTitre={convSousTitre(active)}
           />
@@ -237,24 +249,44 @@ export default function MessagesPage() {
 // ════════════════════════════════════════════════
 // Zone de conversation active
 // ════════════════════════════════════════════════
-function ChatZone({ conversation, me, palette, isDark, onBack, typingNom, send, upload, markRead, convNom, convSousTitre }) {
-  const { messages, loading } = useConversationMessages(conversation.id)
+function ChatZone({ conversation, me, palette, isDark, onBack, typingNom, isOnline, send, upload, markRead, convNom, convSousTitre }) {
+  const { messages, hasMore, loading } = useConversationMessages(conversation.id)
   const emitTyping = useTypingEmitter()
+  const loadOlder  = useLoadOlder()
   const [text, setText]       = useState('')
   const [showEmoji, setShowEmoji] = useState(false)
   const [sending,  setSending] = useState(false)
+  const [loadingOlder, setLoadingOlder] = useState(false)
   const scrollRef = useRef(null)
   const inputRef  = useRef(null)
   const fileRef   = useRef(null)
   const typingTimer = useRef(null)
+  const prependRef  = useRef(null) // hauteur de scroll avant un chargement d'anciens messages
 
   const recipients = useMemo(() => (conversation.membre_ids ?? []).filter(id => id !== me?.id), [conversation.membre_ids, me?.id])
   const estGroupe  = conversation.type === 'groupe'
 
-  // Auto-scroll vers le bas
-  useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+  // Auto-scroll bas — sauf après chargement d'anciens messages (on restaure la position)
+  useLayoutEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    if (prependRef.current != null) {
+      el.scrollTop = el.scrollHeight - prependRef.current
+      prependRef.current = null
+    } else {
+      el.scrollTop = el.scrollHeight
+    }
   }, [messages.length, typingNom])
+
+  // Charger les messages plus anciens quand on remonte tout en haut
+  const onScroll = (e) => {
+    const el = e.currentTarget
+    if (el.scrollTop < 80 && hasMore && !loadingOlder) {
+      setLoadingOlder(true)
+      prependRef.current = el.scrollHeight
+      loadOlder(conversation.id).finally(() => setLoadingOlder(false))
+    }
+  }
 
   // Marquer comme lu quand un message des autres arrive pendant qu'on regarde
   useEffect(() => {
@@ -328,14 +360,14 @@ function ChatZone({ conversation, me, palette, isDark, onBack, typingNom, send, 
           style={{ display: 'none', width: 34, height: 34, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer', color: palette.textSub, alignItems: 'center', justifyContent: 'center' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         </button>
-        <Avatar nom={convNom} url={conversation.type === 'direct' ? conversation.autre_avatar : null} groupe={estGroupe} size={42} />
+        <Avatar nom={convNom} url={conversation.type === 'direct' ? conversation.autre_avatar : null} groupe={estGroupe} size={42} online={!estGroupe && isOnline} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: palette.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{convNom}</div>
-          <div style={{ fontSize: 11.5, color: typingNom ? '#10B981' : palette.textSub }}>
+          <div style={{ fontSize: 11.5, color: typingNom ? '#10B981' : (!estGroupe && isOnline ? '#22C55E' : palette.textSub) }}>
             {typingNom ? `${typingNom.split(' ')[0]} écrit…` : (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                {!estGroupe && <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#10B981', display: 'inline-block' }} />}
-                {convSousTitre}
+                {!estGroupe && <span style={{ width: 7, height: 7, borderRadius: '50%', background: isOnline ? '#22C55E' : palette.textMuted, display: 'inline-block' }} />}
+                {estGroupe ? convSousTitre : (isOnline ? 'en ligne' : convSousTitre)}
               </span>
             )}
           </div>
@@ -348,7 +380,13 @@ function ChatZone({ conversation, me, palette, isDark, onBack, typingNom, send, 
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div ref={scrollRef} onScroll={onScroll} style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {loadingOlder && (
+          <div style={{ alignSelf: 'center', margin: '4px 0 10px', display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: palette.textMuted }}>
+            <span style={{ width: 14, height: 14, border: `2px solid ${palette.cardBorder}`, borderTopColor: '#2563EB', borderRadius: '50%', display: 'inline-block', animation: 'fuelo-ns-spin 0.7s linear infinite' }} />
+            Chargement…
+          </div>
+        )}
         {loading ? (
           <div style={{ margin: 'auto', color: palette.textMuted, fontSize: 13 }}>Chargement…</div>
         ) : messages.length === 0 ? (
@@ -407,6 +445,7 @@ function ChatZone({ conversation, me, palette, isDark, onBack, typingNom, send, 
 
       <style>{`
         @media (max-width: 768px) { .msg-back { display: flex !important; } }
+        @keyframes fuelo-ns-spin { to { transform: rotate(360deg); } }
         .msg-dots { display: inline-flex; gap: 3px; }
         .msg-dots i { width: 5px; height: 5px; border-radius: 50%; background: ${palette.textMuted}; display: inline-block; animation: msgBounce 1.2s infinite; }
         .msg-dots i:nth-child(2) { animation-delay: 0.2s; }

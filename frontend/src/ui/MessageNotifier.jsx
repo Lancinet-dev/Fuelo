@@ -9,6 +9,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { useAuth } from '../context/AuthContext'
 import { useSocket } from '../hooks/useSocket'
+import { useUnreadMessages } from '../hooks/useMessages'
 import { playMessageBeep } from '../utils/messageSound'
 
 export default function MessageNotifier() {
@@ -16,6 +17,13 @@ export default function MessageNotifier() {
   const { socket } = useSocket()
   const location   = useLocation()
   const navigate   = useNavigate()
+  const unread     = useUnreadMessages()
+
+  // Compteur de non-lus dans le titre de l'onglet (style WhatsApp Web)
+  const baseTitle = useRef(document.title)
+  useEffect(() => {
+    document.title = unread > 0 ? `(${unread}) ${baseTitle.current}` : baseTitle.current
+  }, [unread])
 
   // Chemin courant lu via ref (évite de re-souscrire le socket à chaque navigation)
   const pathRef = useRef(location.pathname)

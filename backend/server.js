@@ -64,11 +64,30 @@ io.use((socket, next) => {
   next()
 })
 
+// Présence en ligne — nb de sockets actifs par utilisateur (single-instance Render)
+const onlineUsers = new Map()
+
 io.on('connection', (socket) => {
   logger.info(`🔌 Socket connecté: ${socket.id}`)
 
-  // Room privée par utilisateur (messagerie)
-  if (socket.user?.id) socket.join(`user_${socket.user.id}`)
+  // Room privée par utilisateur (messagerie) + room station (présence)
+  if (socket.user?.id) {
+    const uid = socket.user.id
+    socket.join(`user_${uid}`)
+    if (socket.user.station_id) socket.join(`station_${socket.user.station_id}`)
+
+    const n = (onlineUsers.get(uid) || 0) + 1
+    onlineUsers.set(uid, n)
+    // Première connexion → annonce "en ligne" à sa station
+    if (n === 1 && socket.user.station_id) {
+      io.to(`station_${socket.user.station_id}`).emit('presence:update', { user_id: uid, online: true })
+    }
+  }
+
+  // Snapshot des utilisateurs en ligne (demandé à l'ouverture de la messagerie)
+  socket.on('presence:get', () => {
+    socket.emit('presence:list', Array.from(onlineUsers.keys()))
+  })
 
   socket.on('join_station', (station_id) => {
     socket.join(`station_${station_id}`)
@@ -97,6 +116,17 @@ io.on('connection', (socket) => {
   })
 
   socket.on('disconnect', () => {
+    if (socket.user?.id) {
+      const uid = socket.user.id
+      const n = (onlineUsers.get(uid) || 1) - 1
+      if (n <= 0) {
+        onlineUsers.delete(uid)
+        // Plus aucun socket → annonce "hors ligne"
+        if (socket.user.station_id) io.to(`station_${socket.user.station_id}`).emit('presence:update', { user_id: uid, online: false })
+      } else {
+        onlineUsers.set(uid, n)
+      }
+    }
     logger.info(`🔌 Socket déconnecté: ${socket.id}`)
   })
 })
