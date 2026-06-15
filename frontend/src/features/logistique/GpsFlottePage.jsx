@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AreaChart, Area, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
-import { useFlotte, useFlotteStats, useGpsPoints, useGeofencing } from '../../hooks/useTrajets'
+import { useFlotte, useFlotteStats, useGpsPoints, useGeofencing, useTrajets } from '../../hooks/useTrajets'
 import { useSocket } from '../../hooks/useSocket'
 import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -751,6 +751,9 @@ export default function GpsFlottePage({ nightMode: nightModeProp }) {
 
   const { data: flotte = [], isLoading: loadFlotte } = useFlotte()
   const { data: stats } = useFlotteStats()
+  // Liste des trajets pour les onglets Replay + Historique (sans ça, ils
+  // recevaient un tableau vide codé en dur → sélecteurs toujours vides)
+  const { trajets, loading: loadTrajets } = useTrajets()
 
   useEffect(() => {
     if (document.getElementById('fuelo-gps-css')) return
@@ -804,9 +807,9 @@ export default function GpsFlottePage({ nightMode: nightModeProp }) {
       {/* Contenu plein espace */}
       <div style={{ flex: 1, overflow: 'hidden' }}>
         {tab === 'flotte'     && <TabFlotte    flotte={flotte} stats={stats} loading={loadFlotte} nightMode={nightMode} />}
-        {tab === 'replay'     && <TabReplay    trajets={[]} nightMode={nightMode} />}
+        {tab === 'replay'     && <TabReplay    trajets={trajets} nightMode={nightMode} />}
         {tab === 'geofencing' && <TabGeofencing nightMode={nightMode} />}
-        {tab === 'historique' && <TabHistorique trajets={[]} loading={false} />}
+        {tab === 'historique' && <TabHistorique trajets={trajets} loading={loadTrajets} />}
       </div>
     </div>
   )
