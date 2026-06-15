@@ -113,9 +113,11 @@ const createConversation = async (user, { type = 'direct', membres = [], nom = n
   const autres = [...new Set((membres || []).map(Number).filter(id => id && id !== userId))]
   if (autres.length === 0) throw new Error('Sélectionnez au moins un destinataire')
 
-  // Privacité : on ne peut écrire qu'à des membres de SA station
+  // Privacité : on ne peut écrire qu'à des membres de SA station (via station_users)
   const check = await pool.query(
-    `SELECT id FROM users WHERE id = ANY($1) AND station_id = $2 AND deleted_at IS NULL`,
+    `SELECT DISTINCT u.id FROM users u
+     JOIN station_users su ON su.user_id = u.id
+     WHERE u.id = ANY($1) AND su.station_id = $2 AND u.deleted_at IS NULL`,
     [autres, station_id]
   )
   if (check.rows.length !== autres.length) {
@@ -216,10 +218,15 @@ const getTotalNonLus = async (userId) => {
 
 // ── Employés de la station (pour la nouvelle conversation) ──
 const getStationUsers = async (user) => {
+  // L'appartenance station passe par la table de liaison station_users
+  // (la table users n'a pas de colonne station_id)
   const r = await pool.query(
-    `SELECT id, nom, role, avatar FROM users
-     WHERE station_id = $1 AND deleted_at IS NULL AND COALESCE(actif, true) = true AND id <> $2
-     ORDER BY nom ASC`,
+    `SELECT DISTINCT u.id, u.nom, u.role, u.avatar
+     FROM users u
+     JOIN station_users su ON su.user_id = u.id
+     WHERE su.station_id = $1 AND u.deleted_at IS NULL
+       AND COALESCE(u.actif, true) = true AND u.id <> $2
+     ORDER BY u.nom ASC`,
     [user.station_id, user.id]
   )
   return r.rows

@@ -11,6 +11,7 @@ import {
   useConversations, useConversationMessages, useStationUsers,
   useMessageActions, useMessagesRealtime, useTypingEmitter,
 } from '../../hooks/useMessages'
+import { isSoundOn, setSoundOn } from '../../utils/messageSound'
 import toast from 'react-hot-toast'
 
 // ── Helpers avatar (couleur depuis hash du nom) ───
@@ -64,6 +65,9 @@ export default function MessagesPage() {
   const [showNew,   setShowNew]   = useState(false)
   const [mobileView, setMobileView] = useState('list') // 'list' | 'chat'
   const [typing,    setTyping]    = useState({})       // { [convId]: nom }
+  const [soundOn,   setSoundState] = useState(isSoundOn())
+
+  const toggleSound = () => { const v = !soundOn; setSoundState(v); setSoundOn(v) }
 
   const active = useMemo(() => conversations.find(c => c.id === activeId) ?? null, [conversations, activeId])
 
@@ -119,6 +123,14 @@ export default function MessagesPage() {
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
           </button>
           <div style={{ flex: 1, fontSize: 18, fontWeight: 800, color: palette.text }}>Messages</div>
+          <button onClick={toggleSound} title={soundOn ? 'Couper le son' : 'Activer le son'}
+            style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, border: `1px solid ${palette.cardBorder}`, background: 'transparent', cursor: 'pointer', color: soundOn ? '#2563EB' : palette.textMuted, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {soundOn ? (
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 010 7.07M19.07 4.93a10 10 0 010 14.14"/></svg>
+            ) : (
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+            )}
+          </button>
           <button onClick={() => setShowNew(true)} title="Nouvelle conversation"
             style={{ width: 38, height: 38, borderRadius: '50%', border: 'none', background: '#2563EB', cursor: 'pointer', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 14px rgba(37,99,235,0.4)' }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14"/></svg>
