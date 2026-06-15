@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useVentes }  from '../../hooks/useVentes'
 import { useTheme }   from '../../context/ThemeContext'
 import { useAuth }    from '../../context/AuthContext'
+import { useTranslation } from '../../hooks/useTranslation'
 import { usePlan }    from '../../hooks/usePlan'
 import { useUpgradeModal } from '../../ui/PlanGate'
 import StatCard       from '../../ui/StatCard'
@@ -32,6 +33,7 @@ export default function Ventes() {
   const { user }     = useAuth()
   const isOwner      = user?.role === 'owner'
   const { palette, isDark } = useTheme()
+  const { t }        = useTranslation()
   const { canAccess } = usePlan()
   const { showUpgrade, Modal: UpgradeModal } = useUpgradeModal()
   const canExport = canAccess('exports')
@@ -72,8 +74,8 @@ export default function Ventes() {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, flexWrap: 'wrap', gap: 14 }}>
         <div>
-          <h1 style={{ fontSize: theme.font.size['2xl'], fontWeight: theme.font.weight.black, color: palette.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 4 }}>Ventes</h1>
-          <p style={{ fontSize: theme.font.size.md, color: palette.textSub, margin: 0 }}>Historique des ventes enregistrées par vos pompistes</p>
+          <h1 style={{ fontSize: theme.font.size['2xl'], fontWeight: theme.font.weight.black, color: palette.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 4 }}>{t('ventes.title')}</h1>
+          <p style={{ fontSize: theme.font.size.md, color: palette.textSub, margin: 0 }}>{t('ventes.subtitle')}</p>
         </div>
         {!isOwner && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -98,7 +100,7 @@ export default function Ventes() {
       {/* Info banner */}
       <div style={{ background: 'rgba(37,99,235,0.07)', border: '1px solid rgba(37,99,235,0.15)', borderRadius: theme.radius.md, padding: '10px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10, fontSize: theme.font.size.sm, color: theme.colors.primary }}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Les ventes sont enregistrées uniquement par vos pompistes depuis leur interface dédiée.
+        {t('ventes.infoBanner')}
       </div>
 
       {/* Stat cards */}
@@ -111,9 +113,9 @@ export default function Ventes() {
         </>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 24 }} className="fuelo-grid-3">
-          <StatCard label="Transactions aujourd'hui" value={String(aujourdhui.nb ?? 0)}            icon={ICONS.ventes} color={theme.colors.primary} />
-          <StatCard label="Litres vendus"            value={formatLitres(aujourdhui.total_litres)} icon={ICONS.litres} color={theme.colors.success} />
-          <StatCard label="Montant encaissé"         value={formatGNF(aujourdhui.total_gnf)}       icon={ICONS.cash}   color={theme.colors.info}    />
+          <StatCard label={t('ventes.transactionsToday')} value={String(aujourdhui.nb ?? 0)}            icon={ICONS.ventes} color={theme.colors.primary} />
+          <StatCard label={t('ventes.litresVendus')}       value={formatLitres(aujourdhui.total_litres)} icon={ICONS.litres} color={theme.colors.success} />
+          <StatCard label={t('ventes.montantEncaisse')}    value={formatGNF(aujourdhui.total_gnf)}       icon={ICONS.cash}   color={theme.colors.info}    />
         </div>
       )}
 
@@ -128,7 +130,7 @@ export default function Ventes() {
           <input
             value={searchInput}
             onChange={e => setSearchInput(e.target.value)}
-            placeholder="Rechercher un pompiste..."
+            placeholder={t('ventes.searchPlaceholder')}
             style={{
               width: '100%', height: 38, padding: '0 36px 0 36px', borderRadius: theme.radius.button,
               border: `1px solid ${palette.inputBorder}`, background: palette.inputBg, color: palette.text,
@@ -147,7 +149,7 @@ export default function Ventes() {
 
         {/* Filtres carburant */}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {[{ val: '', label: 'Toutes' }, { val: 'essence', label: 'Essence' }, { val: 'gasoil', label: 'Gasoil' }].map(({ val, label }) => {
+          {[{ val: '', label: t('ventes.toutes') }, { val: 'essence', label: t('stock.essence') }, { val: 'gasoil', label: t('stock.gasoil') }].map(({ val, label }) => {
             const active = filterType === val
             return (
               <motion.button key={val} whileTap={{ scale: 0.95 }} onClick={() => { setFilterType(val); setPage(1) }}
@@ -255,14 +257,14 @@ export default function Ventes() {
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, padding: 16, borderTop: `1px solid ${palette.cardBorder}`, flexWrap: 'wrap' }}>
             <motion.button whileHover={{ scale: meta.has_prev ? 1.04 : 1 }} whileTap={{ scale: meta.has_prev ? 0.96 : 1 }} onClick={() => setPage(p => Math.max(1, p - 1))} disabled={!meta.has_prev}
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: theme.radius.full, border: `1px solid ${palette.cardBorder}`, background: palette.card, color: meta.has_prev ? palette.text : palette.textMuted, cursor: meta.has_prev ? 'pointer' : 'not-allowed', fontFamily: theme.font.family, fontSize: theme.font.size.sm, transition: theme.transition.hover }}>
-              ← Précédent
+              ← {t('ventes.precedent')}
             </motion.button>
             <span style={{ fontSize: theme.font.size.sm, padding: '6px 14px', borderRadius: theme.radius.full, background: theme.colors.primaryLight, color: theme.colors.primary, fontWeight: theme.font.weight.semi }}>
               Page {meta.page} / {meta.pages}
             </span>
             <motion.button whileHover={{ scale: meta.has_next ? 1.04 : 1 }} whileTap={{ scale: meta.has_next ? 0.96 : 1 }} onClick={() => setPage(p => p + 1)} disabled={!meta.has_next}
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: theme.radius.full, border: `1px solid ${palette.cardBorder}`, background: palette.card, color: meta.has_next ? palette.text : palette.textMuted, cursor: meta.has_next ? 'pointer' : 'not-allowed', fontFamily: theme.font.family, fontSize: theme.font.size.sm, transition: theme.transition.hover }}>
-              Suivant →
+              {t('ventes.suivant')} →
             </motion.button>
           </div>
         )}

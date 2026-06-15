@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useStock }    from '../../hooks/useStock'
 import { useTheme }    from '../../context/ThemeContext'
 import { useAuth }     from '../../context/AuthContext'
+import { useTranslation } from '../../hooks/useTranslation'
 import StockGauge      from '../../ui/StockGauge'
 import { SkeletonStockGauge, SkeletonStyle } from '../../ui/Skeleton'
 import { formatLitres, formatRelative } from '../../utils/format'
@@ -17,6 +18,7 @@ export default function Stock() {
   const { user }    = useAuth()
   const isOwner     = user?.role === 'owner'
   const { palette, isDark } = useTheme()
+  const { t }       = useTranslation()
   const { essence, gasoil, essenceMaj, gasoilMaj, essenceJours, gasoilJours, loading, livraisonLoading, ajouterLivraison } = useStock()
 
   const [type,     setType]     = useState('essence')
@@ -38,10 +40,10 @@ export default function Stock() {
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: theme.font.size['2xl'], fontWeight: theme.font.weight.black, color: palette.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 4 }}>
-          Gestion du stock
+          {t('stock.title')}
         </h1>
         <p style={{ fontSize: theme.font.size.md, color: palette.textSub, margin: 0 }}>
-          {isOwner ? 'Niveaux de stock en temps réel' : 'Niveaux en temps réel — enregistrez vos livraisons ici'}
+          {isOwner ? t('stock.subtitleOwner') : t('stock.subtitleGerant')}
         </p>
       </div>
 
@@ -56,7 +58,7 @@ export default function Stock() {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 28 }} className="fuelo-grid-2">
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-            <StockGauge label="Essence" quantite={essence} derniereMaj={essenceMaj ? formatRelative(essenceMaj) : null} />
+            <StockGauge label={t('stock.essence')} quantite={essence} derniereMaj={essenceMaj ? formatRelative(essenceMaj) : null} />
             {essenceJours !== null && (
               <div style={{ textAlign: 'center', marginTop: 8, fontSize: 12, color: essenceJours <= 3 ? '#EF4444' : essenceJours <= 7 ? '#F59E0B' : '#10B981', fontWeight: 600 }}>
                 ~{essenceJours} jour{essenceJours !== 1 ? 's' : ''} restant{essenceJours !== 1 ? 's' : ''}
@@ -65,7 +67,7 @@ export default function Stock() {
             )}
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.06 }}>
-            <StockGauge label="Gasoil" quantite={gasoil} derniereMaj={gasoilMaj ? formatRelative(gasoilMaj) : null} />
+            <StockGauge label={t('stock.gasoil')} quantite={gasoil} derniereMaj={gasoilMaj ? formatRelative(gasoilMaj) : null} />
             {gasoilJours !== null && (
               <div style={{ textAlign: 'center', marginTop: 8, fontSize: 12, color: gasoilJours <= 3 ? '#EF4444' : gasoilJours <= 7 ? '#F59E0B' : '#10B981', fontWeight: 600 }}>
                 ~{gasoilJours} jour{gasoilJours !== 1 ? 's' : ''} restant{gasoilJours !== 1 ? 's' : ''}
@@ -100,10 +102,10 @@ export default function Stock() {
             </div>
             <div>
               <div style={{ fontSize: theme.font.size.lg, fontWeight: theme.font.weight.bold, color: palette.text }}>
-                Enregistrer une livraison
+                {t('stock.livraisonTitre')}
               </div>
               <div style={{ fontSize: theme.font.size.sm, color: palette.textSub, marginTop: 2 }}>
-                Le stock sera mis à jour automatiquement
+                {t('stock.livraisonSub')}
               </div>
             </div>
           </div>
@@ -113,7 +115,7 @@ export default function Stock() {
             {/* Choix type */}
             <div style={{ marginBottom: 18 }}>
               <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
-                Type de carburant
+                {t('stock.typeCarburant')}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                 {[{ val: 'essence', icon: 'pump', color: theme.colors.warning }, { val: 'gasoil', icon: 'drum', color: theme.colors.info }].map(({ val, icon, color }) => {
@@ -135,7 +137,7 @@ export default function Stock() {
                         ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/><path d="M3 11h12"/><path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/><path d="M6 7h4"/></svg>
                         : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.657 3.582 3 8 3s8-1.343 8-3V6"/></svg>
                       }
-                      {val}
+                      {t('stock.' + val)}
                     </motion.button>
                   )
                 })}
@@ -145,7 +147,7 @@ export default function Stock() {
             {/* Quantité */}
             <div style={{ marginBottom: 22 }}>
               <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>
-                Quantité reçue (litres)
+                {t('stock.quantiteRecue')}
               </div>
               <div style={{ position: 'relative' }}>
                 <input
@@ -184,7 +186,7 @@ export default function Stock() {
                 ? <div style={{ width: 18, height: 18, border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                 : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
               }
-              {livraisonLoading ? 'Enregistrement...' : 'Confirmer la livraison'}
+              {livraisonLoading ? `${t('common.loading')}` : t('stock.confirmer')}
             </motion.button>
           </form>
         </motion.div>

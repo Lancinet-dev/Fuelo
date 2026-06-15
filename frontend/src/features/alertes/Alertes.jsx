@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAlertes }   from '../../hooks/useAlertes'
 import { useTheme }     from '../../context/ThemeContext'
+import { useTranslation } from '../../hooks/useTranslation'
 import StatCard         from '../../ui/StatCard'
 import EmptyState       from '../../ui/EmptyState'
 import { SkeletonStatCard, SkeletonStyle } from '../../ui/Skeleton'
@@ -68,13 +69,14 @@ const ICONS = {
 }
 
 const FILTERS = [
-  { val: 'toutes', label: 'Toutes' },
-  { val: 'non_lues', label: 'Non lues' },
-  { val: 'lues', label: 'Lues' },
+  { val: 'toutes',   tkey: 'toutes' },
+  { val: 'non_lues', tkey: 'nonLues' },
+  { val: 'lues',     tkey: 'lues' },
 ]
 
 export default function Alertes() {
   const { palette, isDark } = useTheme()
+  const { t } = useTranslation()
   const { alertes, nonLues, loading, marquerLue, marquerToutesLues } = useAlertes()
   const [filter, setFilter] = useState('toutes')
 
@@ -94,7 +96,7 @@ export default function Alertes() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 14 }}>
         <div>
           <h1 style={{ fontSize: theme.font.size['2xl'], fontWeight: theme.font.weight.black, color: palette.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 10 }}>
-            Alertes
+            {t('alertes.title')}
             {nonLues > 0 && (
               <motion.span
                 initial={{ scale: 0 }} animate={{ scale: 1 }}
@@ -105,7 +107,7 @@ export default function Alertes() {
             )}
           </h1>
           <p style={{ fontSize: theme.font.size.md, color: palette.textSub, margin: 0 }}>
-            {alertes.length} alerte{alertes.length > 1 ? 's' : ''} au total
+            {alertes.length} {t('alertes.auTotal')}
           </p>
         </div>
 
@@ -115,7 +117,7 @@ export default function Alertes() {
             onMouseEnter={e => e.currentTarget.style.boxShadow = `0 0 0 1px ${theme.colors.success}30, 0 8px 22px ${theme.colors.success}22`}
             onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.check} /></svg>
-            Tout marquer comme lu
+            {t('alertes.toutMarquer')}
           </motion.button>
         )}
       </div>
@@ -130,22 +132,22 @@ export default function Alertes() {
         </>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 24 }} className="fuelo-grid-3">
-          <StatCard label="Total alertes" value={String(alertes.length)} icon={ICONS.alertes} color={palette.textSub} />
-          <StatCard label="Non lues"      value={String(nonLues)}        icon={ICONS.alertes} color={nonLues > 0 ? theme.colors.danger : theme.colors.success} />
-          <StatCard label="Lues"          value={String(lues)}           icon={ICONS.check}   color={theme.colors.success} />
+          <StatCard label={t('alertes.totalAlertes')} value={String(alertes.length)} icon={ICONS.alertes} color={palette.textSub} />
+          <StatCard label={t('alertes.nonLues')}      value={String(nonLues)}        icon={ICONS.alertes} color={nonLues > 0 ? theme.colors.danger : theme.colors.success} />
+          <StatCard label={t('alertes.lues')}         value={String(lues)}           icon={ICONS.check}   color={theme.colors.success} />
         </div>
       )}
 
       {/* Filtres */}
       {!loading && alertes.length > 0 && (
         <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-          {FILTERS.map(({ val, label }) => {
+          {FILTERS.map(({ val, tkey }) => {
             const active = filter === val
             const count  = val === 'toutes' ? alertes.length : val === 'non_lues' ? nonLues : lues
             return (
               <motion.button key={val} whileTap={{ scale: 0.95 }} onClick={() => setFilter(val)}
                 style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px', borderRadius: theme.radius.full, border: `1px solid ${active ? theme.colors.primary : palette.cardBorder}`, background: active ? theme.colors.primaryLight : palette.card, color: active ? theme.colors.primary : palette.textSub, fontSize: theme.font.size.sm, fontWeight: active ? theme.font.weight.semi : theme.font.weight.normal, cursor: 'pointer', fontFamily: theme.font.family, transition: theme.transition.hover, boxShadow: active ? '0 0 0 1px rgba(37,99,235,0.2), 0 4px 14px rgba(37,99,235,0.18)' : 'none' }}>
-                {label}
+                {t('alertes.' + tkey)}
                 <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 99, background: active ? 'rgba(37,99,235,0.18)' : palette.hover, color: active ? theme.colors.primary : palette.textMuted }}>
                   {count}
                 </span>
@@ -174,7 +176,7 @@ export default function Alertes() {
           </div>
         ) : filtered.length === 0 ? (
           <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.card, padding: '40px 24px', textAlign: 'center', fontSize: theme.font.size.md, color: palette.textSub }}>
-            Aucune alerte dans cette catégorie.
+            {t('alertes.aucuneCategorie')}
           </div>
         ) : (
           <AnimatePresence mode="popLayout">
@@ -227,12 +229,12 @@ export default function Alertes() {
                       style={{ padding: '7px 14px', borderRadius: theme.radius.button, border: `1px solid ${c.color}40`, background: 'transparent', color: c.color, fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, cursor: 'pointer', fontFamily: theme.font.family, whiteSpace: 'nowrap', transition: theme.transition.hover, flexShrink: 0 }}
                       onMouseEnter={e => { e.currentTarget.style.background = `${c.color}12` }}
                       onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
-                      Marquer lue
+                      {t('alertes.marquerLue')}
                     </motion.button>
                   ) : (
                     <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.colors.success} strokeWidth="2.5" strokeLinecap="round"><path d={ICONS.check} /></svg>
-                      <span style={{ fontSize: theme.font.size.xs, color: palette.textMuted }}>Lu</span>
+                      <span style={{ fontSize: theme.font.size.xs, color: palette.textMuted }}>{t('alertes.lu')}</span>
                     </motion.div>
                   )}
                 </motion.div>

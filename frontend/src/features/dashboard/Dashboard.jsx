@@ -8,6 +8,7 @@ import { motion } from 'framer-motion'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useAuth }      from '../../context/AuthContext'
 import { useTheme }     from '../../context/ThemeContext'
+import { useTranslation } from '../../hooks/useTranslation'
 import { useDashboard, useGraphique, calcTrend } from '../../hooks/useDashboard'
 import { useVentes }    from '../../hooks/useVentes'
 import { useEmployes }  from '../../hooks/useEmployes'
@@ -545,6 +546,7 @@ export default function Dashboard() {
   const navigate    = useNavigate()
   const { user }    = useAuth()
   const { palette, isDark } = useTheme()
+  const { t }       = useTranslation()
 
   const userRole = String(user?.role ?? '').toLowerCase()
   const isGerant = userRole === 'gerant' || userRole === 'manager'
@@ -610,7 +612,7 @@ export default function Dashboard() {
             {planBadge}
           </div>
           <h1 style={{ fontSize: 26, fontWeight: 900, color: palette.text, letterSpacing: '-0.6px', margin: 0, marginBottom: 5, lineHeight: 1.1 }}>
-            Bonjour, {prenom} 👋
+            {t('dashboard.hello')}, {prenom} 👋
           </h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <p style={{ fontSize: 13, color: palette.textSub, margin: 0, textTransform: 'capitalize' }}>
@@ -626,12 +628,12 @@ export default function Dashboard() {
             onMouseEnter={e => { e.currentTarget.style.borderColor = theme.colors.primary + '60'; e.currentTarget.style.color = theme.colors.primary }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = palette.cardBorder; e.currentTarget.style.color = palette.textSub }}>
             <Icon d={ICONS.refresh} size={13} />
-            Actualiser
+            {t('common.refresh')}
           </button>
           <button onClick={() => navigate('/ventes')}
             style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 18px', borderRadius: 10, border: 'none', background: theme.colors.primary, color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', boxShadow: theme.shadow.primary }}>
             <Icon d={ICONS.eye} size={13} color="#fff" />
-            Voir les ventes
+            {t('dashboard.versement')}
           </button>
           <NotifBell count={notifsNonLues || alertesNonLues} onClick={() => navigate('/alertes')} palette={palette} />
           <Avatar nom={user?.nom} color={theme.colors.primary} />
@@ -670,7 +672,7 @@ export default function Dashboard() {
       {/* ── Stat cards (compteur animé + tendance) ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 24 }} className="fuelo-grid-4">
         <StatCard
-          label="Ventes aujourd'hui"
+          label={t('dashboard.ventesToday')}
           numericValue={Number(aujourdhui.montant) || 0}
           formatFn={formatGNF}
           sub={`${aujourdhui.nb} transaction${aujourdhui.nb > 1 ? 's' : ''} · ${formatLitres(aujourdhui.litres)}`}
@@ -679,7 +681,7 @@ export default function Dashboard() {
           trend={trendVentesJour}
         />
         <StatCard
-          label="Litres vendus aujourd'hui"
+          label={t('dashboard.litresVendus')}
           numericValue={Number(aujourdhui.litres) || 0}
           formatFn={formatLitres}
           sub={`${aujourdhui.nb} transaction${aujourdhui.nb > 1 ? 's' : ''} · Ce mois : ${formatLitres(cemois.litres)}`}
@@ -688,20 +690,20 @@ export default function Dashboard() {
           trend={calcTrend(aujourdhui.litres, veille.litres)}
         />
         <StatCard
-          label="Stock essence"
+          label={t('dashboard.stockEssence')}
           numericValue={stockEssence}
           formatFn={formatLitres}
-          sub={getStockStatus(stockEssence).label === 'Critique' || getStockStatus(stockEssence).label === 'Vide' ? 'Niveau critique — à commander' : 'Niveau correct'}
+          sub={getStockStatus(stockEssence).label === 'Critique' || getStockStatus(stockEssence).label === 'Vide' ? t('dashboard.niveauCritique') : t('dashboard.niveauCorrect')}
           iconD={ICONS.essence}
           color={getStockStatus(stockEssence).color}
           onClick={() => navigate('/stock')}
           pulse={stockEssence > 0 && stockEssence <= 300}
         />
         <StatCard
-          label="Stock gasoil"
+          label={t('dashboard.stockGasoil')}
           numericValue={stockGasoil}
           formatFn={formatLitres}
-          sub={getStockStatus(stockGasoil).label === 'Critique' || getStockStatus(stockGasoil).label === 'Vide' ? 'Niveau critique — à commander' : 'Niveau correct'}
+          sub={getStockStatus(stockGasoil).label === 'Critique' || getStockStatus(stockGasoil).label === 'Vide' ? t('dashboard.niveauCritique') : t('dashboard.niveauCorrect')}
           iconD={ICONS.stock}
           color={getStockStatus(stockGasoil).color}
           onClick={() => navigate('/stock')}
@@ -763,9 +765,9 @@ export default function Dashboard() {
         {/* Ventes récentes */}
         <div style={{ background: palette.card, border: `1px solid ${palette.cardBorder}`, borderRadius: 16, boxShadow: theme.shadow.sm, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: `1px solid ${palette.cardBorder}`, flexShrink: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: palette.text }}>Ventes récentes</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: palette.text }}>{t('dashboard.recentSales')}</div>
             <button onClick={() => navigate('/ventes')} style={{ fontSize: 11, color: theme.colors.primary, fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 3 }}>
-              Voir tout <Icon d={ICONS.chevron} size={11} color={theme.colors.primary} />
+              {t('dashboard.viewAll')} <Icon d={ICONS.chevron} size={11} color={theme.colors.primary} />
             </button>
           </div>
 
@@ -785,7 +787,7 @@ export default function Dashboard() {
                     <VenteRow vente={v} isLast={i === recentes.length - 1} palette={palette} />
                   </motion.div>
                 ))
-              : <EmptyState type="ventes" message="Aucune vente aujourd'hui" />
+              : <EmptyState type="ventes" message={t('dashboard.noSalesToday')} />
             }
           </div>
         </div>
@@ -816,7 +818,7 @@ export default function Dashboard() {
 
       {/* ── Actions rapides (hover glow + scale) ──── */}
       <div style={{ marginBottom: 12 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Actions rapides</div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t('dashboard.quickActions')}</div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${actions.length}, 1fr)`, gap: 14 }} className={`fuelo-actions fuelo-grid-${actions.length}`}>
         {actions.map(({ label, sub, icon, path, color }) => (
