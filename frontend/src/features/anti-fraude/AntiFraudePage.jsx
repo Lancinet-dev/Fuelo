@@ -15,7 +15,7 @@ import EmptyState from '../../ui/EmptyState'
 import Shimmer, { SkeletonStatCard, SkeletonStyle } from '../../ui/Skeleton'
 import theme from '../../config/theme'
 import { formatGNF, formatDateTime } from '../../utils/format'
-import { exportAntiFraudePDF, exportAntiFraudeExcel } from '../../utils/export'
+// export.js (jsPDF + ExcelJS ≈ 1,4 Mo) chargé dynamiquement au clic — voir handlers
 
 // ── Icônes (chemins simples validés) ──────────────
 const ICONS = {
@@ -526,11 +526,11 @@ export default function AntiFraudePage() {
 
   const handleExportPDF = async () => {
     setExporting('pdf')
-    try { await exportAntiFraudePDF(data, station.nom, station.logoUrl) } finally { setExporting('') }
+    try { const { exportAntiFraudePDF } = await import('../../utils/export'); await exportAntiFraudePDF(data, station.nom, station.logoUrl) } finally { setExporting('') }
   }
   const handleExportExcel = async () => {
     setExporting('excel')
-    try { await exportAntiFraudeExcel(data, station.nom) } finally { setExporting('') }
+    try { const { exportAntiFraudeExcel } = await import('../../utils/export'); await exportAntiFraudeExcel(data, station.nom) } finally { setExporting('') }
   }
 
   const hasData = !isLoading && data

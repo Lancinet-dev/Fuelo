@@ -14,7 +14,7 @@ import StatCard       from '../../ui/StatCard'
 import EmptyState     from '../../ui/EmptyState'
 import { SkeletonStatCard, SkeletonRow, SkeletonStyle } from '../../ui/Skeleton'
 import { formatGNF, formatLitres, formatDateTime } from '../../utils/format'
-import { exportVentesPDF, exportVentesExcel }      from '../../utils/export'
+// export.js (jsPDF + ExcelJS ≈ 1,4 Mo) chargé dynamiquement au clic — voir handlers
 import api   from '../../services/api'
 import theme from '../../config/theme'
 
@@ -62,8 +62,8 @@ export default function Ventes() {
     return () => { cancelled = true }
   }, [])
 
-  const handleExportPDF   = async () => { if (!canExport) return showUpgrade('exports'); setExporting('pdf');   try { await exportVentesPDF(ventes, nomStation, logoUrl)   } finally { setExporting('') } }
-  const handleExportExcel = async () => { if (!canExport) return showUpgrade('exports'); setExporting('excel'); try { await exportVentesExcel(ventes, nomStation, logoUrl) } finally { setExporting('') } }
+  const handleExportPDF   = async () => { if (!canExport) return showUpgrade('exports'); setExporting('pdf');   try { const { exportVentesPDF }   = await import('../../utils/export'); await exportVentesPDF(ventes, nomStation, logoUrl)   } finally { setExporting('') } }
+  const handleExportExcel = async () => { if (!canExport) return showUpgrade('exports'); setExporting('excel'); try { const { exportVentesExcel } = await import('../../utils/export'); await exportVentesExcel(ventes, nomStation, logoUrl) } finally { setExporting('') } }
 
   return (
     <div style={{ padding: '32px 28px', maxWidth: 1100, margin: '0 auto' }} className="fuelo-ventes">

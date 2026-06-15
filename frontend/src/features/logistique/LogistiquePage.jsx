@@ -14,7 +14,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api            from '../../services/api'
 import toast          from 'react-hot-toast'
 import { formatRelative } from '../../utils/format'
-import { exportTrajetsExcel } from '../../utils/export'
+// export.js (ExcelJS ≈ 1,4 Mo) chargé dynamiquement au clic — voir handleExportExcel
 import theme from '../../config/theme'
 
 const GpsFlottePage = lazy(() => import('./GpsFlottePage'))
@@ -873,6 +873,7 @@ function TabRapports({ palette}) {
     setExporting(true)
     try {
       const logoUrl = await api.get('/station').then(r => r.data.station?.logo_url ?? null).catch(() => null)
+      const { exportTrajetsExcel } = await import('../../utils/export')
       await exportTrajetsExcel(trajets, stats, { chauffeurs, logoUrl })
       toast.success('Export Excel téléchargé')
     } catch { toast.error('Erreur lors de l\'export') }

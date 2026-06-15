@@ -59,7 +59,9 @@ export default defineConfig({
             options: {
               cacheName: 'fuelo-api',
               networkTimeoutSeconds: 3,
-              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 7 }, // 7 jours
+              // 14 jours : fallback hors ligne plus long (connectivité intermittente
+              // en Afrique de l'Ouest). NetworkFirst → toujours frais quand en ligne.
+              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 14 },
               cacheableResponse: { statuses: [0, 200] },
             },
           },
