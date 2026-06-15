@@ -5,6 +5,7 @@
 const pool   = require('../config/database')
 const logger = require('../utils/logger')
 const { notifyAlerte } = require('../utils/socketNotify')
+const { notifierStation } = require('./notificationService')
 
 const SEUIL_FRAUDE_LITRES = 10 // écart > 10L déclenche une alerte fraude
 
@@ -91,6 +92,7 @@ const terminerService = async (user, serviceId, data, photoUrl, app) => {
       (ecart_gasoil  != null && Math.abs(ecart_gasoil)  > SEUIL_FRAUDE_LITRES)
 
     const statut = aFraude ? 'alerte' : 'termine'
+    let fraudeMsg = null
 
     // Mettre à jour le service
     const updated = await client.query(
@@ -127,18 +129,23 @@ const terminerService = async (user, serviceId, data, photoUrl, app) => {
         parties.push(`Gasoil: écart ${ecart_gasoil > 0 ? '+' : ''}${ecart_gasoil.toFixed(1)}L`)
       }
 
-      const message = `Fraude potentielle — ${nomPompiste} — ${parties.join(' | ')}`
+      fraudeMsg = `Fraude potentielle — ${nomPompiste} — ${parties.join(' | ')}`
 
       await client.query(
         `INSERT INTO alertes (station_id, type, message) VALUES ($1, 'FRAUDE', $2)`,
-        [station_id, message]
+        [station_id, fraudeMsg]
       )
 
-      if (app) notifyAlerte(app, station_id, { type: 'FRAUDE', message })
+      if (app) notifyAlerte(app, station_id, { type: 'FRAUDE', message: fraudeMsg })
       logger.warn(`Alerte fraude — Station ${station_id} — ${nomPompiste}: ${parties.join(', ')}`)
     }
 
     await client.query('COMMIT')
+
+    // 🔔 Notification in-app (cloche) owner/gérant
+    if (fraudeMsg) {
+      notifierStation(station_id, { titre: 'Fraude pompiste détectée', corps: fraudeMsg, type: 'alerte', lienUrl: '/alertes' }, app)
+    }
 
     return { service: updated.rows[0], ventes: ventesByType, alerte_fraude: aFraude }
   } catch (err) {

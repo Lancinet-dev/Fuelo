@@ -5,6 +5,7 @@
 const pool   = require('../config/database')
 const logger = require('../utils/logger')
 const { notifyAlerte, notifyGps } = require('../utils/socketNotify')
+const { notifierStation } = require('./notificationService')
 
 // Distance Haversine entre deux points GPS (en mètres)
 function distanceM(lat1, lng1, lat2, lng2) {
@@ -88,6 +89,7 @@ const ajouterPosition = async (trajet_id, chauffeur_id, { lat, lng, vitesse, pre
       const msg = `Vitesse excessive — ${nomChauffeur} — ${Math.round(vit)} km/h (Trajet #${trajet_id})`
       await pool.query(`INSERT INTO alertes (station_id, type, message) VALUES ($1, 'VITESSE_EXCESSIVE', $2)`, [trajet.station_id, msg])
       if (app) notifyAlerte(app, trajet.station_id, { type: 'VITESSE_EXCESSIVE', message: msg })
+      notifierStation(trajet.station_id, { titre: 'Vitesse excessive', corps: msg, type: 'alerte', lienUrl: '/trajets' }, app)
     }
   }
 
@@ -105,6 +107,7 @@ const ajouterPosition = async (trajet_id, chauffeur_id, { lat, lng, vitesse, pre
         const msg = `Sortie de zone — ${nomChauffeur} — Zone "${zone.nom}" — ${(distZone/1000).toFixed(1)} km du centre (Trajet #${trajet_id})`
         await pool.query(`INSERT INTO alertes (station_id, type, message) VALUES ($1, 'SORTIE_GEOFENCING', $2)`, [trajet.station_id, msg])
         if (app) notifyAlerte(app, trajet.station_id, { type: 'SORTIE_GEOFENCING', message: msg })
+        notifierStation(trajet.station_id, { titre: 'Sortie de zone', corps: msg, type: 'alerte', lienUrl: '/trajets' }, app)
         logger.warn(`Géofencing — Trajet ${trajet_id} hors zone "${zone.nom}"`)
       }
     }
@@ -133,6 +136,7 @@ const ajouterPosition = async (trajet_id, chauffeur_id, { lat, lng, vitesse, pre
         await pool.query(`INSERT INTO alertes (station_id, type, message) VALUES ($1, 'ARRET_SUSPECT', $2)`, [trajet.station_id, msg])
         await pool.query(`UPDATE trajets SET alerte_arret_at = NOW() WHERE id = $1`, [trajet_id])
         if (app) notifyAlerte(app, trajet.station_id, { type: 'ARRET_SUSPECT', message: msg })
+        notifierStation(trajet.station_id, { titre: 'Arrêt suspect', corps: msg, type: 'alerte', lienUrl: '/trajets' }, app)
         logger.warn(`Arrêt suspect — Trajet ${trajet_id}`)
       }
     }
@@ -255,6 +259,7 @@ const validerQrArrivee = async (user, { qr_code }, app) => {
       [trajet.station_id, msg]
     )
     if (app) notifyAlerte(app, trajet.station_id, { type: 'FRAUDE_CITERNE', message: msg })
+    notifierStation(trajet.station_id, { titre: 'Fraude citerne', corps: msg, type: 'alerte', lienUrl: '/trajets' }, app)
     logger.warn(`Fraude citerne — Trajet ${trajet.id}: ${msg}`)
   }
 

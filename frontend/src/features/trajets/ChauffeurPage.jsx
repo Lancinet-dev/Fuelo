@@ -10,6 +10,7 @@ import { useCiternes }   from '../../hooks/useTrajets'
 import { useParametres } from '../../hooks/useParametres'
 import { compressImage } from '../../utils/compressImage'
 import MessagesButton from '../../ui/MessagesButton'
+import NotifCenter    from '../../ui/NotifCenter'
 
 // ── Palette dark fixe — identité chauffeur ────────
 const C = {
@@ -557,6 +558,7 @@ export default function ChauffeurPage() {
             </div>
             <span className="chauffeur-user-name" style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{user?.nom}</span>
           </div>
+          <NotifCenter size={32} color={C.sub} bg="rgba(255,255,255,0.06)" border={C.border} />
           <MessagesButton color={C.sub} bg="rgba(255,255,255,0.06)" border={C.border} />
           <button onClick={logout}
             style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'rgba(239,68,68,0.8)' }}>

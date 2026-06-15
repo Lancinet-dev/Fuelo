@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext'
 import AppLayout from '../ui/AppLayout'
 import PageLoader from '../ui/PageLoader'
 import ErrorBoundary from '../ui/ErrorBoundary'
-import MessageNotifier from '../ui/MessageNotifier'
+import RealtimeNotifier from '../ui/RealtimeNotifier'
 import ComptableLayout from '../features/comptable/ComptableLayout'
 import { PlanGatePage } from '../ui/PlanGate'
 
@@ -87,7 +87,7 @@ function PublicRoute({ children }) {
 export default function Router() {
   return (
     <BrowserRouter>
-      <MessageNotifier />
+      <RealtimeNotifier />
       <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
         <Routes>

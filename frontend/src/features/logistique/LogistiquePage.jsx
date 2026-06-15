@@ -6,6 +6,7 @@ import { useState, useEffect, useRef, useMemo, lazy, Suspense, useCallback } fro
 import EmptyState from '../../ui/EmptyState'
 import { SkeletonStyle, SkeletonCard } from '../../ui/Skeleton'
 import MessagesButton from '../../ui/MessagesButton'
+import NotifCenter    from '../../ui/NotifCenter'
 import { useAuth }    from '../../context/AuthContext'
 import { PlanGatePage } from '../../ui/PlanGate'
 import { useTrajets, useGpsPoints, useCiternes } from '../../hooks/useTrajets'
@@ -1055,6 +1056,7 @@ function LogistiquePageContent() {
               <span className="log-user-txt" style={{ fontSize: 11, color: H_SUB, fontWeight: 500 }}>{user?.nom}</span>
             </div>
 
+            <NotifCenter size={30} color={H_MUTED} bg={H_CHIP} border={H_BORDER} />
             <MessagesButton size={30} color={H_MUTED} bg={H_CHIP} border={H_BORDER} />
 
             <button onClick={logout}

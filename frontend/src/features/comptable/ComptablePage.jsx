@@ -8,6 +8,8 @@ import {
 } from 'recharts'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
+import MessagesButton from '../../ui/MessagesButton'
+import NotifCenter    from '../../ui/NotifCenter'
 import {
   useDashboardComptable, useAchats, useCreateAchat, useUpdateAchat, useDeleteAchat,
   useBL, useCreateBL, useSiginerBL,
@@ -118,6 +120,8 @@ export default function ComptablePage() {
             {readOnly && (
               <span style={{ padding: '4px 10px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 6, fontSize: 11, color: '#f59e0b', fontWeight: 600, letterSpacing: 0.5 }}>LECTURE SEULE</span>
             )}
+            <NotifCenter size={34} color={palette.textSub} bg={palette.hover} border={palette.cardBorder} />
+            <MessagesButton size={34} color={palette.textSub} bg={palette.hover} border={palette.cardBorder} />
           </div>
         </div>
         {/* Tabs */}

@@ -5,6 +5,7 @@
 const pool   = require('../config/database')
 const logger = require('../utils/logger')
 const { notifyVente, notifyAlerte, notifyStock } = require('../utils/socketNotify')
+const { notifierStation } = require('./notificationService')
 
 // ── Créer une vente (logique ACID complète) ──────────
 const createVente = async (user, data, app) => {
@@ -63,17 +64,18 @@ const createVente = async (user, data, app) => {
     // 5. Vérifier seuil alerte (seuil déjà lu plus haut, pas de requête en plus)
     const seuilMin  = parseFloat(type === 'essence' ? station.seuil_essence : station.seuil_gasoil)
     let alertCreee  = false
+    let alertMsg    = null
 
     if (stockRestant <= seuilMin) {
-      const msg = `Stock ${type} faible: ${stockRestant.toFixed(1)}L restants (seuil: ${seuilMin}L)`
+      alertMsg = `Stock ${type} faible: ${stockRestant.toFixed(1)}L restants (seuil: ${seuilMin}L)`
       await client.query(
         `INSERT INTO alertes (station_id, type, message) VALUES ($1, 'STOCK_FAIBLE', $2)`,
-        [station_id, msg]
+        [station_id, alertMsg]
       )
       alertCreee = true
 
       // 🔔 Notifier alerte stock en temps réel
-      if (app) notifyAlerte(app, station_id, { type, message: msg })
+      if (app) notifyAlerte(app, station_id, { type, message: alertMsg })
     }
 
     await client.query('COMMIT')
@@ -82,6 +84,13 @@ const createVente = async (user, data, app) => {
     if (app) {
       notifyVente(app, station_id, { ...vente, employe_nom: user.nom })
       notifyStock(app, station_id, { type, quantite: stockRestant })
+    }
+
+    // 🔔 Notification in-app persistante (cloche) pour owner/gérant
+    if (alertMsg) {
+      notifierStation(station_id, {
+        titre: `Stock ${type} faible`, corps: alertMsg, type: 'alerte', lienUrl: '/alertes',
+      }, app)
     }
 
     logger.info(`Vente enregistrée — Station ${station_id} — ${litres}L ${type} — ${montant_gnf} GNF`)
