@@ -3,6 +3,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
+import MessagesButton from '../../ui/MessagesButton'
 
 const NAV_ITEMS = [
   { label: 'Dashboard',        path: '/comptable',              exact: true, icon: <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> },
@@ -71,6 +72,9 @@ export default function ComptableLayout({ children }) {
               </div>
             </div>
           )}
+          <div style={{ display: 'flex', justifyContent: collapsed ? 'center' : 'flex-start', marginBottom: 8 }}>
+            <MessagesButton size={34} color="rgba(255,255,255,0.55)" bg="rgba(255,255,255,0.04)" border="rgba(148,163,184,0.2)" />
+          </div>
           <button onClick={handleLogout} style={{ width: '100%', padding: collapsed ? '10px 0' : '8px 12px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)', borderRadius: 8, color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start', gap: 8, fontSize: 13 }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
             {!collapsed && <span>Déconnexion</span>}

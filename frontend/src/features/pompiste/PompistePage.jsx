@@ -11,6 +11,7 @@ import { useParametres } from '../../hooks/useParametres'
 import { useService }    from '../../hooks/useService'
 import { formatGNF, formatLitres, getStockStatus } from '../../utils/format'
 import { compressImage } from '../../utils/compressImage'
+import MessagesButton from '../../ui/MessagesButton'
 
 // ── Palette dark fixe — identité pompiste ────────
 const C = {
@@ -439,6 +440,7 @@ export default function PompistePage() {
             </div>
             <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{user?.nom}</span>
           </div>
+          <MessagesButton color={C.sub} bg="rgba(255,255,255,0.06)" border={C.border} />
           <button onClick={logout}
             style={{ width: 32, height: 32, borderRadius: 8, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: 'rgba(239,68,68,0.8)' }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>

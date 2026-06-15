@@ -75,4 +75,17 @@ const notifyGps = (app, station_id, data) => {
   }
 }
 
-module.exports = { notifyAlerte, notifyVente, notifyStock, notifyGps }
+// ── Messagerie — émet un event vers les rooms privées des destinataires ──
+// (chaque membre d'une conversation a sa room `user_${id}` assignée au login).
+// Garantit que seuls les membres reçoivent le message en temps réel.
+const emitToUsers = (app, userIds, event, data) => {
+  try {
+    const io = app.get('io')
+    if (!io || !Array.isArray(userIds)) return
+    userIds.forEach(uid => io.to(`user_${uid}`).emit(event, data))
+  } catch (err) {
+    console.error('Socket emitToUsers error:', err.message)
+  }
+}
+
+module.exports = { notifyAlerte, notifyVente, notifyStock, notifyGps, emitToUsers }

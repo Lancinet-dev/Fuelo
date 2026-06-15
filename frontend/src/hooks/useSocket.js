@@ -24,6 +24,8 @@ export function useSocket() {
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionAttempts: 5,
+        // Token JWT → le serveur assigne la room privée user_${id} (messagerie)
+        auth: { token: localStorage.getItem('fuelo_token') },
       })
     }
 

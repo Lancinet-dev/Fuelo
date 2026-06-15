@@ -44,6 +44,7 @@ const PerformancesPage       = lazy(() => import('../features/performances/Perfo
 const AntiFraudePage         = lazy(() => import('../features/anti-fraude/AntiFraudePage'))
 const ComptablePage          = lazy(() => import('../features/comptable/ComptablePage'))
 const ActivitePage           = lazy(() => import('../features/activite/ActivitePage'))
+const MessagesPage           = lazy(() => import('../features/messages/MessagesPage'))
 
 // ── Garde routes protégées ────────────────────────────
 function PrivateRoute({ children, allowedRoles }) {
@@ -132,6 +133,13 @@ export default function Router() {
               <ComptableLayout>
                 <ComptablePage />
               </ComptableLayout>
+            </PrivateRoute>
+          } />
+
+          {/* Messagerie — accessible à TOUS les rôles authentifiés (layout dédié) */}
+          <Route path="/messages" element={
+            <PrivateRoute>
+              <MessagesPage />
             </PrivateRoute>
           } />
 

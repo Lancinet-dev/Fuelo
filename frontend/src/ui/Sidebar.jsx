@@ -13,6 +13,7 @@ import { usePlan, PLAN_COLORS, FEATURE_PLAN_REQUIS } from '../hooks/usePlan'
 import { useParametres } from '../hooks/useParametres'
 import { usePerformancesBadge } from '../hooks/usePerformances'
 import { useNotifications } from '../hooks/useNotifications'
+import { useUnreadMessages } from '../hooks/useMessages'
 import NotificationsPanel, { NotifBell } from './NotificationsPanel'
 import { useUpgradeModal } from './PlanGate'
 
@@ -39,6 +40,7 @@ const ALL_NAV = [
   { path: '/stock',       label: 'Stock',            roles: ['owner', 'gerant'], d: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', ownerReadOnly: true },
   { path: '/ventes',      label: 'Ventes',           roles: ['owner', 'gerant'], d: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', ownerReadOnly: true },
   { path: '/alertes',     label: 'Alertes',          roles: ['owner', 'gerant'], d: 'M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01' },
+  { path: '/messages',    label: 'Messages',         roles: ['owner', 'gerant', 'superadmin'], d: 'M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z' },
   { path: '/services',    label: 'Services',         roles: ['owner', 'gerant'], d: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', ownerReadOnly: true, planRequired: 'services' },
   { path: '/trajets',     label: 'GPS Citernes',     roles: ['owner'], d: 'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0zM12 10m-3 0a3 3 0 106 0 3 3 0 00-6 0', planRequired: 'trajets' },
   { path: '/employes',    label: 'Employés',         roles: ['owner', 'gerant'], d: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75M9 7a4 4 0 100 8 4 4 0 000-8z' },
@@ -52,7 +54,7 @@ const ALL_NAV = [
   { path: '/abonnements',  label: 'Mon abonnement',  roles: ['owner'], d: 'M3 3h18v18H3zM3 9h18M9 21V9' },
 ]
 
-function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logout, onSearch, user, role, isDark, toggle, palette, notifNb = 0, onBellClick }) {
+function Content({ alertesNb, messagesNb = 0, navItems, location, navigate, setMobileOpen, logout, onSearch, user, role, isDark, toggle, palette, notifNb = 0, onBellClick }) {
   const { plan, colors, canAccess } = usePlan()
   const { parametres }   = useParametres()
   const { data: badgeData } = usePerformancesBadge()
@@ -166,6 +168,11 @@ function Content({ alertesNb, navItems, location, navigate, setMobileOpen, logou
               {isAlerte && alertesNb > 0 && (
                 <span style={{ background: '#EF4444', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 20, padding: '2px 7px', boxShadow: '0 0 0 1px rgba(239,68,68,0.3), 0 2px 8px rgba(239,68,68,0.4)' }}>
                   {alertesNb}
+                </span>
+              )}
+              {item.path === '/messages' && messagesNb > 0 && (
+                <span style={{ background: '#10B981', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 20, padding: '2px 7px', boxShadow: '0 0 0 1px rgba(16,185,129,0.3), 0 2px 8px rgba(16,185,129,0.4)' }}>
+                  {messagesNb}
                 </span>
               )}
               {item.badge === 'performances' && performancesBadge > 0 && (
@@ -326,13 +333,14 @@ export default function Sidebar({ alertesNb = 0, onSearch }) {
   const [notifPanelOpen,  setNotifPanelOpen]  = useState(false)
 
   const { nonLues } = useNotifications()
+  const messagesNb  = useUnreadMessages()
 
   const userRole = normalizeRole(role)
   const navItems = ALL_NAV.filter((item) => item.roles.includes(userRole || 'gerant'))
 
   const doLogout = () => { authLogout(); navigate('/login') }
 
-  const contentProps = { alertesNb, navItems, location, navigate, setMobileOpen, logout: () => setConfirmLogout(true), onSearch, user, role: userRole, isDark, toggle, palette, notifNb: nonLues, onBellClick: () => setNotifPanelOpen(o => !o) }
+  const contentProps = { alertesNb, messagesNb, navItems, location, navigate, setMobileOpen, logout: () => setConfirmLogout(true), onSearch, user, role: userRole, isDark, toggle, palette, notifNb: nonLues, onBellClick: () => setNotifPanelOpen(o => !o) }
 
   return (
     <>

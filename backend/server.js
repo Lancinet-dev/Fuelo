@@ -23,6 +23,7 @@ const helmet       = require('helmet')
 const compression  = require('compression')
 const cookieParser = require('cookie-parser')
 const passport     = require('./config/passport')
+const jwt          = require('jsonwebtoken')
 const logger       = require('./utils/logger')
 
 const app    = express()
@@ -51,12 +52,50 @@ const io = new Server(server, {
 
 app.set('io', io)
 
+// Authentification socket par JWT — la room `user_${id}` est assignée par le
+// serveur (et non par le client) pour garantir la privacité des messages directs.
+// On n'échoue pas si le token est absent/invalide : le socket reste connecté en
+// "anonyme" (events station publics) pour ne rien casser de l'existant.
+io.use((socket, next) => {
+  try {
+    const token = socket.handshake.auth?.token
+    if (token) socket.user = jwt.verify(token, process.env.JWT_SECRET)
+  } catch { /* token invalide → socket anonyme */ }
+  next()
+})
+
 io.on('connection', (socket) => {
   logger.info(`🔌 Socket connecté: ${socket.id}`)
+
+  // Room privée par utilisateur (messagerie)
+  if (socket.user?.id) socket.join(`user_${socket.user.id}`)
+
   socket.on('join_station', (station_id) => {
     socket.join(`station_${station_id}`)
     logger.info(`Socket ${socket.id} rejoint station_${station_id}`)
   })
+
+  // Indicateur "en train d'écrire" — relayé uniquement aux destinataires fournis
+  // (membres de la conversation, connus côté client via l'API autorisée)
+  socket.on('message:typing', ({ conversation_id, recipients }) => {
+    if (!socket.user?.id || !Array.isArray(recipients)) return
+    recipients
+      .filter(uid => uid !== socket.user.id)
+      .forEach(uid => io.to(`user_${uid}`).emit('message:typing', {
+        conversation_id,
+        sender_id: socket.user.id,
+        nom:       socket.user.nom,
+      }))
+  })
+  socket.on('message:stop_typing', ({ conversation_id, recipients }) => {
+    if (!socket.user?.id || !Array.isArray(recipients)) return
+    recipients
+      .filter(uid => uid !== socket.user.id)
+      .forEach(uid => io.to(`user_${uid}`).emit('message:stop_typing', {
+        conversation_id, sender_id: socket.user.id,
+      }))
+  })
+
   socket.on('disconnect', () => {
     logger.info(`🔌 Socket déconnecté: ${socket.id}`)
   })
@@ -276,6 +315,34 @@ pool.query(`
   );
   CREATE INDEX IF NOT EXISTS idx_notifications_user    ON notifications(user_id, created_at DESC);
   CREATE INDEX IF NOT EXISTS idx_notifications_user_lu ON notifications(user_id, lu);
+  CREATE TABLE IF NOT EXISTS conversations (
+    id          SERIAL PRIMARY KEY,
+    station_id  INTEGER REFERENCES stations(id) ON DELETE CASCADE,
+    type        VARCHAR(20) DEFAULT 'direct',
+    nom         VARCHAR(100),
+    created_by  INTEGER REFERENCES users(id),
+    created_at  TIMESTAMP DEFAULT NOW()
+  );
+  CREATE TABLE IF NOT EXISTS conversation_membres (
+    id              SERIAL PRIMARY KEY,
+    conversation_id INTEGER REFERENCES conversations(id) ON DELETE CASCADE,
+    user_id         INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    derniere_lecture TIMESTAMP DEFAULT NOW(),
+    UNIQUE (conversation_id, user_id)
+  );
+  CREATE TABLE IF NOT EXISTS messages (
+    id              SERIAL PRIMARY KEY,
+    conversation_id INTEGER REFERENCES conversations(id) ON DELETE CASCADE,
+    sender_id       INTEGER REFERENCES users(id),
+    contenu         TEXT,
+    type            VARCHAR(20) DEFAULT 'texte',
+    fichier_url     VARCHAR(500),
+    lu_par          INTEGER[] DEFAULT '{}',
+    created_at      TIMESTAMP DEFAULT NOW()
+  );
+  CREATE INDEX IF NOT EXISTS idx_messages_conv          ON messages(conversation_id, created_at DESC);
+  CREATE INDEX IF NOT EXISTS idx_conv_membres_user      ON conversation_membres(user_id);
+  CREATE INDEX IF NOT EXISTS idx_conversations_station  ON conversations(station_id);
 `).catch(err => logger.error('Migration startup error:', err.message))
 
 // ── Rate limiting ─────────────────────────────────────
@@ -303,6 +370,7 @@ const comptableRoutes       = require('./routes/comptable')
 const geofencingRoutes      = require('./routes/geofencing')
 const notificationsRoutes   = require('./routes/notificationsRoute')
 const activiteRoutes        = require('./routes/activiteRoute')
+const messageRoutes         = require('./routes/messages')
 
 app.use('/api/auth',      limiterAuth, authRoutes)
 app.use('/api/stock',     stockRoutes)
@@ -324,6 +392,7 @@ app.use('/api/comptable',     comptableRoutes)
 app.use('/api/geofencing',    geofencingRoutes)
 app.use('/api/notifications', notificationsRoutes)
 app.use('/api/activite',     activiteRoutes)
+app.use('/api/messages',     messageRoutes)
 
 // ── Route test ────────────────────────────────────────
 app.get('/', (req, res) => {

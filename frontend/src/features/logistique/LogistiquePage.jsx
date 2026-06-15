@@ -5,6 +5,7 @@
 import { useState, useEffect, useRef, useMemo, lazy, Suspense, useCallback } from 'react'
 import EmptyState from '../../ui/EmptyState'
 import { SkeletonStyle, SkeletonCard } from '../../ui/Skeleton'
+import MessagesButton from '../../ui/MessagesButton'
 import { useAuth }    from '../../context/AuthContext'
 import { PlanGatePage } from '../../ui/PlanGate'
 import { useTrajets, useGpsPoints, useCiternes } from '../../hooks/useTrajets'
@@ -1053,6 +1054,8 @@ function LogistiquePageContent() {
               </div>
               <span className="log-user-txt" style={{ fontSize: 11, color: H_SUB, fontWeight: 500 }}>{user?.nom}</span>
             </div>
+
+            <MessagesButton size={30} color={H_MUTED} bg={H_CHIP} border={H_BORDER} />
 
             <button onClick={logout}
               style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'rgba(239,68,68,0.8)', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', padding: '5px 10px', transition: 'all 0.15s' }}
