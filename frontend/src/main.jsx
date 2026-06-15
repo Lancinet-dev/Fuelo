@@ -13,6 +13,7 @@ import { Toaster }       from 'react-hot-toast'
 import { registerSW }    from 'virtual:pwa-register'
 import { AuthProvider }  from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
+import { LanguageProvider } from './context/LanguageContext'
 import NetworkStatus     from './ui/NetworkStatus'
 import Router            from './app/router'
 
@@ -131,6 +132,7 @@ document.head.appendChild(styleEl)
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
+      <LanguageProvider>
       <ThemeProvider>
         <AuthProvider>
           <NetworkStatus />
@@ -155,6 +157,7 @@ createRoot(document.getElementById('root')).render(
           />
         </AuthProvider>
       </ThemeProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   </StrictMode>
 )

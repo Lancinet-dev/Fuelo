@@ -13,7 +13,18 @@ import { usePlan, PLAN_COLORS, FEATURE_PLAN_REQUIS } from '../hooks/usePlan'
 import { useParametres } from '../hooks/useParametres'
 import { usePerformancesBadge } from '../hooks/usePerformances'
 import { useUnreadMessages } from '../hooks/useMessages'
+import { useTranslation } from '../hooks/useTranslation'
 import NotifCenter from './NotifCenter'
+
+// Correspondance chemin → clé de traduction (nav.*)
+const NAV_TKEY = {
+  '/admin': 'nav.vueGlobale', '/dashboard': 'nav.dashboard', '/stock': 'nav.stock',
+  '/ventes': 'nav.ventes', '/alertes': 'nav.alertes', '/messages': 'nav.messages',
+  '/services': 'nav.services', '/trajets': 'nav.gpsCiternes', '/employes': 'nav.employes',
+  '/stations': 'nav.stations', '/profile': 'nav.profile', '/parametres': 'nav.parametres',
+  '/performances': 'nav.performances', '/anti-fraude': 'nav.antiFraude',
+  '/comptabilite': 'nav.comptabilite', '/activite': 'nav.activite', '/abonnements': 'nav.abonnements',
+}
 import { useUpgradeModal } from './PlanGate'
 
 const normalizeRole = (value = '') => {
@@ -54,6 +65,7 @@ const ALL_NAV = [
 ]
 
 function Content({ alertesNb, messagesNb = 0, navItems, location, navigate, setMobileOpen, logout, onSearch, user, role, isDark, toggle, palette }) {
+  const { t } = useTranslation()
   const { plan, colors, canAccess } = usePlan()
   const { parametres }   = useParametres()
   const { data: badgeData } = usePerformancesBadge()
@@ -109,12 +121,12 @@ function Content({ alertesNb, messagesNb = 0, navItems, location, navigate, setM
           <circle cx="11" cy="11" r="8"/>
           <path d="M21 21l-4.35-4.35"/>
         </svg>
-        <span style={{ flex: 1 }}>Rechercher...</span>
+        <span style={{ flex: 1 }}>{t('common.search')}</span>
         <kbd style={{ fontSize: 9, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 4, padding: '1px 4px', fontFamily: 'monospace', color: palette.textMuted }}>⌘K</kbd>
       </button>
 
       <div style={{ fontSize: 10, fontWeight: 600, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6, paddingLeft: 12 }}>
-        Navigation
+        {t('common.navigation')}
       </div>
 
       <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto', minHeight: 0, padding: '0 8px' }}>
@@ -163,7 +175,7 @@ function Content({ alertesNb, messagesNb = 0, navItems, location, navigate, setM
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d={item.d} />
               </svg>
-              <span style={{ flex: 1 }}>{item.label}</span>
+              <span style={{ flex: 1 }}>{NAV_TKEY[item.path] ? t(NAV_TKEY[item.path]) : item.label}</span>
               {isAlerte && alertesNb > 0 && (
                 <span style={{ background: '#EF4444', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 20, padding: '2px 7px', boxShadow: '0 0 0 1px rgba(239,68,68,0.3), 0 2px 8px rgba(239,68,68,0.4)' }}>
                   {alertesNb}
@@ -251,7 +263,7 @@ function Content({ alertesNb, messagesNb = 0, navItems, location, navigate, setM
                 : <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
               }
             </svg>
-            {isDark ? 'Mode jour' : 'Mode nuit'}
+            {isDark ? t('common.lightMode') : t('common.darkMode')}
           </div>
           <div style={{ width: 34, height: 18, borderRadius: 18, background: isDark ? '#2563EB' : 'rgba(255,255,255,0.12)', position: 'relative', transition: 'background 0.3s ease', flexShrink: 0 }}>
             <motion.div
@@ -272,7 +284,7 @@ function Content({ alertesNb, messagesNb = 0, navItems, location, navigate, setM
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
           </svg>
-          Déconnexion
+          {t('common.logout')}
         </button>
       </div>
     </div>
