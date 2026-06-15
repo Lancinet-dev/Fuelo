@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useEmployes } from '../../hooks/useEmployes'
 import { useTheme }    from '../../context/ThemeContext'
 import { useAuth }     from '../../context/AuthContext'
+import { useTranslation } from '../../hooks/useTranslation'
 import { usePlan }     from '../../hooks/usePlan'
 import { useUpgradeModal } from '../../ui/PlanGate'
 import EmptyState      from '../../ui/EmptyState'
@@ -73,6 +74,7 @@ const ROLE_LABELS = {
 }
 
 function StatusBadge({ actif }) {
+  const { t } = useTranslation()
   return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 5,
@@ -82,12 +84,13 @@ function StatusBadge({ actif }) {
       color: actif ? theme.colors.success : theme.colors.danger,
     }}>
       <span style={{ width: 5, height: 5, borderRadius: '50%', background: actif ? theme.colors.success : theme.colors.danger }} />
-      {actif ? 'Actif' : 'Désactivé'}
+      {actif ? t('employes.actif') : t('employes.inactif')}
     </span>
   )
 }
 
 function ConfirmModal({ employe, onConfirm, onCancel, palette, isDark }) {
+  const { t } = useTranslation()
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -117,11 +120,11 @@ function ConfirmModal({ employe, onConfirm, onCancel, palette, isDark }) {
             </svg>
           </div>
         </div>
-        <div style={{ fontSize: 16, fontWeight: 700, color: palette.text, marginBottom: 8, textAlign: 'center' }}>Supprimer {employe.nom} ?</div>
-        <div style={{ fontSize: 13, color: palette.textSub, marginBottom: 24, textAlign: 'center', lineHeight: 1.6 }}>Cette action est irréversible.</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: palette.text, marginBottom: 8, textAlign: 'center' }}>{t('common.delete')} {employe.nom} ?</div>
+        <div style={{ fontSize: 13, color: palette.textSub, marginBottom: 24, textAlign: 'center', lineHeight: 1.6 }}>{t('employes.irreversible')}</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <button onClick={onCancel} style={{ padding: '11px', borderRadius: theme.radius.button, border: `1px solid ${palette.cardBorder}`, background: 'transparent', color: palette.textSub, cursor: 'pointer', fontFamily: theme.font.family, fontSize: 13 }}>Annuler</button>
-          <button onClick={onConfirm} style={{ padding: '11px', borderRadius: theme.radius.button, border: 'none', background: theme.colors.danger, color: '#fff', cursor: 'pointer', fontFamily: theme.font.family, fontSize: 13, fontWeight: 700 }}>Supprimer</button>
+          <button onClick={onCancel} style={{ padding: '11px', borderRadius: theme.radius.button, border: `1px solid ${palette.cardBorder}`, background: 'transparent', color: palette.textSub, cursor: 'pointer', fontFamily: theme.font.family, fontSize: 13 }}>{t('common.cancel')}</button>
+          <button onClick={onConfirm} style={{ padding: '11px', borderRadius: theme.radius.button, border: 'none', background: theme.colors.danger, color: '#fff', cursor: 'pointer', fontFamily: theme.font.family, fontSize: 13, fontWeight: 700 }}>{t('common.delete')}</button>
         </div>
       </motion.div>
     </motion.div>
@@ -138,6 +141,12 @@ export default function Employes() {
   const config        = ROLE_CONFIG[userRole] ?? ROLE_CONFIG.gerant
 
   const { palette, isDark } = useTheme()
+  const { t } = useTranslation()
+  const rt = ({
+    owner:       { title: 'titleOwner',       sub: 'subOwner',       btn: 'btnOwner' },
+    gerant:      { title: 'titleGerant',      sub: 'subGerant',      btn: 'btnGerant' },
+    logisticien: { title: 'titleLogisticien', sub: 'subLogisticien', btn: 'btnLogisticien' },
+  })[userRole] ?? { title: 'titleGerant', sub: 'subGerant', btn: 'btnGerant' }
   const { employes, loading, createLoading, creerEmploye, toggleEmploye, supprimerEmploye } = useEmployes()
   const { maxEmployes } = usePlan()
   const { showUpgrade, Modal: UpgradeModal } = useUpgradeModal()
@@ -212,10 +221,10 @@ export default function Employes() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 14 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 900, color: palette.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 5 }}>
-            {config.title}
+            {t('employes.' + rt.title)}
           </h1>
           <p style={{ fontSize: 13, color: palette.textSub, margin: 0 }}>
-            {config.subtitle(employes.length)}
+            {employes.length} {t('employes.' + rt.sub)}
             {maxEmployes !== null && ` · ${employes.length}/${maxEmployes} max`}
           </p>
         </div>
@@ -225,12 +234,12 @@ export default function Employes() {
               if (limitEmployesAtteinte) return showUpgrade('performances')
               resetForm(); setShowForm(v => !v)
             }}
-            title={limitEmployesAtteinte ? `Limite de ${maxEmployes} employé(s) atteinte` : config.btnLabel}
+            title={limitEmployesAtteinte ? `Limite de ${maxEmployes} employé(s) atteinte` : t('employes.' + rt.btn)}
             style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: theme.radius.button, border: 'none', background: limitEmployesAtteinte ? palette.hover : theme.colors.primary, color: limitEmployesAtteinte ? palette.textMuted : '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: theme.font.family, boxShadow: limitEmployesAtteinte ? 'none' : theme.shadow.primary, whiteSpace: 'nowrap' }}>
             {limitEmployesAtteinte
               ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
               : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>}
-            {limitEmployesAtteinte ? `Limite atteinte (${maxEmployes} max)` : config.btnLabel}
+            {limitEmployesAtteinte ? `Limite atteinte (${maxEmployes} max)` : t('employes.' + rt.btn)}
           </motion.button>
         )}
       </div>
@@ -259,7 +268,7 @@ export default function Employes() {
                 <div className="fuelo-grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 16 }}>
                   {/* Nom */}
                   <div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Nom complet</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{t('employes.nomComplet')}</div>
                     <input type="text" placeholder="Mamadou Diallo" value={nom}
                       onChange={e => { setNom(e.target.value); setErrors(er => ({ ...er, nom: '' })) }}
                       onFocus={e => { e.target.style.borderColor = theme.colors.primary; e.target.style.boxShadow = `0 0 0 3px ${theme.colors.primaryLight}` }}
@@ -269,7 +278,7 @@ export default function Employes() {
                   </div>
                   {/* Email */}
                   <div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Email</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{t('employes.email')}</div>
                     <input type="email" placeholder="membre@mastation.com" value={email}
                       onChange={e => { setEmail(e.target.value); setErrors(er => ({ ...er, email: '' })) }}
                       onFocus={e => { e.target.style.borderColor = theme.colors.primary; e.target.style.boxShadow = `0 0 0 3px ${theme.colors.primaryLight}` }}
@@ -279,7 +288,7 @@ export default function Employes() {
                   </div>
                   {/* Mot de passe */}
                   <div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Mot de passe</div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{t('employes.motDePasse')}</div>
                     <div style={{ position: 'relative' }}>
                       <input type={showPwd ? 'text' : 'password'} placeholder="Minimum 6 caractères" value={password}
                         onChange={e => { setPassword(e.target.value); setErrors(er => ({ ...er, password: '' })) }}
@@ -326,11 +335,11 @@ export default function Employes() {
                   <motion.button type="submit" disabled={createLoading} whileHover={{ y: createLoading ? 0 : -2 }} whileTap={{ scale: 0.98 }}
                     style={{ padding: '11px 24px', borderRadius: theme.radius.button, border: 'none', background: theme.colors.primary, color: '#fff', fontSize: 13, fontWeight: 700, cursor: createLoading ? 'not-allowed' : 'pointer', fontFamily: theme.font.family, display: 'flex', alignItems: 'center', gap: 8, boxShadow: theme.shadow.primary }}>
                     {createLoading && <div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />}
-                    {createLoading ? 'Création...' : 'Créer le compte'}
+                    {createLoading ? t('employes.creation') : t('employes.creerCompte')}
                   </motion.button>
                   <button type="button" onClick={() => { resetForm(); setShowForm(false) }}
                     style={{ padding: '11px 20px', borderRadius: theme.radius.button, border: `1px solid ${palette.cardBorder}`, background: 'transparent', color: palette.textSub, fontSize: 13, cursor: 'pointer', fontFamily: theme.font.family }}>
-                    Annuler
+                    {t('common.cancel')}
                   </button>
                 </div>
               </form>
@@ -374,7 +383,7 @@ export default function Employes() {
         }}>
           <EmptyState
             type="employes"
-            actionLabel={canManage ? config.btnLabel : undefined}
+            actionLabel={canManage ? t('employes.' + rt.btn) : undefined}
             onAction={canManage ? () => setShowForm(true) : undefined}
           />
         </div>
@@ -440,18 +449,18 @@ export default function Employes() {
                   {/* Statut + ancienneté */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: config.showVentes ? 16 : 18, position: 'relative' }}>
                     <StatusBadge actif={emp.actif} />
-                    <span style={{ fontSize: 11, color: palette.textMuted }}>Depuis {createdDate}</span>
+                    <span style={{ fontSize: 11, color: palette.textMuted }}>{t('employes.depuis')} {createdDate}</span>
                   </div>
 
                   {/* Stats (gérant uniquement) */}
                   {config.showVentes && (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18, position: 'relative' }}>
                       <div style={{ background: palette.hover, borderRadius: theme.radius.md, padding: '10px 14px' }}>
-                        <div style={{ fontSize: 9, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Ventes / jour</div>
+                        <div style={{ fontSize: 9, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{t('employes.ventesJour')}</div>
                         <div style={{ fontSize: 16, fontWeight: 800, color: palette.text, fontFamily: theme.font.mono }}>{emp.nb_ventes_jour ?? 0}</div>
                       </div>
                       <div style={{ background: palette.hover, borderRadius: theme.radius.md, padding: '10px 14px', overflow: 'hidden' }}>
-                        <div style={{ fontSize: 9, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Revenu généré</div>
+                        <div style={{ fontSize: 9, fontWeight: 700, color: palette.textMuted, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>{t('employes.revenuGenere')}</div>
                         <div style={{ fontSize: 16, fontWeight: 800, color: theme.colors.primary, fontFamily: theme.font.mono, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{formatGNF(emp.total_ventes_jour ?? 0)}</div>
                       </div>
                     </div>
@@ -473,7 +482,7 @@ export default function Employes() {
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                           <path d={emp.actif ? 'M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636' : 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'} />
                         </svg>
-                        {emp.actif ? 'Désactiver' : 'Activer'}
+                        {emp.actif ? t('employes.desactiver') : t('employes.activer')}
                       </motion.button>
                       <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.96 }} onClick={() => setToDelete(emp)} title="Supprimer"
                         style={{
