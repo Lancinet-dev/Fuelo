@@ -64,9 +64,12 @@ export default defineConfig({
             },
           },
           {
-            // ── Images Cloudinary (logos, photos) — CacheFirst ──
+            // ── Images Cloudinary (logos, photos) — StaleWhileRevalidate ──
+            // Sert l'image en cache instantanément (offline OK) et revérifie en
+            // arrière-plan → un logo de station modifié apparaît au 2ᵉ affichage,
+            // sans sacrifier la perf ni le hors ligne.
             urlPattern: ({ url }) => url.hostname === 'res.cloudinary.com',
-            handler: 'CacheFirst',
+            handler: 'StaleWhileRevalidate',
             options: {
               cacheName: 'fuelo-images',
               expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 24 * 30 }, // 30 jours
