@@ -9,27 +9,42 @@ const { notifyVente, notifyAlerte, notifyStock } = require('../utils/socketNotif
 // ── Créer une vente (logique ACID complète) ──────────
 const createVente = async (user, data, app) => {
   const { station_id, id: user_id } = user
-  const { type, litres, montant_gnf } = data
+  const { type, litres } = data
 
   const client = await pool.connect()
 
   try {
     await client.query('BEGIN')
 
-    // 1. Vérifier stock suffisant
+    // 1. Verrouiller le stock + lire prix/seuils de la station dans la même
+    //    transaction (cohérence + une seule requête au lieu de deux)
     const stockResult = await client.query(
       'SELECT quantite FROM stocks WHERE station_id = $1 AND type = $2 FOR UPDATE',
       [station_id, type]
     )
-
     if (!stockResult.rows[0]) throw new Error('Stock introuvable pour ce type de carburant')
+
+    const stationResult = await client.query(
+      `SELECT prix_essence, prix_gasoil, seuil_essence, seuil_gasoil
+       FROM stations WHERE id = $1`,
+      [station_id]
+    )
+    if (!stationResult.rows[0]) throw new Error('Station introuvable')
+    const station = stationResult.rows[0]
 
     const stockActuel = parseFloat(stockResult.rows[0].quantite)
     if (stockActuel < litres) {
       throw new Error(`Stock insuffisant. Disponible: ${stockActuel}L — Demandé: ${litres}L`)
     }
 
-    // 2. Déduire du stock
+    // 2. Montant calculé côté serveur depuis le prix configuré — anti-fraude :
+    //    on ne fait jamais confiance au montant envoyé par le client (un pompiste
+    //    pourrait soumettre un montant incohérent avec les litres déclarés)
+    const prixLitre = parseFloat(type === 'essence' ? station.prix_essence : station.prix_gasoil) || 0
+    if (prixLitre <= 0) throw new Error(`Prix du ${type} non configuré — contactez le propriétaire`)
+    const montant_gnf = Math.round(litres * prixLitre)
+
+    // 3. Déduire du stock
     const nouveauStockResult = await client.query(
       `UPDATE stocks SET quantite = quantite - $1, updated_at = NOW()
        WHERE station_id = $2 AND type = $3 RETURNING quantite`,
@@ -37,7 +52,7 @@ const createVente = async (user, data, app) => {
     )
     const stockRestant = parseFloat(nouveauStockResult.rows[0].quantite)
 
-    // 3. Enregistrer la vente
+    // 4. Enregistrer la vente
     const venteResult = await client.query(
       `INSERT INTO ventes (station_id, user_id, type, litres, montant_gnf)
        VALUES ($1, $2, $3, $4, $5) RETURNING *`,
@@ -45,12 +60,8 @@ const createVente = async (user, data, app) => {
     )
     const vente = venteResult.rows[0]
 
-    // 4. Vérifier seuil alerte
-    const seuilCol   = type === 'essence' ? 'seuil_essence' : 'seuil_gasoil'
-    const seuilResult = await client.query(
-      `SELECT ${seuilCol}, nom FROM stations WHERE id = $1`, [station_id]
-    )
-    const seuilMin  = parseFloat(seuilResult.rows[0][seuilCol])
+    // 5. Vérifier seuil alerte (seuil déjà lu plus haut, pas de requête en plus)
+    const seuilMin  = parseFloat(type === 'essence' ? station.seuil_essence : station.seuil_gasoil)
     let alertCreee  = false
 
     if (stockRestant <= seuilMin) {

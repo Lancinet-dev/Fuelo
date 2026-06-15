@@ -35,7 +35,9 @@ const loginSchema = z.object({
 const venteSchema = z.object({
   type:        z.enum(['essence', 'gasoil'], { errorMap: () => ({ message: 'Type doit être essence ou gasoil' }) }),
   litres:      z.number({ invalid_type_error: 'Litres doit être un nombre' }).positive('Litres doit être supérieur à 0'),
-  montant_gnf: z.number({ invalid_type_error: 'Montant doit être un nombre' }).positive('Montant doit être supérieur à 0'),
+  // montant_gnf est recalculé côté serveur (venteService) depuis le prix configuré
+  // de la station — accepté mais ignoré s'il est fourni par le client (anti-fraude)
+  montant_gnf: z.number().positive().optional(),
 })
 
 const livraisonSchema = z.object({

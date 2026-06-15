@@ -6,7 +6,7 @@ const pool      = require('../config/database')
 const Anthropic = require('@anthropic-ai/sdk')
 const logger    = require('../utils/logger')
 
-const MODEL      = 'claude-sonnet-4-20250514'
+const MODEL      = 'claude-sonnet-4-6'   // Sonnet actuel — meilleur rapport qualité/latence/coût pour un assistant chat
 const MAX_TOKENS = 1024
 
 let client = null
