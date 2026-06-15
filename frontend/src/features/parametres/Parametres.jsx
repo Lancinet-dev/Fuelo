@@ -96,7 +96,9 @@ function PwdToggle({ visible, onToggle, palette }) {
 }
 
 // ── Bouton de sauvegarde animé (idle / loading / sauvegardé) ──
-function SaveBtn({ loading, saved, label = 'Sauvegarder' }) {
+function SaveBtn({ loading, saved, label }) {
+  const { t } = useTranslation()
+  const lbl = label || t('parametres.sauvegarder')
   return (
     <motion.button type="submit" disabled={loading} whileHover={{ y: loading ? 0 : -2 }} whileTap={{ scale: 0.97 }}
       style={{
@@ -120,13 +122,14 @@ function SaveBtn({ loading, saved, label = 'Sauvegarder' }) {
             width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.save} /></motion.svg>
         )}
       </AnimatePresence>
-      {loading ? 'Sauvegarde...' : saved ? 'Sauvegardé !' : label}
+      {loading ? `${t('common.loading')}` : saved ? t('parametres.sauvegarde') : lbl}
     </motion.button>
   )
 }
 
 // ── Section logo station ──────────────────────────────
 function LogoSection({ palette, isDark, delay }) {
+  const { t } = useTranslation()
   const fileRef = useRef()
   const [preview, setPreview] = useState(null)
 
@@ -156,8 +159,8 @@ function LogoSection({ palette, isDark, delay }) {
   return (
     <SectionCard
       icon={ICONS.logo}
-      title="Logo de la station"
-      desc="Apparaît dans la sidebar, les exports PDF et Excel"
+      title={t('parametres.logoTitre')}
+      desc={t('parametres.logoDesc')}
       palette={palette} isDark={isDark} delay={delay}
       color={theme.colors.info}
     >
@@ -234,7 +237,7 @@ export default function Parametres() {
   const { user }    = useAuth()
   const { palette, isDark } = useTheme()
   const isOwner     = user?.role === 'owner'
-  const { lang, setLang } = useTranslation()
+  const { t, lang, setLang } = useTranslation()
 
   const [station,        setStation]        = useState({ nom: '', adresse: '', ville: '', pays: '' })
   const [prix,           setPrix]           = useState({ prix_essence: 10000, prix_gasoil: 9000 })
@@ -350,15 +353,15 @@ const handlePwdSave = async (e) => {
     <div style={{ padding: '32px 28px', maxWidth: 700, margin: '0 auto' }} className="fuelo-params">
 
       <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: theme.font.size['2xl'], fontWeight: theme.font.weight.black, color: palette.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 4 }}>Paramètres</h1>
-        <p style={{ fontSize: theme.font.size.md, color: palette.textSub, margin: 0 }}>Gérez votre station et votre compte</p>
+        <h1 style={{ fontSize: theme.font.size['2xl'], fontWeight: theme.font.weight.black, color: palette.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 4 }}>{t('parametres.title')}</h1>
+        <p style={{ fontSize: theme.font.size.md, color: palette.textSub, margin: 0 }}>{t('parametres.subtitle')}</p>
       </motion.div>
 
       {/* Logo station — owner uniquement */}
       {isOwner && <LogoSection palette={palette} isDark={isDark} delay={dLogo} />}
 
       {/* Infos station */}
-      <SectionCard icon={ICONS.station} title="Informations de la station" desc="Ces informations apparaissent sur vos rapports PDF" palette={palette} isDark={isDark} delay={dStation} color={theme.colors.primary}>
+      <SectionCard icon={ICONS.station} title={t('parametres.infosStation')} desc={t('parametres.infosStationDesc')} palette={palette} isDark={isDark} delay={dStation} color={theme.colors.primary}>
         <form onSubmit={handleStationSave}>
           <Field label="Nom de la station" value={station.nom} onChange={setS('nom')} placeholder="Ex: Station Almamya" error={stationErrors.nom} {...fieldProps} />
           <div className="fuelo-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
@@ -371,7 +374,7 @@ const handlePwdSave = async (e) => {
       </SectionCard>
 
       {/* Prix carburants */}
-      <SectionCard icon={ICONS.prix} title="Prix des carburants" desc="Le pompiste verra ces prix — le montant sera calculé automatiquement" palette={palette} isDark={isDark} delay={dPrix} color={theme.colors.success}>
+      <SectionCard icon={ICONS.prix} title={t('parametres.prixTitre')} desc={t('parametres.prixDesc')} palette={palette} isDark={isDark} delay={dPrix} color={theme.colors.success}>
         <form onSubmit={handlePrixSave}>
           <div style={{ background: `${theme.colors.info}12`, border: `1px solid ${theme.colors.info}28`, borderRadius: theme.radius.md, padding: '12px 16px', marginBottom: 20, fontSize: theme.font.size.sm, color: theme.colors.info, display: 'flex', alignItems: 'center', gap: 8 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.colors.info} strokeWidth="2" strokeLinecap="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0018 8 6 6 0 006 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 018.91 14"/></svg>
@@ -396,7 +399,7 @@ const handlePwdSave = async (e) => {
       </SectionCard>
 
       {/* Seuils alertes */}
-      <SectionCard icon={ICONS.bell} title="Seuils d'alerte stock" desc="Fuelo vous alerte automatiquement quand le stock descend sous ces valeurs" palette={palette} isDark={isDark} delay={dSeuils} color={theme.colors.warning}>
+      <SectionCard icon={ICONS.bell} title={t('parametres.seuilsTitre')} desc={t('parametres.seuilsDesc')} palette={palette} isDark={isDark} delay={dSeuils} color={theme.colors.warning}>
         <form onSubmit={handleSeuilSave}>
           <div style={{ background: `${theme.colors.warning}12`, border: `1px solid ${theme.colors.warning}28`, borderRadius: theme.radius.md, padding: '12px 16px', marginBottom: 20, fontSize: theme.font.size.sm, color: theme.colors.warning, display: 'flex', alignItems: 'center', gap: 8 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={theme.colors.warning} strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
@@ -412,7 +415,7 @@ const handlePwdSave = async (e) => {
       </SectionCard>
 
       {/* Mot de passe */}
-      <SectionCard icon={ICONS.lock} title="Changer le mot de passe" desc="Utilisez un mot de passe fort d'au moins 8 caractères" palette={palette} isDark={isDark} delay={dPwd} color={theme.colors.danger}>
+      <SectionCard icon={ICONS.lock} title={t('parametres.pwdTitre')} desc={t('parametres.pwdDesc')} palette={palette} isDark={isDark} delay={dPwd} color={theme.colors.danger}>
         <form onSubmit={handlePwdSave}>
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>Mot de passe actuel</div>
@@ -461,7 +464,7 @@ const handlePwdSave = async (e) => {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="2" strokeLinecap="round">
             <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
           </svg>
-          <span style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Langue de l'interface</span>
+          <span style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t('parametres.langueInterface')}</span>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {LANGUES_DISPONIBLES.map(l => (
@@ -473,7 +476,7 @@ const handlePwdSave = async (e) => {
           ))}
         </div>
         <div style={{ fontSize: 11, color: palette.textMuted, marginTop: 10 }}>
-          L'interface est entièrement disponible en français. L'anglais est en cours de traduction.
+          {t('parametres.langueNote')}
         </div>
       </motion.div>
 
@@ -489,7 +492,7 @@ const handlePwdSave = async (e) => {
           padding:      '18px 22px',
           boxShadow:    isDark ? theme.shadow.premium : theme.shadow.sm,
         }}>
-        <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>Informations du compte</div>
+        <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 14 }}>{t('parametres.infosCompte')}</div>
         {[
           ['Nom',   user?.nom],
           ['Email', user?.email],
