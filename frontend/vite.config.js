@@ -4,16 +4,17 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { compression } from 'vite-plugin-compression2'
 
 // ── Icônes PWA (Cloudinary) ──────────────────────────
-// On génère de VRAIES icônes carrées dimensionnées (et non l'image brute),
-// sur fond thème #020817 pour fondre les bords.
-//  • purpose "any"      : logo cadré plein carré (c_pad)
-//  • purpose "maskable" : logo réduit à ~80% (zone de sécurité Android moderne)
-//    via 2 transformations chaînées — sinon Android 12/13/14 rogne le logo.
+// Logo DÉTOURÉ (e_background_removal) posé sur le fond bleu nuit de la marque
+// (#020817), carré plein bord à bord → rendu premium quel que soit le masque
+// Android (cercle, squircle…).
+//  • purpose "any"      : logo cadré plein carré.
+//  • purpose "maskable" : logo agrandi pour REMPLIR le cercle de sécurité
+//    (central 80%) via 2 transformations chaînées — sinon Android 12/13/14
+//    rogne le logo ou l'affiche minuscule.
 const CLD = 'https://res.cloudinary.com/de0xeqpj9/image/upload'
 const ICON_SRC = 'v1780821117/Capture_vh0qaw.png'
-const iconAny  = (s) => `${CLD}/c_pad,b_rgb:020817,w_${s},h_${s}/${ICON_SRC}`
-const iconMask = (s) => `${CLD}/c_pad,b_rgb:020817,w_${Math.round(s * 0.8)},h_${Math.round(s * 0.8)}/c_pad,b_rgb:020817,w_${s},h_${s}/${ICON_SRC}`
-const ICON = iconAny(512) // icône générique (apple-touch, favicon runtime…)
+const iconAny  = (s) => `${CLD}/e_background_removal/c_pad,b_rgb:020817,w_${s},h_${s}/${ICON_SRC}`
+const iconMask = (s) => `${CLD}/e_background_removal/c_pad,b_rgb:020817,w_${Math.round(s * 0.8)},h_${Math.round(s * 0.8)}/c_pad,b_rgb:020817,w_${s},h_${s}/${ICON_SRC}`
 
 // https://vite.dev/config/
 export default defineConfig({
