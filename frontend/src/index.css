@@ -34,3 +34,11 @@ img, video, canvas { max-width: 100%; height: auto; }
     -webkit-overflow-scrolling: touch;
   }
 }
+
+/* Utilitaire : masquer un élément non essentiel sur petit écran.
+   Sert à libérer de la place dans les en-têtes des pages dédiées
+   (pompiste/chauffeur/logisticien) pour que le bouton de déconnexion
+   reste toujours entièrement visible. */
+@media (max-width: 480px) {
+  .fuelo-hide-mobile { display: none !important; }
+}

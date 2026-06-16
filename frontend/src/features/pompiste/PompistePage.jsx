@@ -414,21 +414,21 @@ export default function PompistePage() {
 
       {/* ── Header ─────────────────────────────── */}
       <div style={{ background: 'linear-gradient(135deg, #080D18, #0F1622)', borderBottom: `1px solid ${C.green}20`, padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 10, boxShadow: `0 2px 20px rgba(0,0,0,0.4)` }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flexShrink: 1 }}>
           {parametres?.logo_url
-            ? <img src={parametres.logo_url} style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover', border: `1px solid ${C.green}40` }} alt="" />
-            : <div style={{ width: 34, height: 34, background: `linear-gradient(135deg, ${C.green}, #059669)`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 16px ${C.green}40` }}>
+            ? <img src={parametres.logo_url} style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover', border: `1px solid ${C.green}40`, flexShrink: 0 }} alt="" />
+            : <div style={{ width: 34, height: 34, flexShrink: 0, background: `linear-gradient(135deg, ${C.green}, #059669)`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 16px ${C.green}40` }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round">
                   <path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/><path d="M3 11h12"/><path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/><path d="M6 7h4"/>
                 </svg>
               </div>
           }
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#fff' }}>{parametres?.nom ?? 'Fuelo'}</div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{parametres?.nom ?? 'Fuelo'}</div>
             <div style={{ fontSize: 10, color: C.green, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Pompiste</div>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           {serviceActif && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', background: 'rgba(16,185,129,0.12)', border: `1px solid ${C.green}30`, borderRadius: 8 }}>
               <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.green, boxShadow: `0 0 6px ${C.green}`, animation: 'pulse 2s infinite' }} />
@@ -439,7 +439,7 @@ export default function PompistePage() {
             <div style={{ width: 22, height: 22, borderRadius: '50%', background: `${C.green}25`, border: `1px solid ${C.green}50`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, color: C.green }}>
               {(user?.nom || 'P').charAt(0).toUpperCase()}
             </div>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{user?.nom}</span>
+            <span className="fuelo-hide-mobile" style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{user?.nom}</span>
           </div>
           <NotifCenter size={32} color={C.sub} bg="rgba(255,255,255,0.06)" border={C.border} />
           <MessagesButton color={C.sub} bg="rgba(255,255,255,0.06)" border={C.border} />

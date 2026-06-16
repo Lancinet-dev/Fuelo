@@ -530,22 +530,22 @@ export default function ChauffeurPage() {
 
       {/* ── Header ─────────────────────────────── */}
       <div style={{ background: 'linear-gradient(135deg, #090D1A, #111827)', borderBottom: `1px solid ${C.orange}20`, padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 10, boxShadow: '0 2px 20px rgba(0,0,0,0.4)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flexShrink: 1 }}>
           {parametres?.logo_url
-            ? <img src={parametres.logo_url} alt="" style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover', border: `1px solid ${C.orange}40` }} />
-            : <div style={{ width: 34, height: 34, background: `linear-gradient(135deg, ${C.orange}, #D97706)`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 16px ${C.orange}40` }}>
+            ? <img src={parametres.logo_url} alt="" style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover', border: `1px solid ${C.orange}40`, flexShrink: 0 }} />
+            : <div style={{ width: 34, height: 34, flexShrink: 0, background: `linear-gradient(135deg, ${C.orange}, #D97706)`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 16px ${C.orange}40` }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#090D1A" strokeWidth="2.5" strokeLinecap="round">
                   <path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM18.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/>
                 </svg>
               </div>
           }
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#fff' }}>{parametres?.nom ?? 'Fuelo'}</div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{parametres?.nom ?? 'Fuelo'}</div>
             <div style={{ fontSize: 10, color: C.orange, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Chauffeur</div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           {trajetActif && !isAttenteQR && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', background: `${GPS_COLOR}12`, border: `1px solid ${GPS_COLOR}30`, borderRadius: 8 }}>
               <div style={{ width: 6, height: 6, borderRadius: '50%', background: GPS_COLOR, boxShadow: gpsStatus === 'actif' ? `0 0 6px ${GPS_COLOR}` : 'none', animation: gpsStatus === 'actif' ? 'pulse 2s infinite' : 'none' }} />
@@ -685,8 +685,10 @@ export default function ChauffeurPage() {
         .chauffeur-map-container { height: 200px; }
         @media (min-height: 700px) { .chauffeur-map-container { height: 240px; } }
         @media (min-height: 800px) { .chauffeur-map-container { height: 280px; } }
-        @media (max-width: 400px) {
+        @media (max-width: 480px) {
           .chauffeur-user-name { display: none !important; }
+        }
+        @media (max-width: 400px) {
           .chauffeur-infos-grid { grid-template-columns: 1fr 1fr !important; }
         }
       `}</style>
