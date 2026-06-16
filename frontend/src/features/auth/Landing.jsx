@@ -558,7 +558,7 @@ export default function Landing() {
 
   const PROBLEMS = [
     'Vols de carburant par les pompistes — pertes mensuelles invisibles',
-    'Détournements de citernes en cours de livraison',
+    'Vol de carburant au cours du transport',
     'Aucune visibilité en temps réel sur le stock',
     'Rapports manuels, lents et peu fiables',
     'Employés mal encadrés, fraude impossible à prouver',
@@ -646,7 +646,7 @@ export default function Landing() {
       name: 'Aïssatou Diallo', role: 'Gérante — Station Soleil, Conakry', stars: 5,
     },
     {
-      quote: 'Le suivi GPS des citernes m\'a permis de repérer un détournement en cours de livraison. Sans Fuelo, je ne l\'aurais jamais su.',
+      quote: 'Le suivi GPS des citernes m\'a permis de repérer un vol de carburant pendant le transport. Sans Fuelo, je ne l\'aurais jamais su.',
       name: 'Moussa Camara', role: 'Propriétaire — AfriPetrol, Kindia', stars: 5,
     },
     {

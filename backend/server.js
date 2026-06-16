@@ -175,6 +175,8 @@ pool.query(`
   ALTER TABLE trajets          ADD COLUMN IF NOT EXISTS vitesse_moyenne        DECIMAL(5,2);
   ALTER TABLE trajets          ADD COLUMN IF NOT EXISTS vitesse_max            DECIMAL(5,2);
   ALTER TABLE trajets          ADD COLUMN IF NOT EXISTS nb_arrets              INT DEFAULT 0;
+  -- Vocabulaire : "fraude citerne" → "vol de carburant au cours du transport"
+  UPDATE alertes SET type = 'VOL_TRANSPORT' WHERE type = 'FRAUDE_CITERNE';
   CREATE TABLE IF NOT EXISTS zones_geofencing (
     id          SERIAL PRIMARY KEY,
     station_id  INT REFERENCES stations(id) ON DELETE CASCADE,

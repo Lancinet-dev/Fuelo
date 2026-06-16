@@ -175,7 +175,7 @@ const getFlotteStats = async (station_id) => {
     pool.query(`SELECT statut, COUNT(*) AS nb FROM trajets WHERE station_destination_id=$1 AND statut IN ('en_cours','arrive_attente') GROUP BY statut`, [station_id]),
     pool.query(`SELECT COUNT(*) AS nb FROM trajets WHERE station_destination_id=$1 AND statut IN ('arrive','alerte') AND DATE(ended_at)=CURRENT_DATE`, [station_id]),
     pool.query(`SELECT COALESCE(SUM(distance_km),0) AS km FROM trajets WHERE station_destination_id=$1 AND DATE(started_at)=CURRENT_DATE`, [station_id]),
-    pool.query(`SELECT COUNT(*) AS nb FROM alertes WHERE station_id=$1 AND type IN ('ARRET_SUSPECT','VITESSE_EXCESSIVE','SORTIE_GEOFENCING','FRAUDE_CITERNE') AND DATE(created_at)=CURRENT_DATE`, [station_id]),
+    pool.query(`SELECT COUNT(*) AS nb FROM alertes WHERE station_id=$1 AND type IN ('ARRET_SUSPECT','VITESSE_EXCESSIVE','SORTIE_GEOFENCING','VOL_TRANSPORT','FRAUDE_CITERNE') AND DATE(created_at)=CURRENT_DATE`, [station_id]),
   ])
   const statuts = { en_cours: 0, arrive_attente: 0 }
   for (const r of actifs.rows) statuts[r.statut] = parseInt(r.nb)
@@ -252,15 +252,15 @@ const validerQrArrivee = async (user, { qr_code }, app) => {
   if (aFraude) {
     const chauffeurResult = await pool.query(`SELECT nom FROM users WHERE id = $1`, [trajet.chauffeur_id])
     const nom = chauffeurResult.rows[0]?.nom ?? `Chauffeur #${trajet.chauffeur_id}`
-    const msg = `Fraude citerne — ${nom} — Départ: ${trajet.qty_depart}L · Arrivée: ${qtyArrivee}L · Écart: ${ecart.toFixed(1)}L`
+    const msg = `Vol de carburant au cours du transport — ${nom} — Départ: ${trajet.qty_depart}L · Arrivée: ${qtyArrivee}L · Écart: ${ecart.toFixed(1)}L`
 
     await pool.query(
-      `INSERT INTO alertes (station_id, type, message) VALUES ($1, 'FRAUDE_CITERNE', $2)`,
+      `INSERT INTO alertes (station_id, type, message) VALUES ($1, 'VOL_TRANSPORT', $2)`,
       [trajet.station_id, msg]
     )
-    if (app) notifyAlerte(app, trajet.station_id, { type: 'FRAUDE_CITERNE', message: msg })
-    notifierStation(trajet.station_id, { titre: 'Fraude citerne', corps: msg, type: 'alerte', lienUrl: '/trajets' }, app)
-    logger.warn(`Fraude citerne — Trajet ${trajet.id}: ${msg}`)
+    if (app) notifyAlerte(app, trajet.station_id, { type: 'VOL_TRANSPORT', message: msg })
+    notifierStation(trajet.station_id, { titre: 'Vol de carburant — transport', corps: msg, type: 'alerte', lienUrl: '/trajets' }, app)
+    logger.warn(`Vol carburant transport — Trajet ${trajet.id}: ${msg}`)
   }
 
   logger.info(`QR validé — Trajet ${trajet.id} — Écart: ${ecart.toFixed(1)}L — Statut: ${statut}`)

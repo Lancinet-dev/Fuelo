@@ -472,7 +472,8 @@ function TabAlertes({ palette }) {
   }
 
   const CFG = {
-    FRAUDE_CITERNE: { type: 'truck',  label: 'Fraude citerne', color: '#EF4444' },
+    VOL_TRANSPORT:  { type: 'truck',  label: 'Vol transport',  color: '#EF4444' },
+    FRAUDE_CITERNE: { type: 'truck',  label: 'Vol transport',  color: '#EF4444' }, // ancien libellé (rétrocompat)
     ARRET_SUSPECT:  { type: 'pause',  label: 'Arrêt suspect',  color: '#D97706' },
   }
   const renderCfgIcon = (cfgType, color) => {

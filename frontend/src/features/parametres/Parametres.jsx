@@ -409,7 +409,7 @@ const handlePwdSave = async (e) => {
             <Field label="Seuil Essence" type="number" value={seuils.seuil_essence} onChange={setQ('seuil_essence')} placeholder="300" suffix="Litres" hint="Recommandé : 300 L" {...fieldProps} />
             <Field label="Seuil Gasoil"  type="number" value={seuils.seuil_gasoil}  onChange={setQ('seuil_gasoil')}  placeholder="300" suffix="Litres" hint="Recommandé : 300 L" {...fieldProps} />
           </div>
-          <Field label="Seuil fraude citerne" type="number" value={seuils.seuil_fraude_citerne} onChange={setQ('seuil_fraude_citerne')} placeholder="50" suffix="Litres" hint="Alerte si écart départ/arrivée dépasse ce seuil" {...fieldProps} />
+          <Field label="Seuil vol transport" type="number" value={seuils.seuil_fraude_citerne} onChange={setQ('seuil_fraude_citerne')} placeholder="50" suffix="Litres" hint="Alerte si écart départ/arrivée dépasse ce seuil" {...fieldProps} />
           <SaveBtn loading={seuilLoading} saved={seuilSaved} label="Enregistrer les seuils" />
         </form>
       </SectionCard>

@@ -411,7 +411,7 @@ function AlerteCard({ alerte, index, palette, isDark, onPreuves, onResoudre, isR
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-          <Badge label={isPompiste ? 'Fraude pompiste' : 'Fraude citerne'} color={theme.colors.danger} />
+          <Badge label={isPompiste ? 'Fraude pompiste' : 'Vol transport'} color={theme.colors.danger} />
           <Badge label={resolu ? 'Résolu' : 'En cours'} color={resolu ? theme.colors.success : theme.colors.warning} />
         </div>
       </div>
@@ -637,14 +637,14 @@ export default function AntiFraudePage() {
 
       {/* ── 3. LISTE DES ALERTES FRAUDE ────────────── */}
       <div style={{ marginBottom: 32 }}>
-        <SectionTitle icon={ICONS.alert} title="Alertes fraude" subtitle="Pompistes (FRAUDE) et transport (FRAUDE_CITERNE)" color={theme.colors.danger} palette={palette} />
+        <SectionTitle icon={ICONS.alert} title="Alertes fraude" subtitle="Pompistes (fraude compteur) et vol de carburant au cours du transport" color={theme.colors.danger} palette={palette} />
 
         {/* Filtres */}
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 20 }}>
           <select value={filtres.type} onChange={e => setFiltres(f => ({ ...f, type: e.target.value }))} style={SELECT_STYLE(palette)}>
             <option value="tous">Tous les types</option>
             <option value="FRAUDE">Fraude pompiste</option>
-            <option value="FRAUDE_CITERNE">Fraude citerne</option>
+            <option value="VOL_TRANSPORT">Vol transport</option>
           </select>
           <select value={filtres.statut} onChange={e => setFiltres(f => ({ ...f, statut: e.target.value }))} style={SELECT_STYLE(palette)}>
             <option value="tous">Tous les statuts</option>
@@ -731,12 +731,12 @@ export default function AntiFraudePage() {
         </GlassCard>
       </div>
 
-      {/* ── 6. ALERTES TRANSPORT (FRAUDE_CITERNE) ──── */}
+      {/* ── 6. ALERTES TRANSPORT (VOL_TRANSPORT) ──── */}
       <div style={{ marginBottom: 32 }}>
-        <SectionTitle icon={ICONS.truck} title="Alertes transport — fraude citerne" subtitle="Écarts jauge départ / arrivée et validation QR" color={theme.colors.warning} palette={palette} />
+        <SectionTitle icon={ICONS.truck} title="Vol de carburant au cours du transport" subtitle="Écarts jauge départ / arrivée et validation QR" color={theme.colors.warning} palette={palette} />
         {alertesTransport.length === 0 ? (
           <GlassCard palette={palette} isDark={isDark} style={{ border: `1px dashed ${palette.cardBorder}` }}>
-            <EmptyState type="alertes" title="Aucune fraude citerne détectée" message="Tous les trajets de livraison sont conformes aux quantités déclarées." />
+            <EmptyState type="alertes" title="Aucun vol de carburant détecté" message="Tous les trajets de livraison sont conformes aux quantités déclarées." />
           </GlassCard>
         ) : (
           <div className="fuelo-af-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>

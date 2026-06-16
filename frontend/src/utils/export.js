@@ -895,11 +895,11 @@ export const exportAntiFraudePDF = async (data, nomStation = 'Station', logoUrl 
     didDrawPage: onDrawPage,
   })
 
-  // ── Page 3 — alertes fraude transport (citernes) ───
+  // ── Page 3 — vol de carburant au cours du transport ───
   doc.addPage()
   drawAFHeader()
   doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...C.text)
-  doc.text('Alertes fraude - transport (citernes)', 14, 42)
+  doc.text('Vol de carburant au cours du transport', 14, 42)
 
   autoTable(doc, {
     startY: 46,
@@ -1092,7 +1092,7 @@ export const exportAntiFraudeExcel = async (data, nomStation = 'Station') => {
   ws5.views = [{ state: 'frozen', ySplit: 5 }]
   ws5.properties.tabColor = { argb: XL.orange }
 
-  addTitleBand(ws5, 'FUELO — ALERTES FRAUDE TRANSPORT (CITERNES)', 'A1:J1', XL.orange)
+  addTitleBand(ws5, 'FUELO — VOL DE CARBURANT AU COURS DU TRANSPORT', 'A1:J1', XL.orange)
   addMetaRow(ws5, `Généré le : ${fmtDateXL(new Date())}`, 'A2:J2')
   addMetaRow(ws5, `${alertesTransport.length} alerte(s) — écarts jauge départ/arrivée détectés sur trajet`, 'A3:J3')
   ws5.addRow([]).height = 8

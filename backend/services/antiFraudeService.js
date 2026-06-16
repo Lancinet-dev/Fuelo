@@ -185,10 +185,10 @@ const getDashboard = async (user) => {
     dateFin:   s.ended_at,
   }))
 
-  // ── Liste alertes transport (FRAUDE_CITERNE) ──────
+  // ── Liste alertes transport (VOL_TRANSPORT) ──────
   const alertesTransport = fraudesTrajets.map(t => ({
     id: t.id,
-    type: 'FRAUDE_CITERNE',
+    type: 'VOL_TRANSPORT',
     chauffeurId:   t.chauffeur_id,
     chauffeurNom:  t.chauffeur_nom ?? 'Chauffeur',
     chauffeurActif: t.chauffeur_actif,

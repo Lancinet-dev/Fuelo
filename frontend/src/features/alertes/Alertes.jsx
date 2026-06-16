@@ -17,7 +17,8 @@ import theme from '../../config/theme'
 const TYPE_CONFIG = {
   STOCK_FAIBLE:   { color: theme.colors.danger,   bg: theme.colors.dangerLight,   label: 'Stock faible'     },
   FRAUDE:         { color: '#DC2626',              bg: 'rgba(220,38,38,0.10)',     label: 'Fraude pompiste'  },
-  FRAUDE_CITERNE: { color: '#DC2626',              bg: 'rgba(220,38,38,0.10)',     label: 'Fraude citerne'   },
+  VOL_TRANSPORT:  { color: '#DC2626',              bg: 'rgba(220,38,38,0.10)',     label: 'Vol transport'    },
+  FRAUDE_CITERNE: { color: '#DC2626',              bg: 'rgba(220,38,38,0.10)',     label: 'Vol transport'    },
   ARRET_SUSPECT:  { color: '#D97706',              bg: 'rgba(217,119,6,0.10)',     label: 'Arrêt suspect'    },
   ANOMALIE:       { color: theme.colors.warning,   bg: theme.colors.warningLight,  label: 'Anomalie'         },
   DEFAULT:        { color: theme.colors.info,      bg: theme.colors.infoLight,     label: 'Information'      },
@@ -37,7 +38,7 @@ function AlertIcon({ type, color, size = 20 }) {
       <path d="M13.73 21a2 2 0 01-3.46 0"/>
     </svg>
   )
-  if (type === 'FRAUDE_CITERNE') return (
+  if (type === 'FRAUDE_CITERNE' || type === 'VOL_TRANSPORT') return (
     <svg width={size} height={size} viewBox="0 0 24 24" {...p}>
       <rect x="1" y="3" width="15" height="13"/>
       <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>

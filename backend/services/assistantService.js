@@ -130,9 +130,9 @@ const getContexteStation = async (user) => {
 
   const fraudesTransport = fraudesTransportRes.rows.length
     ? fraudesTransportRes.rows.map(f =>
-        `  • ${f.chauffeur ?? 'Chauffeur'} — écart citerne ${num(f.ecart) > 0 ? '+' : ''}${num(f.ecart).toFixed(1)} L le ${new Date(f.started_at).toLocaleDateString('fr-FR')} (${f.resolu ? 'résolu' : 'en cours'})`
+        `  • ${f.chauffeur ?? 'Chauffeur'} — écart transport ${num(f.ecart) > 0 ? '+' : ''}${num(f.ecart).toFixed(1)} L le ${new Date(f.started_at).toLocaleDateString('fr-FR')} (${f.resolu ? 'résolu' : 'en cours'})`
       ).join('\n')
-    : '  Aucune fraude transport (citerne) détectée récemment.'
+    : '  Aucun vol de carburant au cours du transport détecté récemment.'
 
   return `=== DONNÉES EN TEMPS RÉEL — ${station.nom} ===
 (Prix actuels : essence ${fmtGNF(station.prix_essence)}/L, gasoil ${fmtGNF(station.prix_gasoil)}/L)
@@ -156,7 +156,7 @@ ${alertesCritiques}
 FRAUDES POMPISTES RÉCENTES (anti-fraude compteur) :
 ${fraudesPompistes}
 
-FRAUDES TRANSPORT RÉCENTES (écarts citernes) :
+VOLS DE CARBURANT AU COURS DU TRANSPORT — RÉCENTS (écarts départ/arrivée) :
 ${fraudesTransport}`
 }
 

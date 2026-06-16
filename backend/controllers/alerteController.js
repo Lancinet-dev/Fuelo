@@ -60,7 +60,9 @@ const marquerToutesLues = async (req, res) => {
 }
 
 // ── Alertes transport uniquement (logisticien) ───
-const TYPES_TRANSPORT = ['FRAUDE_CITERNE', 'ARRET_SUSPECT']
+// VOL_TRANSPORT = nouveau libellé. FRAUDE_CITERNE conservé pour les alertes
+// déjà enregistrées avant la migration du vocabulaire (rétrocompatibilité).
+const TYPES_TRANSPORT = ['VOL_TRANSPORT', 'FRAUDE_CITERNE', 'ARRET_SUSPECT']
 
 const getAlertesTransport = async (req, res) => {
   try {
