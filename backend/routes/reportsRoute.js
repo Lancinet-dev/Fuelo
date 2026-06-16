@@ -9,6 +9,7 @@ const verifyToken = require('../middleware/auth')
 const { isOwner } = require('../middleware/checkRole')
 const { envoyerRapportStation } = require('../services/reportService')
 const logger = require('../utils/logger')
+const erreurServeur = require('../utils/erreurServeur')
 
 // Envoyer rapport manuellement pour le mois en cours
 router.post('/envoyer', verifyToken, isOwner, async (req, res) => {
@@ -28,7 +29,7 @@ router.post('/envoyer', verifyToken, isOwner, async (req, res) => {
       res.status(500).json({ error: result.error })
     }
   } catch (err) {
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: erreurServeur(err) })
   }
 })
 

@@ -61,6 +61,22 @@ const ajouterLivraison = async (req, res) => {
          [quantite, station_id, type]
     )
 
+    // Garde-fou : si la station n'a pas encore de ligne stock pour ce type
+    // (station créée avant l'init automatique essence/gasoil), on la crée.
+    if (!result.rows[0]) {
+      const inserted = await pool.query(
+        `INSERT INTO stocks (station_id, type, quantite)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (station_id, type) DO UPDATE SET quantite = stocks.quantite + EXCLUDED.quantite, updated_at = NOW()
+         RETURNING quantite`,
+        [station_id, type, quantite]
+      )
+      return res.json({
+        message: `Livraison de ${quantite}L de ${type} ajoutée`,
+        nouveau_stock: inserted.rows[0].quantite,
+      })
+    }
+
     res.json({
       message: `Livraison de ${quantite}L de ${type} ajoutée`,
       nouveau_stock: result.rows[0].quantite

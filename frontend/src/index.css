@@ -12,3 +12,25 @@ body {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #0F172A; }
 ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+
+/* ───────────────────────────────────────────────
+   Filets de sécurité mobile-first (375px+)
+   L'app utilise des styles inline React : ces règles
+   globales évitent les débordements horizontaux sans
+   casser les mises en page existantes.
+   ─────────────────────────────────────────────── */
+
+/* Images / médias ne débordent jamais de leur conteneur.
+   NB : pas d'`overflow-x: hidden` sur html/body — casserait les
+   en-têtes `position: sticky` utilisés dans plusieurs pages. */
+img, video, canvas { max-width: 100%; height: auto; }
+
+@media (max-width: 768px) {
+  /* Tableaux scrollables horizontalement au lieu de déborder */
+  table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
