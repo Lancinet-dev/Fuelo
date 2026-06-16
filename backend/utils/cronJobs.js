@@ -9,7 +9,7 @@ const { envoyerTousLesRapports } = require('../services/reportService')
 const { lancerBackup }           = require('../services/backupService')
 const { calculerPerformances }   = require('../services/performanceService')
 const { genererRapportHebdo }    = require('../services/weeklyReportService')
-const { notifierStation }        = require('../services/notificationService')
+const { notifierStation, creerNotification } = require('../services/notificationService')
 
 const initCronJobs = () => {
 
@@ -75,6 +75,32 @@ const initCronJobs = () => {
       }
     } catch (err) {
       logger.error('Cron stock check error:', err.message)
+    }
+  }, { timezone: 'Africa/Conakry' })
+
+  // ── Expiration des essais gratuits — chaque jour à 1h00 ─
+  cron.schedule('0 1 * * *', async () => {
+    logger.info('🕐 Cron: Expiration des essais gratuits...')
+    try {
+      const pool = require('../config/database')
+      const r = await pool.query(
+        `UPDATE subscriptions SET statut = 'expired', updated_at = NOW()
+         WHERE statut = 'trial' AND trial_ends_at < NOW()
+         RETURNING owner_id`
+      )
+      if (r.rows.length > 0) {
+        logger.info(`⏳ ${r.rows.length} essai(s) gratuit(s) expiré(s)`)
+        for (const row of r.rows) {
+          await creerNotification(row.owner_id, {
+            titre:   'Votre essai gratuit est terminé',
+            corps:   'Choisissez un plan pour continuer à utiliser Fuelo.',
+            type:    'info',
+            lienUrl: '/abonnements',
+          })
+        }
+      }
+    } catch (err) {
+      logger.error('Cron trial expiry error:', err.message)
     }
   }, { timezone: 'Africa/Conakry' })
 

@@ -208,6 +208,10 @@ ALTER TABLE stations ADD COLUMN IF NOT EXISTS logo_url VARCHAR(500);
 -- Orange Money — référence transaction
 ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS transaction_id VARCHAR(200);
 
+-- Essai gratuit (trial) — fin de la période d'essai 14 jours
+ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS trial_ends_at TIMESTAMP;
+CREATE INDEX IF NOT EXISTS idx_subscriptions_trial ON subscriptions(statut, trial_ends_at);
+
 -- QR code anti-vol transport
 ALTER TABLE trajets ADD COLUMN IF NOT EXISTS qr_code VARCHAR(10);
 ALTER TABLE trajets ADD COLUMN IF NOT EXISTS qr_expires_at TIMESTAMP;

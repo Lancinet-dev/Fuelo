@@ -375,6 +375,36 @@ const getTousAbonnements = async (req, res) => {
   }
 }
 
+// ── GET /abonnements/statut-trial (tous rôles) ───
+const getStatutTrial = async (req, res) => {
+  try {
+    let ownerId
+    if (req.user.role === 'owner' || req.user.role === 'superadmin') {
+      ownerId = req.user.id
+    } else {
+      const r = await pool.query(`SELECT owner_id FROM stations WHERE id = $1`, [req.user.station_id])
+      ownerId = r.rows[0]?.owner_id
+    }
+    if (!ownerId) return res.json({ statut: 'actif', joursRestants: null, plan: 'enterprise' })
+
+    const sub = await pool.query(
+      `SELECT plan, statut, trial_ends_at FROM subscriptions WHERE owner_id = $1`,
+      [ownerId]
+    )
+    if (!sub.rows[0]) return res.json({ statut: 'actif', joursRestants: null, plan: 'starter' })
+
+    const { plan, statut, trial_ends_at } = sub.rows[0]
+    let joursRestants = null
+    if (statut === 'trial' && trial_ends_at) {
+      joursRestants = Math.max(0, Math.ceil((new Date(trial_ends_at).getTime() - Date.now()) / 86_400_000))
+    }
+    res.json({ statut, joursRestants, plan, trial_ends_at })
+  } catch (err) {
+    logger.error('getStatutTrial', err)
+    res.status(500).json({ error: erreurServeur(err) })
+  }
+}
+
 // ── PUT /abonnements/:id/valider (superadmin) ────
 const validerAbonnement = async (req, res) => {
   try {
@@ -403,4 +433,5 @@ module.exports = {
   sandboxSimulate,
   getTousAbonnements,
   validerAbonnement,
+  getStatutTrial,
 }

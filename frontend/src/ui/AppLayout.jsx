@@ -11,10 +11,13 @@ import { useAlertes }       from '../hooks/useAlertes'
 import { useTheme }         from '../context/ThemeContext'
 import { useAuth }          from '../context/AuthContext'
 import { useNotifications } from '../hooks/useNotifications'
+import { useTrialStatus }   from '../hooks/useTrialStatus'
 import SplashScreen         from './SplashScreen'
 import OnboardingModal      from './OnboardingModal'
 import SearchModal          from './SearchModal'
 import AssistantFuelo       from './AssistantFuelo'
+import TrialBanner          from './TrialBanner'
+import TrialExpiredOverlay  from './TrialExpiredOverlay'
 
 const PAGE_TRANSITION = {
   initial:    { opacity: 0, y: 14 },
@@ -28,7 +31,12 @@ const AppLayout = memo(function AppLayout() {
   const { palette }  = useTheme()
   const { user }     = useAuth()
   const location     = useLocation()
+  const { isExpired } = useTrialStatus()
   useNotifications()
+
+  // Overlay de blocage sauf sur les pages encore accessibles (payer / profil)
+  const allowedWhenExpired = ['/abonnements', '/profile']
+  const showExpiredOverlay = isExpired && !allowedWhenExpired.some(p => location.pathname.startsWith(p))
 
   const [showSplash, setShowSplash] = useState(() => {
     const fromLogin = sessionStorage.getItem('fuelo_just_logged_in')
@@ -77,7 +85,11 @@ const AppLayout = memo(function AppLayout() {
         <OnboardingModal user={user} onDone={() => setShowOnboarding(false)} />
       )}
       {searchOpen && <SearchModal onClose={closeSearch} />}
-      <AssistantFuelo />
+      {!isExpired && <AssistantFuelo />}
+
+      <AnimatePresence>
+        {showExpiredOverlay && <TrialExpiredOverlay />}
+      </AnimatePresence>
 
       <div style={{
         display:    'flex',
@@ -86,7 +98,7 @@ const AppLayout = memo(function AppLayout() {
         fontFamily: "'DM Sans', system-ui, sans-serif",
         transition: 'background 0.3s ease',
       }}>
-        <Sidebar alertesNb={nonLues} onSearch={openSearch} />
+        <Sidebar alertesNb={nonLues} onSearch={openSearch} trialExpired={isExpired} />
 
         <main className="fuelo-main" style={{
           marginLeft: '220px',
@@ -95,6 +107,7 @@ const AppLayout = memo(function AppLayout() {
           overflowX:  'hidden',
           transition: 'background 0.3s ease',
         }}>
+          <TrialBanner />
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}

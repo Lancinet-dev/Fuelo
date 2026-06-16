@@ -84,6 +84,14 @@ const register = async (req, res) => {
       [station_id]
     )
 
+    // Essai gratuit : accès Enterprise complet pendant 14 jours
+    await client.query(
+      `INSERT INTO subscriptions (owner_id, plan, statut, trial_ends_at, started_at, updated_at)
+       VALUES ($1, 'enterprise', 'trial', NOW() + INTERVAL '14 days', NOW(), NOW())
+       ON CONFLICT (owner_id) DO NOTHING`,
+      [user.rows[0].id]
+    )
+
     await client.query('COMMIT')
 
     const payload      = { id: user.rows[0].id, station_id, role: user.rows[0].role }

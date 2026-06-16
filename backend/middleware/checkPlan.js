@@ -4,6 +4,7 @@
 // ================================================
 
 const pool   = require('../config/database')
+const jwt    = require('jsonwebtoken')
 const logger = require('../utils/logger')
 
 const PLANS = {
@@ -59,7 +60,9 @@ const getPlanOwner = async (user) => {
     if (!sub.rows[0]) return 'enterprise'
 
     const { plan, statut } = sub.rows[0]
-    if (statut === 'expire' || statut === 'en_attente') return 'starter'
+    // Essai expiré ou suspendu → accès minimal (le blocage dur est géré par blockIfExpired)
+    if (['expire', 'expired', 'en_attente', 'suspendu'].includes(statut)) return 'starter'
+    // 'trial' → l'utilisateur garde l'accès complet du plan stocké (enterprise)
 
     return plan ?? 'starter'
   } catch (err) {
@@ -238,4 +241,43 @@ const checkAssistantLimit = async (req, res, next) => {
   }
 }
 
-module.exports = { checkPlan, checkMaxStations, checkMaxEmployes, checkAssistantLimit, getPlanOwner, PLANS }
+// ── Blocage global si l'essai gratuit est expiré ─────────
+// Monté en amont des routes protégées (sauf /auth et /abonnements) : si la
+// souscription de l'owner est 'expired', toutes les routes renvoient 403.
+// Décode le token lui-même (req.user pas encore posé à ce niveau).
+const blockIfExpired = async (req, res, next) => {
+  try {
+    const authHeader = req.headers['authorization']
+    const token = authHeader && authHeader.split(' ')[1]
+    if (!token) return next()
+
+    let decoded
+    try { decoded = jwt.verify(token, process.env.JWT_SECRET) } catch { return next() }
+    if (decoded.role === 'superadmin') return next()
+
+    let ownerId
+    if (decoded.role === 'owner') {
+      ownerId = decoded.id
+    } else {
+      const r = await pool.query(`SELECT owner_id FROM stations WHERE id = $1`, [decoded.station_id])
+      ownerId = r.rows[0]?.owner_id
+    }
+    if (!ownerId) return next()
+
+    const sub = await pool.query(`SELECT statut FROM subscriptions WHERE owner_id = $1`, [ownerId])
+    if (sub.rows[0]?.statut === 'expired') {
+      return res.status(403).json({
+        error:         'trial_expired',
+        message:       'Votre essai gratuit est terminé. Choisissez un plan pour continuer à utiliser Fuelo.',
+        trial_expired: true,
+        upgrade:       true,
+      })
+    }
+    next()
+  } catch (err) {
+    logger.error('blockIfExpired', err)
+    next()
+  }
+}
+
+module.exports = { checkPlan, checkMaxStations, checkMaxEmployes, checkAssistantLimit, blockIfExpired, getPlanOwner, PLANS }

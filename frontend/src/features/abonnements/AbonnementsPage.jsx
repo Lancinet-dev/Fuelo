@@ -260,8 +260,11 @@ export default function AbonnementsPage() {
   useEffect(() => {
     const status = searchParams.get('status')
     if (status === 'success') {
-      toast.success('Paiement CinetPay confirmé. Activation en cours...', { duration: 8000 })
+      toast.success('Paiement confirmé — bienvenue dans Fuelo ! 🎉', { duration: 7000 })
+      // Déblocage immédiat de l'interface (essai/overlay/plan)
       queryClient.invalidateQueries({ queryKey: ['abonnement'] })
+      queryClient.invalidateQueries({ queryKey: ['trial-status'] })
+      queryClient.invalidateQueries({ queryKey: ['mon-plan'] })
       setSearchParams({})
     } else if (status === 'cancel') {
       toast('Paiement annulé.', { icon: '↩', duration: 4000 })

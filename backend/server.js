@@ -160,6 +160,7 @@ const pool = require('./config/database')
 pool.query(`
   ALTER TABLE stations         ADD COLUMN IF NOT EXISTS logo_url              VARCHAR(500);
   ALTER TABLE stations         ADD COLUMN IF NOT EXISTS seuil_fraude_citerne  FLOAT DEFAULT 50;
+  ALTER TABLE subscriptions    ADD COLUMN IF NOT EXISTS trial_ends_at         TIMESTAMP;
   ALTER TABLE users            ADD COLUMN IF NOT EXISTS refresh_token          VARCHAR(255);
   ALTER TABLE users            ADD COLUMN IF NOT EXISTS refresh_token_expires_at TIMESTAMP;
   ALTER TABLE users            ADD COLUMN IF NOT EXISTS reset_token            VARCHAR(255);
@@ -377,6 +378,7 @@ pool.query(`
 
 // ── Rate limiting ─────────────────────────────────────
 const { limiterGeneral, limiterAuth } = require('./middleware/rateLimit')
+const { blockIfExpired } = require('./middleware/checkPlan')
 app.use(limiterGeneral)
 
 // ── Routes ────────────────────────────────────────────
@@ -403,6 +405,10 @@ const activiteRoutes        = require('./routes/activiteRoute')
 const messageRoutes         = require('./routes/messages')
 
 app.use('/api/auth',      limiterAuth, authRoutes)
+// Abonnements monté AVANT le gate — accessible même quand l'essai est expiré (pour payer)
+app.use('/api/abonnements',   abonnementRoutes)
+// 🔒 Blocage global si l'essai gratuit est expiré (s'applique à toutes les routes suivantes)
+app.use(blockIfExpired)
 app.use('/api/stock',     stockRoutes)
 app.use('/api/ventes',    venteRoutes)
 app.use('/api/alertes',   alerteRoutes)
@@ -412,7 +418,6 @@ app.use('/api/employes',  employeRoutes)
 app.use('/api/services',      serviceRoutes)
 app.use('/api/trajets',       trajetRoutes)
 app.use('/api/citernes',      citerneRoutes)
-app.use('/api/abonnements',   abonnementRoutes)
 app.use('/api/search',        searchRoutes)
 app.use('/api/admin',         adminRoutes)
 app.use('/api/performances',  performanceRoutes)

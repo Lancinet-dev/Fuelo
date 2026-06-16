@@ -13,6 +13,7 @@ const {
   sandboxSimulate,
   getTousAbonnements,
   validerAbonnement,
+  getStatutTrial,
 } = require('../controllers/abonnementController')
 const { getPlanOwner, PLANS } = require('../middleware/checkPlan')
 const erreurServeur = require('../utils/erreurServeur')
@@ -39,6 +40,9 @@ router.get('/mon-plan', verifyToken, async (req, res) => {
     res.status(500).json({ error: erreurServeur(err) })
   }
 })
+
+// Statut de l'essai gratuit — accessible à tous les rôles
+router.get('/statut-trial', verifyToken, getStatutTrial)
 
 router.get('/',           verifyToken, isOwner, getMonPlan)
 router.post('/souscrire', verifyToken, isOwner, souscrire)

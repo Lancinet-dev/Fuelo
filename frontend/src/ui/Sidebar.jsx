@@ -64,7 +64,7 @@ const ALL_NAV = [
   { path: '/abonnements',  label: 'Mon abonnement',  roles: ['owner'], d: 'M3 3h18v18H3zM3 9h18M9 21V9' },
 ]
 
-function Content({ alertesNb, messagesNb = 0, navItems, location, navigate, setMobileOpen, logout, onSearch, user, role, isDark, toggle, palette }) {
+function Content({ alertesNb, messagesNb = 0, trialExpired = false, navItems, location, navigate, setMobileOpen, logout, onSearch, user, role, isDark, toggle, palette }) {
   const { t } = useTranslation()
   const { plan, colors, canAccess } = usePlan()
   const { parametres }   = useParametres()
@@ -134,6 +134,7 @@ function Content({ alertesNb, messagesNb = 0, navItems, location, navigate, setM
           const active    = location.pathname === item.path
           const isAlerte  = item.path === '/alertes'
           const locked    = item.planRequired ? !canAccess(item.planRequired) : false
+          const expiredLocked = trialExpired && !ALLOWED_EXPIRED.includes(item.path)
           const reqPlan   = item.planRequired ? (FEATURE_PLAN_REQUIS[item.planRequired] ?? 'pro') : null
           const lockLabel = reqPlan ? (PLAN_COLORS[reqPlan]?.label ?? reqPlan) : null
 
@@ -141,6 +142,7 @@ function Content({ alertesNb, messagesNb = 0, navItems, location, navigate, setM
             <motion.button
               key={item.path}
               onClick={() => {
+                if (expiredLocked) { navigate('/abonnements'); setMobileOpen(false); return }
                 if (locked) { showUpgrade(item.planRequired); return }
                 navigate(item.path); setMobileOpen(false)
               }}
@@ -155,7 +157,7 @@ function Content({ alertesNb, messagesNb = 0, navItems, location, navigate, setM
                 boxShadow: active ? '0 0 0 1px rgba(37,99,235,0.25), 0 4px 16px rgba(37,99,235,0.18)' : 'none',
                 color: active ? '#60A5FA' : locked ? palette.textMuted : palette.textSub,
                 fontFamily: 'inherit', fontSize: 13, fontWeight: active ? 600 : 400,
-                opacity: locked ? 0.7 : 1,
+                opacity: expiredLocked ? 0.38 : locked ? 0.7 : 1,
                 width: '100%', textAlign: 'left', transition: 'background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease', position: 'relative',
               }}
               onMouseEnter={(e) => {
@@ -334,7 +336,9 @@ function LogoutConfirmModal({ onConfirm, onCancel, palette }) {
   )
 }
 
-export default function Sidebar({ alertesNb = 0, onSearch }) {
+const ALLOWED_EXPIRED = ['/abonnements', '/profile']
+
+export default function Sidebar({ alertesNb = 0, onSearch, trialExpired = false }) {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, role, logout: authLogout } = useAuth()
@@ -349,7 +353,7 @@ export default function Sidebar({ alertesNb = 0, onSearch }) {
 
   const doLogout = () => { authLogout(); navigate('/login') }
 
-  const contentProps = { alertesNb, messagesNb, navItems, location, navigate, setMobileOpen, logout: () => setConfirmLogout(true), onSearch, user, role: userRole, isDark, toggle, palette }
+  const contentProps = { alertesNb, messagesNb, trialExpired, navItems, location, navigate, setMobileOpen, logout: () => setConfirmLogout(true), onSearch, user, role: userRole, isDark, toggle, palette }
 
   return (
     <>
