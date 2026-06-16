@@ -3,7 +3,7 @@
 // Réutilisable dans toutes les barres (tous les rôles)
 // ================================================
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNotifications } from '../hooks/useNotifications'
@@ -32,13 +32,40 @@ export default function NotifCenter({ size = 36, color, bg, border }) {
   const { notifications, nonLues, isLoading, marquerLu, marquerToutLu } = useNotifications()
   const [open, setOpen]     = useState(false)
   const [filtre, setFiltre] = useState('toutes') // 'toutes' | 'non_lues'
-  const ref = useRef(null)
+  const [coords, setCoords] = useState(null)
+  const ref    = useRef(null)
+  const btnRef = useRef(null)
 
   useEffect(() => {
     if (!open) return
     const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
     document.addEventListener('mousedown', onDoc)
     return () => document.removeEventListener('mousedown', onDoc)
+  }, [open])
+
+  // Le panneau est `position: fixed` et positionné à partir de la cloche, puis
+  // borné dans le viewport — sinon, ancré dans la sidebar étroite (220px) avec
+  // une largeur de 360px, il débordait hors de l'écran à gauche (non responsive).
+  useLayoutEffect(() => {
+    if (!open) { setCoords(null); return }
+    const compute = () => {
+      const el = btnRef.current
+      if (!el) return
+      const r      = el.getBoundingClientRect()
+      const margin = 12
+      const width  = Math.min(360, window.innerWidth - margin * 2)
+      // On aligne le bord droit du panneau sur la cloche, puis on borne à l'écran
+      let left = r.right - width
+      left = Math.max(margin, Math.min(left, window.innerWidth - width - margin))
+      setCoords({ top: r.bottom + 8, left, width })
+    }
+    compute()
+    window.addEventListener('resize', compute)
+    window.addEventListener('scroll', compute, true)
+    return () => {
+      window.removeEventListener('resize', compute)
+      window.removeEventListener('scroll', compute, true)
+    }
   }, [open])
 
   const liste = filtre === 'non_lues' ? notifications.filter(n => !n.lu) : notifications
@@ -51,7 +78,7 @@ export default function NotifCenter({ size = 36, color, bg, border }) {
   return (
     <div ref={ref} style={{ position: 'relative', flexShrink: 0 }}>
       {/* Cloche */}
-      <button onClick={() => setOpen(o => !o)} title="Notifications"
+      <button ref={btnRef} onClick={() => setOpen(o => !o)} title="Notifications"
         style={{ position: 'relative', width: size, height: size, borderRadius: 8, background: bg ?? 'rgba(255,255,255,0.06)', border: `1px solid ${border ?? palette.cardBorder}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: color ?? palette.textSub }}>
         <svg width={Math.round(size * 0.46)} height={Math.round(size * 0.46)} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" />
@@ -65,15 +92,15 @@ export default function NotifCenter({ size = 36, color, bg, border }) {
 
       {/* Dropdown */}
       <AnimatePresence>
-        {open && (
+        {open && coords && (
           <motion.div
             initial={{ opacity: 0, y: -8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
             transition={{ duration: 0.15 }}
             style={{
-              position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 1000,
-              width: 'min(360px, calc(100vw - 24px))', maxHeight: 440,
+              position: 'fixed', top: coords.top, left: coords.left, zIndex: 1000,
+              width: coords.width, maxHeight: 'min(440px, calc(100vh - 80px))',
               background: palette.card, border: `1px solid ${palette.cardBorder}`,
               borderRadius: 16, boxShadow: '0 16px 50px rgba(0,0,0,0.4)',
               display: 'flex', flexDirection: 'column', overflow: 'hidden',
