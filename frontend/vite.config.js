@@ -3,8 +3,17 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import { compression } from 'vite-plugin-compression2'
 
-// Icône PWA (Cloudinary — runtime-cachée par la règle CacheFirst images)
-const ICON = 'https://res.cloudinary.com/de0xeqpj9/image/upload/v1780821117/Capture_vh0qaw.png'
+// ── Icônes PWA (Cloudinary) ──────────────────────────
+// On génère de VRAIES icônes carrées dimensionnées (et non l'image brute),
+// sur fond thème #020817 pour fondre les bords.
+//  • purpose "any"      : logo cadré plein carré (c_pad)
+//  • purpose "maskable" : logo réduit à ~80% (zone de sécurité Android moderne)
+//    via 2 transformations chaînées — sinon Android 12/13/14 rogne le logo.
+const CLD = 'https://res.cloudinary.com/de0xeqpj9/image/upload'
+const ICON_SRC = 'v1780821117/Capture_vh0qaw.png'
+const iconAny  = (s) => `${CLD}/c_pad,b_rgb:020817,w_${s},h_${s}/${ICON_SRC}`
+const iconMask = (s) => `${CLD}/c_pad,b_rgb:020817,w_${Math.round(s * 0.8)},h_${Math.round(s * 0.8)}/c_pad,b_rgb:020817,w_${s},h_${s}/${ICON_SRC}`
+const ICON = iconAny(512) // icône générique (apple-touch, favicon runtime…)
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -17,20 +26,26 @@ export default defineConfig({
 
       // ── Manifest PWA complet (installation) ──────────────
       manifest: {
+        id: '/',
         name: 'Fuelo — Gestion de stations-service',
         short_name: 'Fuelo',
         description: 'Gestion de stations-service en Afrique de l\'Ouest — anti-fraude, GPS citernes, alertes temps réel.',
         lang: 'fr',
+        dir: 'ltr',
+        categories: ['business', 'productivity'],
         start_url: '/',
         scope: '/',
         display: 'standalone',
         orientation: 'portrait',
         background_color: '#020817',
         theme_color: '#2563EB',
+        // Android moderne : il FAUT au moins une 192 + une 512, et une icône
+        // maskable (avec zone de sécurité) pour une installation propre.
         icons: [
-          { src: ICON, sizes: '192x192', type: 'image/png', purpose: 'any' },
-          { src: ICON, sizes: '512x512', type: 'image/png', purpose: 'any' },
-          { src: ICON, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: iconAny(192),  sizes: '192x192', type: 'image/png', purpose: 'any'      },
+          { src: iconAny(512),  sizes: '512x512', type: 'image/png', purpose: 'any'      },
+          { src: iconMask(192), sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: iconMask(512), sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
 
