@@ -213,6 +213,28 @@ const en = {
     prixGasoil:     'Diesel price (GNF/L)',
     seuilAlerte:    'Alert threshold (L)',
   },
+  roles: {
+    owner:       'Owner',
+    gerant:      'Manager',
+    logisticien: 'Logistician',
+    comptable:   'Accountant',
+    pompiste:    'Attendant',
+    chauffeur:   'Driver',
+    superadmin:  'Super Admin',
+  },
+  profile: {
+    title:          'My profile',
+    subtitle:       'Manage your personal information',
+    infosPerso:     'Personal information',
+    nomComplet:     'Full name',
+    email:          'Email',
+    emailNote:      'Email cannot be changed',
+    telephone:      'Phone (optional)',
+    mesStations:    'My stations',
+    active:         'Active',
+    activiteRecente: 'Recent activity',
+    aucuneActivite: 'No recent activity',
+  },
 }
 
 export default en

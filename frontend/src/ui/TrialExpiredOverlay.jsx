@@ -22,6 +22,7 @@ export default function TrialExpiredOverlay() {
       }}
     >
       <motion.div
+        className="fuelo-trial-overlay-card"
         initial={{ opacity: 0, scale: 0.92, y: 18 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ type: 'spring', damping: 22, stiffness: 260, delay: 0.05 }}
@@ -34,6 +35,7 @@ export default function TrialExpiredOverlay() {
           overflow: 'hidden',
         }}
       >
+        <style>{`@media (max-width: 480px){ .fuelo-trial-overlay-card{ padding: 32px 22px 26px !important; border-radius: 22px !important; } .fuelo-trial-overlay-card h2{ font-size: 19px !important; } }`}</style>
         {/* Lueur décorative */}
         <div style={{ position: 'absolute', top: -60, left: '50%', transform: 'translateX(-50%)', width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,158,11,0.18), transparent 70%)', pointerEvents: 'none' }} />
 

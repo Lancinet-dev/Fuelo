@@ -213,6 +213,28 @@ const ar = {
     prixGasoil:     'سعر الديزل (GNF/L)',
     seuilAlerte:    'حد التنبيه (لتر)',
   },
+  roles: {
+    owner:       'المالك',
+    gerant:      'المدير',
+    logisticien: 'مسؤول اللوجستيك',
+    comptable:   'المحاسب',
+    pompiste:    'عامل المحطة',
+    chauffeur:   'السائق',
+    superadmin:  'المشرف العام',
+  },
+  profile: {
+    title:          'ملفي الشخصي',
+    subtitle:       'أدِر معلوماتك الشخصية',
+    infosPerso:     'المعلومات الشخصية',
+    nomComplet:     'الاسم الكامل',
+    email:          'البريد الإلكتروني',
+    emailNote:      'لا يمكن تغيير البريد الإلكتروني',
+    telephone:      'الهاتف (اختياري)',
+    mesStations:    'محطاتي',
+    active:         'نشطة',
+    activiteRecente: 'النشاط الأخير',
+    aucuneActivite: 'لا يوجد نشاط حديث',
+  },
 }
 
 export default ar

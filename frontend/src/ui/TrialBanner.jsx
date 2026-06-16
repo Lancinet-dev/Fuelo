@@ -28,17 +28,21 @@ export default function TrialBanner() {
   return (
     <AnimatePresence>
       <motion.div
+        className="fuelo-trial-banner"
         initial={{ height: 0, opacity: 0 }}
         animate={{ height: 'auto', opacity: 1 }}
         exit={{ height: 0, opacity: 0 }}
         style={{
+          position: 'relative', overflow: 'hidden',
           background: cfg.bg, color: '#fff',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
           padding: '9px 16px', fontFamily: "'DM Sans', system-ui, sans-serif",
           flexWrap: 'wrap', textAlign: 'center',
         }}
       >
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+        {/* Reflet premium animé */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.22) 50%, transparent 70%)', backgroundSize: '220% 100%', animation: 'fuelo-trial-shine 4.5s ease-in-out infinite', pointerEvents: 'none' }} />
+        <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={cfg.urgent ? { animation: 'fuelo-trial-pulse 1.4s infinite' } : undefined}>
             {cfg.urgent
               ? <><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 2"/></>
@@ -46,12 +50,19 @@ export default function TrialBanner() {
           </svg>
           <span style={{ fontSize: 13.5, fontWeight: 800 }}>{cfg.label}</span>
         </span>
-        <span style={{ fontSize: 12.5, opacity: 0.92 }}>{sousTexte}</span>
+        <span className="fuelo-trial-sub" style={{ position: 'relative', fontSize: 12.5, opacity: 0.92 }}>{sousTexte}</span>
         <button onClick={() => navigate('/abonnements')}
-          style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.4)', color: '#fff', borderRadius: 8, padding: '5px 16px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+          style={{ position: 'relative', background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.4)', color: '#fff', borderRadius: 8, padding: '5px 16px', fontSize: 12.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
           Voir les plans →
         </button>
-        <style>{`@keyframes fuelo-trial-pulse { 0%,100%{opacity:1} 50%{opacity:0.45} }`}</style>
+        <style>{`
+          @keyframes fuelo-trial-pulse { 0%,100%{opacity:1} 50%{opacity:0.45} }
+          @keyframes fuelo-trial-shine { 0%{background-position:140% 0} 60%,100%{background-position:-40% 0} }
+          @media (max-width: 600px) {
+            .fuelo-trial-banner { gap: 8px !important; padding: 8px 12px !important; }
+            .fuelo-trial-sub { display: none !important; }
+          }
+        `}</style>
       </motion.div>
     </AnimatePresence>
   )

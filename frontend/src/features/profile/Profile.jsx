@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth }  from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
+import { useTranslation } from '../../hooks/useTranslation'
 import api          from '../../services/api'
 import toast        from 'react-hot-toast'
 import {  formatRelative } from '../../utils/format'
@@ -53,6 +54,8 @@ function SectionCard({ icon, title, children, palette }) {
 export default function Profile() {
   const { user }    = useAuth()
   const { palette } = useTheme()
+  const { t }       = useTranslation()
+  const roleKey     = user?.role === 'manager' ? 'gerant' : user?.role
 
   const [form,      setForm]      = useState({ nom: '', email: '', telephone: '' })
   const [loading,   setLoading]   = useState(false)
@@ -137,10 +140,10 @@ export default function Profile() {
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: theme.font.size['2xl'], fontWeight: theme.font.weight.black, color: palette.text, letterSpacing: '-0.5px', margin: 0, marginBottom: 4 }}>
-          Mon profil
+          {t('profile.title')}
         </h1>
         <p style={{ fontSize: theme.font.size.md, color: palette.textSub, margin: 0 }}>
-          Gérez vos informations personnelles
+          {t('profile.subtitle')}
         </p>
       </div>
 
@@ -176,18 +179,18 @@ export default function Profile() {
             {user?.email}
           </div>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: roleColor, background: `${roleColor}15`, border: `1px solid ${roleColor}30`, padding: '3px 12px', borderRadius: theme.radius.full, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            {ROLE_LABELS[user?.role] ?? user?.role}
+            {roleKey ? t('roles.' + roleKey) : (ROLE_LABELS[user?.role] ?? user?.role)}
           </span>
         </div>
       </div>
 
       {/* Informations personnelles */}
-      <SectionCard icon={ICONS.edit} title="Informations personnelles" palette={palette}>
+      <SectionCard icon={ICONS.edit} title={t('profile.infosPerso')} palette={palette}>
         <form onSubmit={handleSave}>
 
           <div style={{ marginBottom: 14 }}>
             <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
-              Nom complet
+              {t('profile.nomComplet')}
             </div>
             <input
               type="text"
@@ -202,7 +205,7 @@ export default function Profile() {
 
           <div style={{ marginBottom: 14 }}>
             <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
-              Email
+              {t('profile.email')}
             </div>
             <input
               type="email"
@@ -211,13 +214,13 @@ export default function Profile() {
               style={{ ...inputStyle, opacity: 0.5, cursor: 'not-allowed' }}
             />
             <div style={{ fontSize: theme.font.size.xs, color: palette.textMuted, marginTop: 4 }}>
-              L'email ne peut pas être modifié
+              {t('profile.emailNote')}
             </div>
           </div>
 
           <div style={{ marginBottom: 22 }}>
             <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: palette.textSub, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
-              Téléphone (optionnel)
+              {t('profile.telephone')}
             </div>
             <input
               type="tel"
@@ -241,14 +244,14 @@ export default function Profile() {
               ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12" /></svg>
               : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d={ICONS.save} /></svg>
             }
-            {loading ? 'Sauvegarde...' : saved ? 'Sauvegardé !' : 'Sauvegarder'}
+            {loading ? `${t('common.loading')}` : saved ? t('parametres.sauvegarde') : t('parametres.sauvegarder')}
           </button>
         </form>
       </SectionCard>
 
       {/* Stations accessibles */}
       {stations.length > 0 && (
-        <SectionCard icon={ICONS.station} title="Mes stations" palette={palette}>
+        <SectionCard icon={ICONS.station} title={t('profile.mesStations')} palette={palette}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {stations.map(s => (
               <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: palette.inputBg, borderRadius: theme.radius.md, border: `1px solid ${palette.cardBorder}` }}>
@@ -260,7 +263,7 @@ export default function Profile() {
                   </div>
                 </div>
                 <span style={{ fontSize: 11, fontWeight: 700, color: theme.colors.success, background: theme.colors.successLight, padding: '2px 10px', borderRadius: theme.radius.full }}>
-                  Active
+                  {t('profile.active')}
                 </span>
               </div>
             ))}
@@ -269,10 +272,10 @@ export default function Profile() {
       )}
 
       {/* Activité récente */}
-      <SectionCard icon={ICONS.activity} title="Activité récente" palette={palette}>
+      <SectionCard icon={ICONS.activity} title={t('profile.activiteRecente')} palette={palette}>
         {activite.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '20px 0', color: palette.textSub, fontSize: theme.font.size.md }}>
-            Aucune activité récente
+            {t('profile.aucuneActivite')}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

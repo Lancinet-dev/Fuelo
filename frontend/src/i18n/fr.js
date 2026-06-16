@@ -213,6 +213,28 @@ const fr = {
     prixGasoil:     'Prix Gasoil (GNF/L)',
     seuilAlerte:    'Seuil d\'alerte (L)',
   },
+  roles: {
+    owner:       'Propriétaire',
+    gerant:      'Gérant',
+    logisticien: 'Logisticien',
+    comptable:   'Comptable',
+    pompiste:    'Pompiste',
+    chauffeur:   'Chauffeur',
+    superadmin:  'Super Admin',
+  },
+  profile: {
+    title:          'Mon profil',
+    subtitle:       'Gérez vos informations personnelles',
+    infosPerso:     'Informations personnelles',
+    nomComplet:     'Nom complet',
+    email:          'Email',
+    emailNote:      'L\'email ne peut pas être modifié',
+    telephone:      'Téléphone (optionnel)',
+    mesStations:    'Mes stations',
+    active:         'Active',
+    activiteRecente: 'Activité récente',
+    aucuneActivite: 'Aucune activité récente',
+  },
 }
 
 export default fr
