@@ -9,7 +9,7 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
 } from 'recharts'
 import { useTheme } from '../../context/ThemeContext'
-import { useAuth }  from '../../context/AuthContext'
+import { useTranslation } from '../../hooks/useTranslation'
 import { useAntiFraude, useMarquerResolu } from '../../hooks/useAntiFraude'
 import EmptyState from '../../ui/EmptyState'
 import Shimmer, { SkeletonStatCard, SkeletonStyle } from '../../ui/Skeleton'
@@ -479,7 +479,7 @@ function ClassementRow({ p, index, palette }) {
 // ── Page principale ────────────────────────────────
 export default function AntiFraudePage() {
   const { isDark, palette } = useTheme()
-  const { role } = useAuth()
+  const { t }    = useTranslation()
 
   const { data, isLoading } = useAntiFraude()
   const { mutateAsync: resoudre, isPending: isResolving } = useMarquerResolu()
@@ -544,10 +544,10 @@ export default function AntiFraudePage() {
           <span style={{ width: 40, height: 40, borderRadius: 12, background: `${theme.colors.danger}15`, border: `1px solid ${theme.colors.danger}28`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke={theme.colors.danger} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={ICONS.shieldChk} /></svg>
           </span>
-          Centre Anti-Fraude
+          {t('antifraude.title')}
         </h1>
         <p style={{ fontSize: theme.font.size.md, color: palette.textSub, margin: 0 }}>
-          Surveillance et détection des fraudes — {station.nom || (role === 'gerant' ? 'votre station' : 'votre établissement')}
+          {t('antifraude.subtitle')} — {station.nom || t('antifraude.votreStation')}
         </p>
       </div>
 
@@ -562,10 +562,10 @@ export default function AntiFraudePage() {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, marginBottom: 28 }} className="fuelo-grid-4">
           {[
-            { label: 'Total fraudes détectées',   value: String(stats.totalFraudes ?? 0),               icon: ICONS.alert,   color: theme.colors.danger,  sub: 'Pompistes + transport' },
-            { label: 'Montant récupéré estimé',   value: formatGNF(stats.montantRecupere ?? 0),         icon: ICONS.cash,    color: theme.colors.warning, sub: 'Cumul des écarts détectés' },
-            { label: 'Pompistes surveillés',      value: String(stats.pompistesSurveilles ?? 0),        icon: ICONS.users,   color: theme.colors.primary, sub: 'Avec service terminé' },
-            { label: 'Taux de fraude',            value: `${stats.tauxFraude ?? 0}%`,                   icon: ICONS.percent, color: theme.colors.info ?? theme.colors.primary, sub: 'Cas suspects / total' },
+            { label: t('antifraude.statTotal'),      value: String(stats.totalFraudes ?? 0),        icon: ICONS.alert,   color: theme.colors.danger,  sub: t('antifraude.statTotalSub') },
+            { label: t('antifraude.statMontant'),    value: formatGNF(stats.montantRecupere ?? 0),  icon: ICONS.cash,    color: theme.colors.warning, sub: t('antifraude.statMontantSub') },
+            { label: t('antifraude.statSurveilles'), value: String(stats.pompistesSurveilles ?? 0), icon: ICONS.users,   color: theme.colors.primary, sub: t('antifraude.statSurveillesSub') },
+            { label: t('antifraude.statTaux'),       value: `${stats.tauxFraude ?? 0}%`,            icon: ICONS.percent, color: theme.colors.info ?? theme.colors.primary, sub: t('antifraude.statTauxSub') },
           ].map((s, i) => (
             <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
               <GlassCard palette={palette} isDark={isDark} style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -588,7 +588,7 @@ export default function AntiFraudePage() {
         <div style={{ marginBottom: 32 }}>
           <div className="fuelo-af-grid2" style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr', gap: 16, marginBottom: 16 }}>
             <GlassCard palette={palette} isDark={isDark}>
-              <SectionTitle icon={ICONS.calendar} title="Fraudes par mois" subtitle="12 derniers mois — pompistes vs transport" color={theme.colors.danger} palette={palette} />
+              <SectionTitle icon={ICONS.calendar} title={t('antifraude.fraudesParMois')} subtitle="12 derniers mois — pompistes vs transport" color={theme.colors.danger} palette={palette} />
               {fraudesParMois.every(m => m.total === 0) ? (
                 <EmptyState type="alertes" title="Aucune fraude sur la période" message="Aucun cas suspect détecté ces 12 derniers mois." />
               ) : (
