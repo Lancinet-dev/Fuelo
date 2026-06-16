@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme }  from '../../context/ThemeContext'
 import { useAuth }   from '../../context/AuthContext'
+import { useTranslation } from '../../hooks/useTranslation'
 import { PlanGatePage } from '../../ui/PlanGate'
 import { usePerformances, usePerformancesEmploye, useValiderPrime, useAnneesDisponibles } from '../../hooks/usePerformances'
 import StatCard      from '../../ui/StatCard'
@@ -69,6 +70,7 @@ function ScoreBar({ score, color, palette }) {
 
 // ── Modal historique d'un employé ────────────────
 function ModalHistorique({ employe, onClose, palette, isDark }) {
+  const { t } = useTranslation()
   const { data } = usePerformancesEmploye(employe.id)
   const historique = data?.historique ?? []
 
@@ -102,7 +104,7 @@ function ModalHistorique({ employe, onClose, palette, isDark }) {
         <div style={{ padding: '20px 24px 16px', borderBottom: `1px solid ${palette.cardBorder}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: theme.font.size.lg, fontWeight: theme.font.weight.bold, color: palette.text }}>{employe.nom}</div>
-            <div style={{ fontSize: theme.font.size.xs, color: palette.textSub, marginTop: 2 }}>Historique 12 derniers mois</div>
+            <div style={{ fontSize: theme.font.size.xs, color: palette.textSub, marginTop: 2 }}>{t('perf.historique12')}</div>
           </div>
           <motion.button whileHover={{ scale: 1.08, rotate: 90 }} whileTap={{ scale: 0.9 }} onClick={onClose}
             style={{ background: palette.hover, border: 'none', borderRadius: theme.radius.md, cursor: 'pointer', color: palette.textMuted, padding: 8, display: 'flex' }}>
@@ -112,7 +114,7 @@ function ModalHistorique({ employe, onClose, palette, isDark }) {
 
         <div style={{ overflowY: 'auto', flex: 1 }}>
           {historique.length === 0 ? (
-            <div style={{ padding: 40, textAlign: 'center', color: palette.textMuted, fontSize: theme.font.size.sm }}>Aucun historique disponible</div>
+            <div style={{ padding: 40, textAlign: 'center', color: palette.textMuted, fontSize: theme.font.size.sm }}>{t('perf.aucunHistorique')}</div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: theme.font.size.sm }}>
               <thead>
@@ -132,7 +134,7 @@ function ModalHistorique({ employe, onClose, palette, isDark }) {
                       <td style={{ padding: '10px 16px', color: palette.text, fontWeight: theme.font.weight.medium }}>{MOIS_LABELS[h.mois]} {h.annee}</td>
                       <td style={{ padding: '10px 16px', color: palette.text, fontFamily: theme.font.mono, fontWeight: theme.font.weight.bold }}>{h.score ?? '—'}%</td>
                       <td style={{ padding: '10px 16px' }}>
-                        <span style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.bold, color: niv.color, background: niv.bg, padding: '2px 8px', borderRadius: theme.radius.full }}>{niv.label}</span>
+                        <span style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.bold, color: niv.color, background: niv.bg, padding: '2px 8px', borderRadius: theme.radius.full }}>{t('perf.niv' + niv.stars)}</span>
                       </td>
                       <td style={{ padding: '10px 16px', color: palette.text, fontFamily: theme.font.mono }}>{h.prime_montant ? `${fmt(h.prime_montant)} GNF` : '—'}</td>
                       <td style={{ padding: '10px 16px', fontSize: theme.font.size.xs, fontWeight: theme.font.weight.semi, color: statutColor }}>{statut}</td>
@@ -150,6 +152,7 @@ function ModalHistorique({ employe, onClose, palette, isDark }) {
 
 // ── Carte employé ────────────────────────────────
 function CarteEmploye({ p, mois, annee, palette, isDark, onHistorique, index }) {
+  const { t } = useTranslation()
   const { mutateAsync: valider, isPending } = useValiderPrime()
   const niv   = getNiveau(p.score)
   const score = p.score ?? null
@@ -202,7 +205,7 @@ function CarteEmploye({ p, mois, annee, palette, isDark, onHistorique, index }) 
           <div>
             <div style={{ fontSize: theme.font.size.md, fontWeight: theme.font.weight.bold, color: palette.text, marginBottom: 2 }}>{p.nom}</div>
             <div style={{ fontSize: theme.font.size.xs, color: palette.textSub, textTransform: 'capitalize' }}>
-              {p.user_role === 'pompiste' ? 'Pompiste' : 'Chauffeur'}
+              {t('roles.' + (p.user_role === 'pompiste' ? 'pompiste' : 'chauffeur'))}
             </div>
           </div>
         </div>
@@ -210,20 +213,20 @@ function CarteEmploye({ p, mois, annee, palette, isDark, onHistorique, index }) 
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
           {!aucuneDonnee && (
             <span style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.bold, color: niv.color, background: niv.bg, padding: '3px 10px', borderRadius: theme.radius.full, whiteSpace: 'nowrap' }}>
-              {niv.label}
+              {t('perf.niv' + niv.stars)}
             </span>
           )}
           <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.96 }} onClick={() => onHistorique(p)}
             style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: theme.font.size.xs, color: palette.textMuted, background: 'transparent', border: `1px solid ${palette.cardBorder}`, borderRadius: theme.radius.md, padding: '4px 10px', cursor: 'pointer', fontFamily: theme.font.family, transition: theme.transition.hover }}>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={ICONS.clock} /></svg>
-            Historique
+            {t('perf.historique')}
           </motion.button>
         </div>
       </div>
 
       {aucuneDonnee ? (
         <div style={{ textAlign: 'center', padding: '16px 0', color: palette.textMuted, fontSize: theme.font.size.sm, position: 'relative' }}>
-          Pas encore de données pour ce mois
+          {t('perf.pasDonnees')}
         </div>
       ) : (
         <>
@@ -239,13 +242,13 @@ function CarteEmploye({ p, mois, annee, palette, isDark, onHistorique, index }) 
           {/* Métriques */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 16, position: 'relative' }}>
             {(p.user_role === 'pompiste' ? [
-              { l: 'Jours',   v: p.nb_jours_travailles ?? 0 },
-              { l: 'Ventes',  v: p.nb_ventes ?? 0 },
-              { l: 'Fraudes', v: p.nb_fraudes ?? 0, bad: (p.nb_fraudes ?? 0) > 0 },
+              { l: t('perf.jours'),   v: p.nb_jours_travailles ?? 0 },
+              { l: t('perf.ventes'),  v: p.nb_ventes ?? 0 },
+              { l: t('perf.fraudes'), v: p.nb_fraudes ?? 0, bad: (p.nb_fraudes ?? 0) > 0 },
             ] : [
-              { l: 'Trajets',   v: p.nb_trajets ?? 0 },
-              { l: 'Fraudes',   v: p.nb_fraudes ?? 0, bad: (p.nb_fraudes ?? 0) > 0 },
-              { l: 'Arrêts',    v: p.nb_alertes ?? 0, bad: (p.nb_alertes ?? 0) > 0 },
+              { l: t('perf.trajets'), v: p.nb_trajets ?? 0 },
+              { l: t('perf.fraudes'), v: p.nb_fraudes ?? 0, bad: (p.nb_fraudes ?? 0) > 0 },
+              { l: t('perf.arrets'),  v: p.nb_alertes ?? 0, bad: (p.nb_alertes ?? 0) > 0 },
             ]).map(({ l, v, bad }) => (
               <div key={l} style={{
                 background: palette.hover,
@@ -275,14 +278,14 @@ function CarteEmploye({ p, mois, annee, palette, isDark, onHistorique, index }) 
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
                     <div>
                       <div style={{ fontSize: theme.font.size.xs, fontWeight: theme.font.weight.bold, color: validee ? theme.colors.success : refusee ? theme.colors.danger : theme.colors.warning, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>
-                        {validee ? 'Prime validée' : refusee ? 'Prime refusée' : 'Prime proposée'}
+                        {validee ? t('perf.primeValidee') : refusee ? t('perf.primeRefusee') : t('perf.primeProposee')}
                       </div>
                       <div style={{ fontSize: theme.font.size.xl, fontWeight: theme.font.weight.black, color: palette.text, fontFamily: theme.font.mono }}>
                         {fmt(p.prime_montant)} GNF
                       </div>
                       {(validee || refusee) && p.valideur_nom && (
                         <div style={{ fontSize: theme.font.size.xs, color: palette.textMuted, marginTop: 4 }}>
-                          par {p.valideur_nom}
+                          {t('perf.par')} {p.valideur_nom}
                         </div>
                       )}
                     </div>
@@ -292,12 +295,12 @@ function CarteEmploye({ p, mois, annee, palette, isDark, onHistorique, index }) 
                         <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.96 }} disabled={isPending} onClick={() => handleAction('valider')}
                           style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: theme.radius.button, border: 'none', background: theme.colors.success, color: '#fff', fontSize: theme.font.size.xs, fontWeight: theme.font.weight.bold, cursor: isPending ? 'not-allowed' : 'pointer', fontFamily: theme.font.family, whiteSpace: 'nowrap', opacity: isPending ? 0.7 : 1, transition: theme.transition.hover }}>
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d={ICONS.check} /></svg>
-                          Valider
+                          {t('perf.valider')}
                         </motion.button>
                         <motion.button whileHover={{ y: -1 }} whileTap={{ scale: 0.96 }} disabled={isPending} onClick={() => handleAction('refuser')}
                           style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: theme.radius.button, border: `1px solid ${theme.colors.danger}`, background: 'transparent', color: theme.colors.danger, fontSize: theme.font.size.xs, fontWeight: theme.font.weight.bold, cursor: isPending ? 'not-allowed' : 'pointer', fontFamily: theme.font.family, whiteSpace: 'nowrap', opacity: isPending ? 0.7 : 1, transition: theme.transition.hover }}>
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d={ICONS.x} /></svg>
-                          Refuser
+                          {t('perf.refuser')}
                         </motion.button>
                       </div>
                     )}
@@ -316,6 +319,7 @@ function CarteEmploye({ p, mois, annee, palette, isDark, onHistorique, index }) 
 function PerformancesPageContent() {
   const { isDark, palette } = useTheme()
   const { role }            = useAuth()
+  const { t }               = useTranslation()
 
   const now     = new Date()
   const [mois,  setMois]  = useState(now.getMonth() + 1)
@@ -348,10 +352,10 @@ function PerformancesPageContent() {
               <path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/>
             </svg>
           </span>
-          Performances & Primes
+          {t('perf.title')}
         </h1>
         <p style={{ fontSize: theme.font.size.md, color: palette.textSub, margin: 0 }}>
-          {role === 'gerant' ? 'Vos pompistes' : role === 'logisticien' ? 'Vos chauffeurs' : 'Tous les employés'}
+          {role === 'gerant' ? t('perf.subGerant') : role === 'logisticien' ? t('perf.subLogisticien') : t('perf.subAll')}
         </p>
       </div>
 
@@ -399,9 +403,9 @@ function PerformancesPageContent() {
         </>
       ) : performances.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 28 }} className="fuelo-grid-3">
-          <StatCard label="Employés"     value={String(performances.length)} icon={ICONS.user}  color={palette.textSub} />
-          <StatCard label="En attente"   value={String(enAttente.length)}    icon={ICONS.clock} color={enAttente.length > 0 ? theme.colors.warning : theme.colors.success} />
-          <StatCard label="Total validé" value={`${fmt(totalPrime)} GNF`}    icon={ICONS.check} color={theme.colors.success} />
+          <StatCard label={t('perf.employes')}    value={String(performances.length)} icon={ICONS.user}  color={palette.textSub} />
+          <StatCard label={t('perf.enAttente')}   value={String(enAttente.length)}    icon={ICONS.clock} color={enAttente.length > 0 ? theme.colors.warning : theme.colors.success} />
+          <StatCard label={t('perf.totalValide')} value={`${fmt(totalPrime)} GNF`}    icon={ICONS.check} color={theme.colors.success} />
         </div>
       )}
 
@@ -437,8 +441,8 @@ function PerformancesPageContent() {
         }}>
           <EmptyState
             type="default"
-            title="Aucun employé actif"
-            message="Les performances sont calculées automatiquement à la fin de chaque mois."
+            title={t('perf.aucunEmploye')}
+            message={t('perf.calculAuto')}
           />
         </div>
       ) : (
