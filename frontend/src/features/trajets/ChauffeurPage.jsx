@@ -9,6 +9,7 @@ import { useTrajet }     from '../../hooks/useTrajet'
 import { useCiternes }   from '../../hooks/useTrajets'
 import { useParametres } from '../../hooks/useParametres'
 import { compressImage } from '../../utils/compressImage'
+import { cloudinaryUrl } from '../../utils/cloudinary'
 import MessagesButton from '../../ui/MessagesButton'
 import NotifCenter    from '../../ui/NotifCenter'
 
@@ -532,7 +533,7 @@ export default function ChauffeurPage() {
       <div style={{ background: 'linear-gradient(135deg, #090D1A, #111827)', borderBottom: `1px solid ${C.orange}20`, padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 10, boxShadow: '0 2px 20px rgba(0,0,0,0.4)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flexShrink: 1 }}>
           {parametres?.logo_url
-            ? <img src={parametres.logo_url} alt="" style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover', border: `1px solid ${C.orange}40`, flexShrink: 0 }} />
+            ? <img src={cloudinaryUrl(parametres.logo_url, { w: 96 })} alt="" style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover', border: `1px solid ${C.orange}40`, flexShrink: 0 }} />
             : <div style={{ width: 34, height: 34, flexShrink: 0, background: `linear-gradient(135deg, ${C.orange}, #D97706)`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 16px ${C.orange}40` }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#090D1A" strokeWidth="2.5" strokeLinecap="round">
                   <path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8zM5.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM18.5 21a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/>

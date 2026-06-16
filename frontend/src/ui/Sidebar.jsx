@@ -14,6 +14,7 @@ import { useParametres } from '../hooks/useParametres'
 import { usePerformancesBadge } from '../hooks/usePerformances'
 import { useUnreadMessages } from '../hooks/useMessages'
 import { useTranslation } from '../hooks/useTranslation'
+import { cloudinaryUrl } from '../utils/cloudinary'
 import NotifCenter from './NotifCenter'
 
 // Correspondance chemin → clé de traduction (nav.*)
@@ -83,7 +84,7 @@ function Content({ alertesNb, messagesNb = 0, trialExpired = false, navItems, lo
       <div style={{ padding: '18px 14px 14px', display: 'flex', alignItems: 'center', gap: 10, borderBottom: `1px solid ${palette.sidebarBorder}`, marginBottom: 8 }}>
         {logoUrl ? (
           <img
-            src={logoUrl}
+            src={cloudinaryUrl(logoUrl, { w: 96 })}
             alt="logo"
             style={{ width: 38, height: 38, borderRadius: 10, objectFit: 'cover', flexShrink: 0, border: '1px solid rgba(255,255,255,0.12)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}
           />

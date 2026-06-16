@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { compression } from 'vite-plugin-compression2'
 
 // Icône PWA (Cloudinary — runtime-cachée par la règle CacheFirst images)
 const ICON = 'https://res.cloudinary.com/de0xeqpj9/image/upload/v1780821117/Capture_vh0qaw.png'
@@ -111,5 +112,34 @@ export default defineConfig({
       // SW désactivé en dev (évite de cacher le HMR) — actif au build/preview
       devOptions: { enabled: false },
     }),
+
+    // ── Pré-compression des assets (gzip + brotli) ──────────
+    // Génère des fichiers .gz et .br à côté des assets. Utile si l'app est
+    // servie ailleurs que Vercel (qui compresse déjà à la volée), et pour
+    // le `preview`. Seuil 1 Ko : inutile de compresser les tout petits.
+    compression({ algorithm: 'gzip',           threshold: 1024, exclude: [/\.(br|gz)$/] }),
+    compression({ algorithm: 'brotliCompress', threshold: 1024, exclude: [/\.(br|gz)$/] }),
   ],
+
+  build: {
+    // Le chunk `index` (entrée principale) descend bien sous ce seuil après split
+    chunkSizeWarningLimit: 600,
+    rollupOptions: {
+      output: {
+        // Sépare les grosses dépendances en chunks vendor mis en cache long
+        // terme : elles changent rarement, donc à chaque déploiement le
+        // navigateur ne re-télécharge que le petit code applicatif.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+          if (id.includes('framer-motion') || id.includes('motion-dom') || id.includes('motion-utils')) return 'vendor-motion'
+          if (id.includes('recharts') || id.includes('/d3-') || id.includes('victory-vendor') || id.includes('/decimal.js')) return 'vendor-charts'
+          if (id.includes('leaflet'))   return 'vendor-leaflet'
+          if (id.includes('@tanstack')) return 'vendor-query'
+          if (id.includes('@sentry'))   return 'vendor-sentry'
+          if (id.includes('socket.io') || id.includes('engine.io')) return 'vendor-socket'
+          if (id.includes('/react-dom/') || id.includes('/react/') || id.includes('/react-router') || id.includes('/react-is/') || id.includes('/scheduler/')) return 'vendor-react'
+        },
+      },
+    },
+  },
 })

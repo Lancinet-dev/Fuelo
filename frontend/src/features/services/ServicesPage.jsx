@@ -10,6 +10,7 @@ import StatCard           from '../../ui/StatCard'
 import EmptyState         from '../../ui/EmptyState'
 import { SkeletonStyle, SkeletonStatCard, SkeletonCard } from '../../ui/Skeleton'
 import { formatRelative } from '../../utils/format'
+import { cloudinaryUrl } from '../../utils/cloudinary'
 import theme from '../../config/theme'
 
 const CARD_VARIANTS = {
@@ -180,7 +181,7 @@ function ServiceModal({ service, onClose, isDark, palette }) {
           >
             <motion.img
               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              src={photoMode === 'debut' ? service.photo_debut_url : service.photo_fin_url}
+              src={cloudinaryUrl(photoMode === 'debut' ? service.photo_debut_url : service.photo_fin_url, { w: 1280 })}
               alt="compteur"
               style={{ maxWidth: '95vw', maxHeight: '90vh', borderRadius: theme.radius.card, objectFit: 'contain' }}
             />

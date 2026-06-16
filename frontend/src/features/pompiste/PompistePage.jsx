@@ -10,6 +10,7 @@ import { useVentes }     from '../../hooks/useVentes'
 import { useParametres } from '../../hooks/useParametres'
 import { useService }    from '../../hooks/useService'
 import { formatGNF, formatLitres, getStockStatus } from '../../utils/format'
+import { cloudinaryUrl } from '../../utils/cloudinary'
 import { compressImage } from '../../utils/compressImage'
 import MessagesButton from '../../ui/MessagesButton'
 import NotifCenter    from '../../ui/NotifCenter'
@@ -416,7 +417,7 @@ export default function PompistePage() {
       <div style={{ background: 'linear-gradient(135deg, #080D18, #0F1622)', borderBottom: `1px solid ${C.green}20`, padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 10, boxShadow: `0 2px 20px rgba(0,0,0,0.4)` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flexShrink: 1 }}>
           {parametres?.logo_url
-            ? <img src={parametres.logo_url} style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover', border: `1px solid ${C.green}40`, flexShrink: 0 }} alt="" />
+            ? <img src={cloudinaryUrl(parametres.logo_url, { w: 96 })} style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover', border: `1px solid ${C.green}40`, flexShrink: 0 }} alt="" />
             : <div style={{ width: 34, height: 34, flexShrink: 0, background: `linear-gradient(135deg, ${C.green}, #059669)`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 16px ${C.green}40` }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round">
                   <path d="M3 22V5a2 2 0 012-2h8a2 2 0 012 2v17H3z"/><path d="M3 11h12"/><path d="M15 7h1a2 2 0 012 2v3a1 1 0 002 0V7l-3-3"/><path d="M6 7h4"/>

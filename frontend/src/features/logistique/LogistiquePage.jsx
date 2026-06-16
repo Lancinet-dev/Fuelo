@@ -16,6 +16,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api            from '../../services/api'
 import toast          from 'react-hot-toast'
 import { formatRelative } from '../../utils/format'
+import { cloudinaryUrl } from '../../utils/cloudinary'
 // export.js (ExcelJS ≈ 1,4 Mo) chargé dynamiquement au clic — voir handleExportExcel
 import theme from '../../config/theme'
 
@@ -1012,7 +1013,7 @@ function LogistiquePageContent() {
           {/* Logo + titre */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
             {parametres?.logo_url ? (
-              <img src={parametres.logo_url} alt="logo" style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover', border: `1px solid ${ORANGE}40` }} />
+              <img src={cloudinaryUrl(parametres.logo_url, { w: 96 })} alt="logo" style={{ width: 34, height: 34, borderRadius: 8, objectFit: 'cover', border: `1px solid ${ORANGE}40` }} />
             ) : (
               <div style={{ width: 34, height: 34, background: `linear-gradient(135deg, ${ORANGE}, #D97706)`, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 0 16px ${ORANGE}50` }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
